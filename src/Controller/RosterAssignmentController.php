@@ -51,6 +51,33 @@ class RosterAssignmentController extends AbstractController
         ]);
     }
 
+    /**
+     * Corrections happen by removing the wrong entry and re-creating it, not by editing one
+     * in place - the same "records are facts, not form fields" rule MILHQ uses for its own
+     * award/qualification/service records. Deleting a primary assignment does not reopen
+     * whichever posting it had ended; create a new assignment for that if needed.
+     */
+    #[Route('/roster/{username}/assignment/{id}/delete', name: 'roster_assignment_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(string $username, int $id, Request $request): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('command-net.admin.personnel.manage');
+        $profile = $this->findProfile($username);
+
+        $token = $request->request->getString('_token');
+        if (!$this->isCsrfTokenValid('roster_assignment_delete_' . $id, $token)) {
+            $this->addFlash('error', 'Your session expired, please try again.');
+            return $this->redirectToRoute('command_net_roster_profile', ['username' => $username]);
+        }
+
+        $assignment = $this->assignmentRepository->find($id);
+        if ($assignment !== null && $assignment->getSoldier() === $profile) {
+            $this->assignmentRepository->remove($assignment);
+            $this->addFlash('success', 'Assignment removed.');
+        }
+
+        return $this->redirectToRoute('command_net_roster_profile', ['username' => $username]);
+    }
+
     private function findProfile(string $username): SoldierProfile
     {
         $user = $this->userRepository->findOneBy(['username' => $username]);

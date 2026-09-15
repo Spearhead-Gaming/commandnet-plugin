@@ -1,0 +1,17 @@
+{% extends '@Forumify/admin/crud/form.html.twig' %}
+{% block form_actions %}
+    {{ parent() }}
+    {% if data %}
+        {# majesticdev/forumify-id-card-plugin is optional; this whole block is inert and
+           renders nothing if it isn't installed. #}
+        {% set idCardPluginActive = repository('Forumify\\Plugin\\Entity\\Plugin').findOneBy({package: 'majesticdev/forumify-id-card-plugin', active: true}) is not null %}
+        {% if idCardPluginActive %}
+            {% set idCard = repository('MajesticDev\\ForumifyIdCard\\Entity\\IdentificationCard').findOneBy({source: 'commandnet', commandNetSoldierId: data.id}) %}
+            {% if idCard %}
+                <a class="btn-outlined" href="{{ path('id_cards_view', {id: idCard.id}) }}">View ID Card</a>
+            {% elseif is_granted('id-cards.admin.id_cards.create') %}
+                <a class="btn-outlined" href="{{ path('id_cards_create_from_commandnet', {soldierId: data.id}) }}">Create ID Card</a>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

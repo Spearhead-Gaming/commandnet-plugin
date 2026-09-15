@@ -51,6 +51,32 @@ class RosterAwardController extends AbstractController
         ]);
     }
 
+    /**
+     * Corrections happen by removing the wrong entry and re-issuing, not by editing one in
+     * place - the same "records are facts, not form fields" rule MILHQ uses for its own
+     * award/qualification/service records.
+     */
+    #[Route('/roster/{username}/award/{id}/delete', name: 'roster_award_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(string $username, int $id, Request $request): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('command-net.admin.awards.manage');
+        $profile = $this->findProfile($username);
+
+        $token = $request->request->getString('_token');
+        if (!$this->isCsrfTokenValid('roster_award_delete_' . $id, $token)) {
+            $this->addFlash('error', 'Your session expired, please try again.');
+            return $this->redirectToRoute('command_net_roster_profile', ['username' => $username]);
+        }
+
+        $soldierAward = $this->soldierAwardRepository->find($id);
+        if ($soldierAward !== null && $soldierAward->getSoldier() === $profile) {
+            $this->soldierAwardRepository->remove($soldierAward);
+            $this->addFlash('success', 'Award removed.');
+        }
+
+        return $this->redirectToRoute('command_net_roster_profile', ['username' => $username]);
+    }
+
     private function findProfile(string $username): SoldierProfile
     {
         $user = $this->userRepository->findOneBy(['username' => $username]);
