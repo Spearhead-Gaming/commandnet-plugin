@@ -70,6 +70,11 @@ class RosterAwardController extends AbstractController
 
         $soldierAward = $this->soldierAwardRepository->find($id);
         if ($soldierAward !== null && $soldierAward->getSoldier() === $profile) {
+            $record = $this->serviceRecordRepository->findOneBySource(ServiceRecord::SOURCE_AWARD, $id);
+            if ($record !== null) {
+                $this->serviceRecordRepository->remove($record, false);
+            }
+
             $this->soldierAwardRepository->remove($soldierAward);
             $this->addFlash('success', 'Award removed.');
         }
@@ -103,6 +108,7 @@ class RosterAwardController extends AbstractController
         );
         $record->setDate($soldierAward->getDateAwarded());
         $record->setDescription($soldierAward->getCitation());
+        $record->setSource(ServiceRecord::SOURCE_AWARD, $soldierAward->getId());
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Award issued.');

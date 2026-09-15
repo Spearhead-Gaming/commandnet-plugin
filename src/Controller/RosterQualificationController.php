@@ -70,6 +70,11 @@ class RosterQualificationController extends AbstractController
 
         $soldierQualification = $this->soldierQualificationRepository->find($id);
         if ($soldierQualification !== null && $soldierQualification->getSoldier() === $profile) {
+            $record = $this->serviceRecordRepository->findOneBySource(ServiceRecord::SOURCE_QUALIFICATION, $id);
+            if ($record !== null) {
+                $this->serviceRecordRepository->remove($record, false);
+            }
+
             $this->soldierQualificationRepository->remove($soldierQualification);
             $this->addFlash('success', 'Qualification removed.');
         }
@@ -102,6 +107,7 @@ class RosterQualificationController extends AbstractController
             $soldierQualification->getQualification()->getName(),
         );
         $record->setDate($soldierQualification->getDateEarned());
+        $record->setSource(ServiceRecord::SOURCE_QUALIFICATION, $soldierQualification->getId());
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Qualification issued.');

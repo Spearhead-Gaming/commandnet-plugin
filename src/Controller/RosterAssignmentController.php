@@ -71,6 +71,11 @@ class RosterAssignmentController extends AbstractController
 
         $assignment = $this->assignmentRepository->find($id);
         if ($assignment !== null && $assignment->getSoldier() === $profile) {
+            $record = $this->serviceRecordRepository->findOneBySource(ServiceRecord::SOURCE_ASSIGNMENT, $id);
+            if ($record !== null) {
+                $this->serviceRecordRepository->remove($record, false);
+            }
+
             $this->assignmentRepository->remove($assignment);
             $this->addFlash('success', 'Assignment removed.');
         }
@@ -113,6 +118,7 @@ class RosterAssignmentController extends AbstractController
             $assignment->getUnit()->getName() . ($assignment->getPosition() !== null ? ' - ' . $assignment->getPosition()->getTitle() : ''),
         );
         $record->setDate($assignment->getStartDate());
+        $record->setSource(ServiceRecord::SOURCE_ASSIGNMENT, $assignment->getId());
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Assignment created.');
