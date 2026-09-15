@@ -35,6 +35,7 @@ class OperationTable extends AbstractDoctrineTable
                 'label' => 'Starts',
                 'field' => 'startDateTime',
                 'searchable' => false,
+                'renderer' => fn (\DateTimeInterface $startDateTime) => $startDateTime->format('Y-m-d H:i'),
             ])
             ->addColumn('status', [
                 'field' => 'status',

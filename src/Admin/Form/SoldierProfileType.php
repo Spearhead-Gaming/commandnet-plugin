@@ -43,7 +43,7 @@ class SoldierProfileType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $isNew = $options['data'] === null;
+        $isNew = ($options['data'] ?? null) === null;
 
         $builder->add('user', EntityType::class, [
             'class' => User::class,

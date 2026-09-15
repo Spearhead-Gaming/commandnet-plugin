@@ -27,12 +27,12 @@ class SoldierProfileRepository extends AbstractRepository
     public function findRoster(): array
     {
         return $this->createQueryBuilder('s')
-            ->addSelect('rank', 'user')
-            ->leftJoin('s.rank', 'rank')
+            ->addSelect('soldierRank', 'user')
+            ->leftJoin('s.rank', 'soldierRank')
             ->leftJoin('s.user', 'user')
             ->where('s.status = :status')
             ->setParameter('status', SoldierStatus::ACTIVE)
-            ->orderBy('rank.position', 'DESC')
+            ->orderBy('soldierRank.position', 'DESC')
             ->addOrderBy('user.displayName', 'ASC')
             ->getQuery()
             ->getResult();

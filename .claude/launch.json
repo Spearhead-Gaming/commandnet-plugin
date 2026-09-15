@@ -1,0 +1,18 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "forumify",
+            "runtimeExecutable": "wsl.exe",
+            "runtimeArgs": [
+                "-d",
+                "Ubuntu",
+                "--",
+                "bash",
+                "-lc",
+                "cd ~/dev/forumify && PATH=\"$HOME/.local/bin:$PATH\" php -S 0.0.0.0:8000 -t public"
+            ],
+            "port": 8000
+        }
+    ]
+}
