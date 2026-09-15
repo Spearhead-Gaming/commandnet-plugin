@@ -1,0 +1,24 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ 'command_net.operations.submit_aar'|trans }} - {{ operation.title }}{% endblock %}
+
+{% block body %}
+    <h1>{{ 'command_net.operations.submit_aar'|trans }}</h1>
+    <p class="text-small mb-4">{{ operation.title }} &middot; {{ operation.startDateTime|format_date }}</p>
+
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <div class="flex justify-end gap-2 mt-4">
+                <a class="btn-outlined" href="{{ path('command_net_operation_detail', { id: operation.id }) }}">
+                    {{ 'command_net.cancel'|trans }}
+                </a>
+                <button class="btn-primary" type="submit">
+                    {{ 'command_net.operations.submit_aar'|trans }}
+                </button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

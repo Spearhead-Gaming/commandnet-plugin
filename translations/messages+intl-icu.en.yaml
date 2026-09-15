@@ -1,0 +1,61 @@
+command_net:
+    cancel: 'Cancel'
+    roster:
+        title: 'Roster'
+        count: '{count, plural, =0 {No personnel} =1 {# soldier} other {# soldiers}}'
+        empty: 'No active personnel yet.'
+    personnel:
+        service_number: 'Service Number'
+        enlisted: 'Enlisted'
+        awards: 'Awards'
+        no_awards: 'No awards yet.'
+        qualifications: 'Qualifications'
+        no_qualifications: 'No qualifications yet.'
+        bio: 'Bio'
+        service_record: 'Service Record'
+        no_service_records: 'No service record entries yet.'
+    operations:
+        title: 'Operations Center'
+        upcoming: 'Upcoming'
+        past: 'Past'
+        no_upcoming: 'No upcoming operations scheduled.'
+        no_past: 'No past operations yet.'
+        opord: 'OPORD'
+        your_rsvp: 'Your RSVP'
+        roster: 'Roster'
+        no_rsvps: 'No responses yet.'
+        aars: 'After-Action Reports'
+        no_aars: 'No after-action reports filed yet.'
+        submit_aar: 'Submit AAR'
+        objectives_met: 'Objectives Met'
+        objectives_not_met: 'Objectives Not Met'
+
+admin:
+    rank:
+        crud:
+            single: 'Rank'
+            plural: 'Ranks'
+    unit:
+        crud:
+            single: 'Unit'
+            plural: 'Units'
+    position:
+        crud:
+            single: 'Position'
+            plural: 'Positions'
+    soldier_profile:
+        crud:
+            single: 'Soldier'
+            plural: 'Personnel'
+    award:
+        crud:
+            single: 'Award'
+            plural: 'Awards'
+    qualification:
+        crud:
+            single: 'Qualification'
+            plural: 'Qualifications'
+    operation:
+        crud:
+            single: 'Operation'
+            plural: 'Operations'

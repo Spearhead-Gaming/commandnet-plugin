@@ -1,0 +1,61 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ 'command_net.operations.title'|trans }}{% endblock %}
+
+{% macro operation_card(operation) %}
+    <a class="card" href="{{ path('command_net_operation_detail', { id: operation.id }) }}">
+        <div class="card-body">
+            <div class="flex items-center justify-between mb-2">
+                <span class="tag">{{ operation.type.label }}</span>
+                <span class="tag">{{ operation.status.label }}</span>
+            </div>
+            <p class="text-bold mb-1">{{ operation.title }}</p>
+            <p class="text-small mb-1">
+                <i class="ph ph-calendar"></i> {{ operation.startDateTime|format_date }}
+            </p>
+            {% if operation.location %}
+                <p class="text-small mb-0">
+                    <i class="ph ph-map-pin"></i> {{ operation.location }}
+                </p>
+            {% endif %}
+        </div>
+    </a>
+{% endmacro %}
+
+{% block body %}
+    <h1>{{ 'command_net.operations.title'|trans }}</h1>
+
+    <div class="mb-6">
+        <h2 class="mb-2">{{ 'command_net.operations.upcoming'|trans }}</h2>
+        {% if upcoming is empty %}
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-small">{{ 'command_net.operations.no_upcoming'|trans }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="grid-xs-12 grid-sm-6 grid-md-4 gap-4">
+                {% for operation in upcoming %}
+                    {{ _self.operation_card(operation) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <h2 class="mb-2">{{ 'command_net.operations.past'|trans }}</h2>
+        {% if past is empty %}
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-small">{{ 'command_net.operations.no_past'|trans }}</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="grid-xs-12 grid-sm-6 grid-md-4 gap-4">
+                {% for operation in past %}
+                    {{ _self.operation_card(operation) }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

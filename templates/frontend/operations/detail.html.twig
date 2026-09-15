@@ -1,0 +1,115 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ operation.title }}{% endblock %}
+
+{% block body %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="tag">{{ operation.type.label }}</span>
+                <span class="tag">{{ operation.status.label }}</span>
+            </div>
+            <h1 class="mb-2">{{ operation.title }}</h1>
+            <p class="text-small mb-1"><i class="ph ph-calendar"></i> {{ operation.startDateTime|format_date }}</p>
+            {% if operation.location %}
+                <p class="text-small mb-1"><i class="ph ph-map-pin"></i> {{ operation.location }}</p>
+            {% endif %}
+            {% if operation.unit %}
+                <p class="text-small mb-0"><i class="ph ph-flag"></i> {{ operation.unit.name }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid gap-4">
+        <div class="col-xs-12 col-md-8 flex flex-col gap-4">
+            {% if operation.content %}
+                <div class="card">
+                    <div class="card-title">{{ 'command_net.operations.opord'|trans }}</div>
+                    <div class="card-body">
+                        {{ operation.content|rich }}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-title flex items-center justify-between">
+                    {{ 'command_net.operations.aars'|trans }}
+                    {% if is_granted('command-net.operations.submit_aar') %}
+                        <a class="btn-outlined btn-small" href="{{ path('command_net_operation_aar', { id: operation.id }) }}">
+                            {{ 'command_net.operations.submit_aar'|trans }}
+                        </a>
+                    {% endif %}
+                </div>
+                {% if operation.aars is empty %}
+                    <div class="card-body">
+                        <p class="text-small">{{ 'command_net.operations.no_aars'|trans }}</p>
+                    </div>
+                {% else %}
+                    <div class="card-body flex flex-col gap-4">
+                        {% for aar in operation.aars %}
+                            <div{% if not loop.last %} class="pb-4 border-b"{% endif %}>
+                                <div class="flex items-center gap-2 mb-2 text-small">
+                                    <span class="text-bold">{{ aar.submittedBy.displayName }}</span>
+                                    <span>{{ aar.createdAt|format_date }}</span>
+                                    {% if aar.objectivesMet is not null %}
+                                        <span class="tag {{ aar.objectivesMet ? '' : 'tag-error' }}">
+                                            {{ aar.objectivesMet ? 'command_net.operations.objectives_met'|trans : 'command_net.operations.objectives_not_met'|trans }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {{ aar.summary|rich }}
+                                {% if aar.notes %}
+                                    <p class="text-small mt-2">{{ aar.notes }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-md-4 flex flex-col gap-4">
+            {% if myProfile %}
+                <div class="card">
+                    <div class="card-title">{{ 'command_net.operations.your_rsvp'|trans }}</div>
+                    <div class="card-body flex flex-col gap-2">
+                        {% for statusCase in rsvpStatuses %}
+                            {% if statusCase.value != 'no_response' %}
+                                <form method="post" action="{{ path('command_net_operation_rsvp', { id: operation.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('operation_rsvp_' ~ operation.id) }}">
+                                    <input type="hidden" name="status" value="{{ statusCase.value }}">
+                                    <button
+                                        type="submit"
+                                        class="{{ myRsvp and myRsvp.status == statusCase ? 'btn-primary' : 'btn-outlined' }} w-full"
+                                    >
+                                        {{ statusCase.label }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-title">{{ 'command_net.operations.roster'|trans }}</div>
+                {% if operation.rsvps is empty %}
+                    <div class="card-body">
+                        <p class="text-small">{{ 'command_net.operations.no_rsvps'|trans }}</p>
+                    </div>
+                {% else %}
+                    <ul class="card-body p-0">
+                        {% for rsvp in operation.rsvps %}
+                            <li class="p-2 pr-4 pl-4 flex items-center justify-between{% if not loop.last %} border-b{% endif %}">
+                                <span>{{ rsvp.soldier.user.displayName }}</span>
+                                <span class="tag {{ rsvp.status.value == 'declined' ? 'tag-error' : '' }}">
+                                    {{ rsvp.status.label }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

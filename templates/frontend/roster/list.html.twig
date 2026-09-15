@@ -1,0 +1,49 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ 'command_net.roster.title'|trans }}{% endblock %}
+
+{% block body %}
+    <div class="mb-4 flex items-center justify-between">
+        <h1 class="mb-0">{{ 'command_net.roster.title'|trans }}</h1>
+        <p class="text-small">
+            {{ 'command_net.roster.count'|trans({ count: roster|length }) }}
+        </p>
+    </div>
+
+    {% if roster is empty %}
+        <div class="card">
+            <div class="card-body">
+                <p class="text-small">{{ 'command_net.roster.empty'|trans }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="grid-xs-12 grid-sm-6 grid-md-4 gap-4">
+            {% for soldier in roster %}
+                <a class="card" href="{{ path('command_net_roster_profile', { username: soldier.user.username }) }}">
+                    <div class="card-body flex items-center gap-3">
+                        {% include '@Forumify/components/avatar.html.twig' with {
+                            user: soldier.user,
+                            className: 'avatar-md',
+                        } only %}
+                        <div>
+                            <p class="mb-0 text-bold">
+                                {% if soldier.rank %}{{ soldier.rank.abbreviation }}{% endif %}
+                                {{ soldier.user.displayName }}
+                            </p>
+                            {% if soldier.callsign %}
+                                <p class="mb-0 text-small">"{{ soldier.callsign }}"</p>
+                            {% endif %}
+                            {% set assignment = soldier.primaryAssignment %}
+                            {% if assignment %}
+                                <p class="mb-0 text-small">
+                                    {{ assignment.unit.name }}
+                                    {%- if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

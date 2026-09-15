@@ -1,0 +1,13 @@
+# Admin controllers (roster, units, ranks, awards, etc.) live behind /admin and forumify
+# expects their route names to start with forumify_admin_.
+command_net_admin:
+    resource: ../src/Admin/Controller
+    type: attribute
+    name_prefix: forumify_admin_
+    prefix: admin/
+
+# Frontend controllers (roster page, operations center, personnel files, ...).
+command_net:
+    resource: ../src/Controller
+    type: attribute
+    name_prefix: command_net_
