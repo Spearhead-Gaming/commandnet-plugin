@@ -1,0 +1,22 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}New Assignment - {{ profile.user.displayName }}{% endblock %}
+
+{% block body %}
+    <h1>New Assignment</h1>
+    <p class="text-small mb-4">{{ profile.user.displayName }}</p>
+
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <div class="flex justify-end gap-2 mt-4">
+                <a class="btn-outlined" href="{{ path('command_net_roster_profile', { username: profile.user.username }) }}">
+                    {{ 'command_net.cancel'|trans }}
+                </a>
+                <button class="btn-primary" type="submit">Create Assignment</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

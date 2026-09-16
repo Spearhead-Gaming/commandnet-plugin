@@ -16,6 +16,10 @@ use MajesticDev\CommandNet\Entity\SoldierProfile;
 #[Route('/command-net/personnel', 'command_net_personnel')]
 class SoldierProfileController extends AbstractCrudController
 {
+    // Adds an optional "Create/View ID Card" action when majesticdev/forumify-id-card-plugin
+    // is installed; a no-op include on any install that doesn't have it.
+    protected string $formTemplate = '@CommandNetPlugin/admin/soldier_profile/form.html.twig';
+
     protected ?string $permissionView = 'command-net.admin.personnel.view';
     protected ?string $permissionCreate = 'command-net.admin.personnel.manage';
     protected ?string $permissionEdit = 'command-net.admin.personnel.manage';

@@ -44,6 +44,28 @@
         </div>
     </div>
 
+    {% if is_granted('command-net.admin.awards.manage') or is_granted('command-net.admin.qualifications.manage') or is_granted('command-net.admin.personnel.manage') %}
+        <div class="card mb-4">
+            <div class="card-body flex flex-wrap gap-2">
+                {% if is_granted('command-net.admin.awards.manage') %}
+                    <a class="btn-outlined btn-small" href="{{ path('command_net_roster_award', { username: profile.user.username }) }}">
+                        <i class="ph ph-medal"></i> Award Medal
+                    </a>
+                {% endif %}
+                {% if is_granted('command-net.admin.qualifications.manage') %}
+                    <a class="btn-outlined btn-small" href="{{ path('command_net_roster_qualification', { username: profile.user.username }) }}">
+                        <i class="ph ph-certificate"></i> Issue Qualification
+                    </a>
+                {% endif %}
+                {% if is_granted('command-net.admin.personnel.manage') %}
+                    <a class="btn-outlined btn-small" href="{{ path('command_net_roster_assignment', { username: profile.user.username }) }}">
+                        <i class="ph ph-flag"></i> New Assignment
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
     <div class="grid gap-4">
         <div class="col-xs-12 col-md-4 flex flex-col gap-4">
             <div class="card">
@@ -55,12 +77,27 @@
                 {% else %}
                     <div class="card-body grid-xs-6 grid-md-4 gap-4 items-center">
                         {% for soldierAward in profile.awards %}
-                            <img
-                                width="100%"
-                                height="auto"
-                                src="{% if soldierAward.award.icon %}{{ asset(soldierAward.award.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}{% endif %}"
-                                title="{{ soldierAward.award.name }} - {{ soldierAward.dateAwarded|format_date }}"
-                            >
+                            <div class="flex flex-col items-center gap-1">
+                                {% if soldierAward.award.icon %}
+                                    <img
+                                        width="100%"
+                                        height="auto"
+                                        src="{{ asset(soldierAward.award.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}"
+                                        title="{{ soldierAward.award.name }} - {{ soldierAward.dateAwarded|format_date }}"
+                                    >
+                                {% else %}
+                                    <div class="text-center text-small" title="{{ soldierAward.award.name }} - {{ soldierAward.dateAwarded|format_date }}">
+                                        <i class="ph ph-medal" style="font-size: 2rem;"></i>
+                                        <div>{{ soldierAward.award.name }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if is_granted('command-net.admin.awards.manage') %}
+                                    <form method="post" action="{{ path('command_net_roster_award_delete', { username: profile.user.username, id: soldierAward.id }) }}" onsubmit="return confirm('Remove this award? This cannot be undone.');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_award_delete_' ~ soldierAward.id) }}">
+                                        <button type="submit" class="btn-link btn-small text-small" title="Remove award"><i class="ph ph-trash"></i></button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -74,12 +111,27 @@
                 {% else %}
                     <div class="card-body grid-xs-6 grid-md-4 gap-4 items-center">
                         {% for soldierQualification in profile.qualifications %}
-                            <img
-                                width="100%"
-                                height="auto"
-                                src="{% if soldierQualification.qualification.icon %}{{ asset(soldierQualification.qualification.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}{% endif %}"
-                                title="{{ soldierQualification.qualification.name }} - {{ soldierQualification.dateEarned|format_date }}"
-                            >
+                            <div class="flex flex-col items-center gap-1">
+                                {% if soldierQualification.qualification.icon %}
+                                    <img
+                                        width="100%"
+                                        height="auto"
+                                        src="{{ asset(soldierQualification.qualification.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}"
+                                        title="{{ soldierQualification.qualification.name }} - {{ soldierQualification.dateEarned|format_date }}"
+                                    >
+                                {% else %}
+                                    <div class="text-center text-small" title="{{ soldierQualification.qualification.name }} - {{ soldierQualification.dateEarned|format_date }}">
+                                        <i class="ph ph-certificate" style="font-size: 2rem;"></i>
+                                        <div>{{ soldierQualification.qualification.name }}</div>
+                                    </div>
+                                {% endif %}
+                                {% if is_granted('command-net.admin.qualifications.manage') %}
+                                    <form method="post" action="{{ path('command_net_roster_qualification_delete', { username: profile.user.username, id: soldierQualification.id }) }}" onsubmit="return confirm('Remove this qualification? This cannot be undone.');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_qualification_delete_' ~ soldierQualification.id) }}">
+                                        <button type="submit" class="btn-link btn-small text-small" title="Remove qualification"><i class="ph ph-trash"></i></button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                     </div>
                 {% endif %}
@@ -94,7 +146,37 @@
             {% endif %}
         </div>
 
-        <div class="col-xs-12 col-md-8">
+        <div class="col-xs-12 col-md-8 flex flex-col gap-4">
+            <div class="card">
+                <div class="card-title">Assignment History</div>
+                {% if profile.assignments is empty %}
+                    <div class="card-body">
+                        <p class="text-small">No assignments recorded.</p>
+                    </div>
+                {% else %}
+                    <ul class="card-body p-0">
+                        {% for assignment in profile.assignments %}
+                            <li class="p-2 pr-4 pl-4 flex items-center justify-between gap-2{% if not loop.last %} border-b{% endif %}">
+                                <div>
+                                    <div class="text-bold">
+                                        {{ assignment.unit.name }}{% if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                                        {% if assignment.isPrimary and assignment.endDate is null %}<span class="tag ml-2">Primary</span>{% endif %}
+                                    </div>
+                                    <div class="text-small">
+                                        {{ assignment.startDate|format_date }} &ndash; {{ assignment.endDate ? assignment.endDate|format_date : 'Present' }}
+                                    </div>
+                                </div>
+                                {% if is_granted('command-net.admin.personnel.manage') %}
+                                    <form method="post" action="{{ path('command_net_roster_assignment_delete', { username: profile.user.username, id: assignment.id }) }}" onsubmit="return confirm('Remove this assignment? This cannot be undone.');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_assignment_delete_' ~ assignment.id) }}">
+                                        <button type="submit" class="btn-link btn-small" title="Remove assignment"><i class="ph ph-trash"></i></button>
+                                    </form>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
             <div class="card">
                 <div class="card-title">{{ 'command_net.personnel.service_record'|trans }}</div>
                 {% if profile.serviceRecords is empty %}
@@ -105,9 +187,17 @@
                     <ul class="card-body p-0">
                         {% for record in profile.serviceRecords %}
                             <li class="p-2 pr-4 pl-4 flex flex-col gap-1{% if not loop.last %} border-b{% endif %}">
-                                <div class="flex items-center gap-2">
-                                    <span class="tag">{{ record.type.label }}</span>
-                                    <span class="text-bold">{{ record.title }}</span>
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="tag">{{ record.type.label }}</span>
+                                        <span class="text-bold">{{ record.title }}</span>
+                                    </div>
+                                    {% if is_granted('command-net.admin.personnel.manage') %}
+                                        <form method="post" action="{{ path('command_net_roster_service_record_delete', { username: profile.user.username, id: record.id }) }}" onsubmit="return confirm('Remove this service record? This cannot be undone.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('roster_service_record_delete_' ~ record.id) }}">
+                                            <button type="submit" class="btn-link btn-small" title="Remove entry"><i class="ph ph-trash"></i></button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                                 {% if record.description %}
                                     <p class="mb-0 text-small">{{ record.description }}</p>

@@ -16,4 +16,17 @@ class ServiceRecordRepository extends AbstractRepository
     {
         return ServiceRecord::class;
     }
+
+    public function findOneBySource(string $sourceType, int $sourceId): ?ServiceRecord
+    {
+        return $this->findOneBy(['sourceType' => $sourceType, 'sourceId' => $sourceId]);
+    }
+
+    /**
+     * @return ServiceRecord[]
+     */
+    public function findBySource(string $sourceType, int $sourceId): array
+    {
+        return $this->findBy(['sourceType' => $sourceType, 'sourceId' => $sourceId]);
+    }
 }

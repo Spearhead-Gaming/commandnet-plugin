@@ -20,6 +20,7 @@ use MajesticDev\CommandNet\Repository\RankRepository;
  * higher numbers outrank lower ones. Reordering the admin list re-ranks everyone.
  */
 #[ORM\Entity(RankRepository::class)]
+#[ORM\Table(name: '`rank`')]
 class Rank implements SortableEntityInterface
 {
     use IdentifiableEntityTrait;

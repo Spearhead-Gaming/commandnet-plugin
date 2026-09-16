@@ -48,6 +48,42 @@ class OperationAarController extends AbstractController
         ]);
     }
 
+    /**
+     * Corrections happen by removing the wrong report and re-submitting, not by editing one
+     * in place - the same "records are facts, not form fields" rule used for personnel
+     * records. Removing the report also removes every combat record it wrote, so re-filing
+     * a corrected AAR for the same operation doesn't leave attendees with duplicates.
+     * Anyone who can manage operations can remove any report; a submitter can also remove
+     * their own.
+     */
+    #[Route('/operations/{id}/aar/{aarId}/delete', name: 'operation_aar_delete', requirements: ['id' => '\d+', 'aarId' => '\d+'], methods: ['POST'])]
+    public function delete(Operation $operation, int $aarId, Request $request): RedirectResponse
+    {
+        $aar = $this->aarRepository->find($aarId);
+        if ($aar === null || $aar->getOperation() !== $operation) {
+            throw $this->createNotFoundException();
+        }
+
+        $isOwnReport = $aar->getSubmittedBy() === $this->getUser();
+        if (!$isOwnReport && !$this->isGranted('command-net.admin.operations.manage')) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $token = $request->request->getString('_token');
+        if (!$this->isCsrfTokenValid('operation_aar_delete_' . $aarId, $token)) {
+            $this->addFlash('error', 'Your session expired, please try again.');
+            return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
+        }
+
+        foreach ($this->serviceRecordRepository->findBySource(ServiceRecord::SOURCE_OPERATION_AAR, $aarId) as $record) {
+            $this->serviceRecordRepository->remove($record, false);
+        }
+        $this->aarRepository->remove($aar);
+
+        $this->addFlash('success', 'After-action report removed.');
+        return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
+    }
+
     private function submit(OperationAAR $aar, Operation $operation): RedirectResponse
     {
         $this->aarRepository->save($aar);
@@ -68,6 +104,7 @@ class OperationAarController extends AbstractController
                 $operation->getTitle(),
             );
             $record->setDate($operation->getStartDateTime());
+            $record->setSource(ServiceRecord::SOURCE_OPERATION_AAR, $aar->getId());
             $this->serviceRecordRepository->save($record, false);
         }
         $this->serviceRecordRepository->flush();

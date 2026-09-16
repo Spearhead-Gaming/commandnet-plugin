@@ -29,6 +29,10 @@ command_net:
         submit_aar: 'Submit AAR'
         objectives_met: 'Objectives Met'
         objectives_not_met: 'Objectives Not Met'
+        mark_attended: 'Mark attended'
+        mark_absent: 'Mark absent'
+        attended: 'Attended'
+        absent: 'Absent'
 
 admin:
     rank:

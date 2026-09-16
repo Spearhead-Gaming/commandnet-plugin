@@ -21,10 +21,23 @@ use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
  * what gives the personnel file a single combined timeline instead of five separate tabs.
  */
 #[ORM\Entity(ServiceRecordRepository::class)]
+#[ORM\Index(columns: ['source_type', 'source_id'], name: 'idx_service_record_source')]
 class ServiceRecord
 {
     use IdentifiableEntityTrait;
     use BlameableEntityTrait;
+
+    /**
+     * Identifies the award/qualification/assignment/AAR that generated this entry, so
+     * deleting that record can find and remove this one too. An AAR can generate several
+     * of these at once (one combat record per attendee), all sharing the same source id.
+     * Records created directly (a manual note, a promotion) leave both null - there's
+     * nothing to clean up if those are ever deleted individually.
+     */
+    public const SOURCE_AWARD = 'soldier_award';
+    public const SOURCE_QUALIFICATION = 'soldier_qualification';
+    public const SOURCE_ASSIGNMENT = 'assignment';
+    public const SOURCE_OPERATION_AAR = 'operation_aar';
 
     #[ORM\ManyToOne(targetEntity: SoldierProfile::class, inversedBy: 'serviceRecords')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -41,6 +54,12 @@ class ServiceRecord
 
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
+
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $sourceType = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $sourceId = null;
 
     public function __construct(SoldierProfile $soldier, ServiceRecordType $type, string $title)
     {
@@ -88,5 +107,21 @@ class ServiceRecord
     public function setDescription(?string $description): void
     {
         $this->description = $description;
+    }
+
+    public function getSourceType(): ?string
+    {
+        return $this->sourceType;
+    }
+
+    public function getSourceId(): ?int
+    {
+        return $this->sourceId;
+    }
+
+    public function setSource(string $sourceType, int $sourceId): void
+    {
+        $this->sourceType = $sourceType;
+        $this->sourceId = $sourceId;
     }
 }

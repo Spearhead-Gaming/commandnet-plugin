@@ -56,6 +56,12 @@
                                             {{ aar.objectivesMet ? 'command_net.operations.objectives_met'|trans : 'command_net.operations.objectives_not_met'|trans }}
                                         </span>
                                     {% endif %}
+                                    {% if aar.submittedBy == app.user or is_granted('command-net.admin.operations.manage') %}
+                                        <form method="post" action="{{ path('command_net_operation_aar_delete', { id: operation.id, aarId: aar.id }) }}" onsubmit="return confirm('Remove this after-action report? This cannot be undone.');" class="ml-auto">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('operation_aar_delete_' ~ aar.id) }}">
+                                            <button type="submit" class="btn-link btn-small" title="Remove report"><i class="ph ph-trash"></i></button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                                 {{ aar.summary|rich }}
                                 {% if aar.notes %}
@@ -93,6 +99,7 @@
 
             <div class="card">
                 <div class="card-title">{{ 'command_net.operations.roster'|trans }}</div>
+                {% set canMarkAttendance = is_granted('command-net.admin.operations.manage') %}
                 {% if operation.rsvps is empty %}
                     <div class="card-body">
                         <p class="text-small">{{ 'command_net.operations.no_rsvps'|trans }}</p>
@@ -100,11 +107,43 @@
                 {% else %}
                     <ul class="card-body p-0">
                         {% for rsvp in operation.rsvps %}
-                            <li class="p-2 pr-4 pl-4 flex items-center justify-between{% if not loop.last %} border-b{% endif %}">
+                            <li class="p-2 pr-4 pl-4 flex items-center justify-between gap-2{% if not loop.last %} border-b{% endif %}">
                                 <span>{{ rsvp.soldier.user.displayName }}</span>
-                                <span class="tag {{ rsvp.status.value == 'declined' ? 'tag-error' : '' }}">
-                                    {{ rsvp.status.label }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="tag {{ rsvp.status.value == 'declined' ? 'tag-error' : '' }}">
+                                        {{ rsvp.status.label }}
+                                    </span>
+                                    {% if canMarkAttendance %}
+                                        <form method="post" action="{{ path('command_net_operation_attendance', { id: operation.id }) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('operation_attendance_' ~ operation.id) }}">
+                                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                                            <input type="hidden" name="attended" value="{{ rsvp.attended is same as(true) ? '' : '1' }}">
+                                            <button
+                                                type="submit"
+                                                class="btn-small {{ rsvp.attended is same as(true) ? 'btn-primary' : 'btn-outlined' }}"
+                                                title="{{ 'command_net.operations.mark_attended'|trans }}"
+                                            >
+                                                <i class="ph ph-check"></i>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ path('command_net_operation_attendance', { id: operation.id }) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('operation_attendance_' ~ operation.id) }}">
+                                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                                            <input type="hidden" name="attended" value="{{ rsvp.attended is same as(false) ? '' : '0' }}">
+                                            <button
+                                                type="submit"
+                                                class="btn-small {{ rsvp.attended is same as(false) ? 'btn-primary' : 'btn-outlined' }}"
+                                                title="{{ 'command_net.operations.mark_absent'|trans }}"
+                                            >
+                                                <i class="ph ph-x"></i>
+                                            </button>
+                                        </form>
+                                    {% elseif rsvp.attended is not null %}
+                                        <span class="tag {{ rsvp.attended ? '' : 'tag-error' }}">
+                                            {{ rsvp.attended ? 'command_net.operations.attended'|trans : 'command_net.operations.absent'|trans }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </li>
                         {% endfor %}
                     </ul>
