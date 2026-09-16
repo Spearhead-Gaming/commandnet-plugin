@@ -6,6 +6,9 @@
     <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
         <h1 class="mb-0">{{ 'command_net.roster.title'|trans }}</h1>
         <div class="flex items-center gap-3">
+            <a class="btn-outlined btn-small" href="{{ path('command_net_units') }}">
+                <i class="ph ph-sitemap"></i> Org Chart
+            </a>
             {% if is_granted('command-net.attendance.view_own') or is_granted('command-net.attendance.view_all') %}
                 <a class="btn-outlined btn-small" href="{{ path('command_net_attendance') }}">
                     <i class="ph ph-chart-bar"></i> Attendance
