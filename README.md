@@ -1,117 +1,134 @@
-# forumify plugin skeleton
+# Command Net
 
-Generates a bare [forumify](https://forumify.net) plugin: registered with the platform,
-with quality tooling, a test suite wired up to forumify's test kit, GitHub Actions
-workflows and a README explaining where things go.
+A [forumify](https://forumify.net) plugin for personnel and unit management: ranks,
+positions, assignments, awards, qualifications, and operations with RSVP, attendance, and
+after-action reports. Everything a soldier does feeds a single append-only service-record
+timeline on their personnel file, rather than each module keeping its own history.
 
-No example controllers, entities or templates — nothing to delete before you start.
-
-## Usage
-
-```bash
-composer create-project majesticdev/commandnet-plugin my-plugin
-```
-
-The generator asks for your package name, namespace, license and whether you want tests
-and CI, then rewrites the skeleton into your plugin and removes itself.
-
-Add `--no-interaction` to take every default, deriving the package name from the target
-directory. Useful in scripts:
-
-```bash
-composer create-project majesticdev/commandnet-plugin my-plugin --no-interaction
-```
-
-### Scripting the answers
-
-Every question can be answered up front with an environment variable, which is how this
-repository's own CI checks the generator:
-
-```bash
-SKELETON_PACKAGE=acme/todo-plugin \
-SKELETON_NAME=Todo \
-SKELETON_FEATURES=tests,ci \
-composer create-project majesticdev/commandnet-plugin my-plugin --no-interaction
-```
-
-| Variable | Answers |
-| --- | --- |
-| `SKELETON_PACKAGE` | package name (`vendor/name`) |
-| `SKELETON_NAMESPACE` | PHP namespace |
-| `SKELETON_PLUGIN_CLASS` | plugin class name |
-| `SKELETON_NAME` | display name |
-| `SKELETON_DESCRIPTION` | description |
-| `SKELETON_AUTHOR` | author |
-| `SKELETON_HOMEPAGE` | homepage |
-| `SKELETON_LICENSE` | license |
-| `SKELETON_PLATFORM` | minimum forumify version |
-| `SKELETON_FEATURES` | comma separated list of the features to include, everything else is left out |
-
-Valid features: `tests`, `ci`.
+Built for a specific MILSIM community's Forumify install; not a general-purpose skeleton.
 
 ## Requirements
 
 - PHP 8.4 or newer
-- Composer 2
-- A MySQL 8.4 database, if you generate a test suite
+- A Forumify 1.3.x install
+- MySQL (for the migration in `migrations/`)
 
-## What you get
-
-Always:
-
-- `composer.json` with the plugin wiring (`type`, `extra.forumify-plugin-class`, autoload)
-- the plugin class, plus service and route configuration
-- `phpcs.xml` and `phpstan.neon` (level 8), runnable with `make quality`
-- a `Makefile`, `.editorconfig`, `.gitignore` and a `migrations/` directory
-- a README explaining where controllers, entities, templates and translations go
-
-Optionally:
-
-| Question | What it generates |
-| --- | --- |
-| Test suite | phpunit wired to `Forumify\Testing`, plus a test proving the plugin boots |
-| GitHub Actions | Workflows running the tests and the quality checks |
-
-## How this repository works
-
-The skeleton is a working forumify plugin in its own right. Its test suite runs in CI
-exactly as a generated plugin's would, which is what stops the templates from drifting
-away from the platform.
-
-Generation is plain string replacement of the skeleton's own identity:
-
-| Placeholder | Becomes |
-| --- | --- |
-| `majesticdev/commandnet-plugin` | your package name |
-| `MajesticDev\CommandNet` | your namespace |
-| `CommandNetPlugin` | your plugin class |
-| `Command Net` | your plugin's display name |
-| `command-net` / `command_net` | slugged and snake_cased forms of the display name |
-
-Optional parts are wrapped in markers that are stripped when you decline them, and kept
-(without the markers) when you accept:
-
-```makefile
-# skeleton:if tests
-tests:
-	make setup-tests
-	make run-tests
-# skeleton:endif
-```
-
-`# skeleton:if !tests` inverts the condition. The comment character is ignored, so the
-same markers work in PHP, YAML, Twig, Makefiles and Markdown.
-
-The generator lives in [`skeleton/Installer.php`](skeleton/Installer.php) and runs from
-composer's `post-create-project-cmd`. It deletes itself once it is done.
-
-## Contributing
-
-Test a change by generating a plugin from your working copy:
+## Install
 
 ```bash
-composer create-project majesticdev/commandnet-plugin /tmp/test-plugin \
-  --repository='{"type":"path","url":"/path/to/command-net","options":{"symlink":false}}' \
-  --stability=dev
-cd /tmp/test-plugin && make quality && make tests
+composer require majesticdev/commandnet-plugin
 ```
+
+Then, from the Forumify install:
+
+```bash
+bin/console forumify:plugins:refresh
+bin/console doctrine:migrations:migrate
+```
+
+## Entities
+
+| Entity | Notes |
+| --- | --- |
+| `SoldierProfile` | 1:1 with the Forumify `User`, kept separate so the plugin can be removed cleanly. Rank, service number, callsign, status, enlistment/discharge dates. |
+| `Unit` | Self-referencing tree (parent/children), sortable, optional commander. |
+| `Rank`, `Position`, `Award`, `Qualification` | Flat, sortable catalogs managed in the admin panel. |
+| `Assignment` | A soldier's posting to a unit (and optionally a position) over a date range. One assignment can be flagged primary. |
+| `SoldierAward`, `SoldierQualification` | Join entities recording who issued what, and when. |
+| `Operation` | An OPORD with a start/end time, optional unit, and status. Owns its RSVPs and AARs. |
+| `OperationRSVP` | One per soldier per operation (`status`, and separately, `attended`, since intent and reality aren't the same field). |
+| `OperationAAR` | After-action report. Many per operation by design — larger ops often get separate reports from each element lead rather than one summary. |
+| `ServiceRecord` | The unified timeline entry. Assignments, awards, qualifications, and AARs each write one on success; deleting the entry that created one removes it too. |
+
+## Frontend routes
+
+| Route | Path | What it does |
+| --- | --- | --- |
+| `command_net_roster` | `/roster` | Active roster listing. |
+| `command_net_roster_profile` | `/roster/{username}` | A soldier's personnel file: awards, qualifications, assignment history, service record timeline. |
+| `command_net_roster_award` | `/roster/{username}/award` | Issue an award. |
+| `command_net_roster_award_delete` | `/roster/{username}/award/{id}/delete` | Remove an award and its service record entry. |
+| `command_net_roster_qualification` | `/roster/{username}/qualification` | Issue a qualification. |
+| `command_net_roster_qualification_delete` | `/roster/{username}/qualification/{id}/delete` | Remove a qualification and its service record entry. |
+| `command_net_roster_assignment` | `/roster/{username}/assignment` | Create an assignment (closes the soldier's current primary posting if the new one is primary). |
+| `command_net_roster_assignment_delete` | `/roster/{username}/assignment/{id}/delete` | Remove an assignment and its service record entry. |
+| `command_net_roster_service_record_delete` | `/roster/{username}/service-record/{id}/delete` | Remove a manual or otherwise-orphaned timeline entry directly. |
+| `command_net_operations` | `/operations` | Upcoming/past operations. |
+| `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
+| `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
+| `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent. |
+| `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; writes a combat service record for every soldier marked attended. |
+| `command_net_operation_aar_delete` | `/operations/{id}/aar/{aarId}/delete` (POST) | Remove a report (its submitter or an operations manager only) and every service record it wrote. |
+
+## Admin
+
+Personnel, Units, Ranks, Positions, Awards, Qualifications, and Operations each get a
+standard Forumify CRUD screen under **Admin → Command Net**. There's no separate admin
+screen for awards issued, qualifications earned, assignments, or service records — those
+are managed from the frontend personnel file instead, since they only make sense in the
+context of one soldier.
+
+## Permissions
+
+Checked as `command-net.<area>.<action>` (the prefix is slugged from the plugin's display
+name, "Command Net" — note the hyphen, unlike the underscored route/translation names).
+
+| Permission | Grants |
+| --- | --- |
+| `command-net.roster.view` | View the roster and personnel files. |
+| `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
+| `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
+| `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
+| `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
+| `command-net.admin.qualifications.view` / `.manage` | View / edit the qualification catalog and issue/remove qualifications. |
+| `command-net.admin.operations.view` / `.manage` | View / edit operations, mark attendance, remove any AAR. |
+| `command-net.operations.view` | View the operations list and detail pages. |
+| `command-net.operations.rsvp` | RSVP to an operation. |
+| `command-net.operations.submit_aar` | Submit an after-action report. |
+
+`attendance.*`, `forms.*`, `courses.*`, and `reportin.*` are also declared in
+`CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet (see
+below) — granting them today has no effect.
+
+## Design notes
+
+- **Corrections happen by deletion, not editing.** Awards, qualifications, assignments,
+  service records, and AARs can all be removed but never edited in place — the same
+  "records are facts, not form fields" rule the MILHQ plugin uses for its own history.
+  Fix a mistake by removing the wrong entry and creating the right one.
+- **Service records are linked back to what created them.** `ServiceRecord` carries a
+  nullable `sourceType`/`sourceId` pair set when an award, qualification, assignment, or
+  AAR writes one, so deleting the source also removes the timeline entry it generated
+  instead of leaving an orphan behind. Manually-added entries (once that exists — see
+  below) leave both null.
+- **Attendance is separate from RSVP.** A soldier's RSVP status is their stated intent;
+  `attended` is a separate field an operations manager sets afterward, so a no-show who
+  RSVP'd "attending" doesn't get a combat record, and someone who shows up unannounced can
+  still get credit.
+
+## Known gaps
+
+This plugin is running against a live install, but a few things are worth knowing before
+you rely on them:
+
+- **No test suite.** Everything here is verified by having booted the plugin against a
+  real install, not by an automated suite.
+- **Rank changes don't write a service record.** Editing a soldier's rank in the admin
+  form updates the field silently, in either direction.
+- **`SoldierProfile::$lastReportIn`** is wired up (getter/setter) but nothing ever sets
+  it — scaffolding for a "Report In" / muster feature (see `reportin.*` permissions above)
+  that hasn't been built yet.
+- **No cycle guard on the unit tree.** The parent-unit picker excludes the unit itself but
+  not its descendants.
+- **OperationRSVP has no "withdraw."** A soldier can change their RSVP any time but can't
+  clear it back to no response.
+
+## Works well with
+
+- [`forumify-id-card-plugin`](https://github.com/MajesticDevBox/forumify-id-card-plugin) —
+  if installed, a soldier's personnel file gets a button to view or create their MILSIM ID
+  card, and the ID card plugin can use this plugin as a personnel source without ever
+  naming it anywhere public.
+- [`command-net-theme`](https://github.com/Spearhead-Gaming/command-net-theme) — the
+  frontend theme this plugin is designed to be used with; its homepage reads this plugin's
+  `Operation` repository and online-count Twig function directly.
