@@ -112,6 +112,20 @@
                             {% if profile.dischargeDate %}
                                 <div><dt>Discharged</dt><dd>{{ profile.dischargeDate|format_date }}</dd></div>
                             {% endif %}
+                            {% if is_granted('command-net.admin.reportin.view') %}
+                                <div>
+                                    <dt>Last Report In</dt>
+                                    <dd class="flex items-center gap-2">
+                                        {{ profile.lastReportIn ? profile.lastReportIn|format_date(true) : 'Never' }}
+                                        {% if latestReportIn and is_granted('command-net.admin.reportin.manage') %}
+                                            <form method="post" action="{{ path('command_net_report_in_delete', { id: latestReportIn.id }) }}" onsubmit="return confirm('Remove this report-in entry? This cannot be undone.');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('report_in_delete_' ~ latestReportIn.id) }}">
+                                                <button type="submit" class="btn-link btn-small" title="Remove report-in entry"><i class="ph ph-trash"></i></button>
+                                            </form>
+                                        {% endif %}
+                                    </dd>
+                                </div>
+                            {% endif %}
                         </dl>
                         {% if profile.bio %}
                             <p class="mb-0">{{ profile.bio }}</p>

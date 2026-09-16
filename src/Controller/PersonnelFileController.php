@@ -8,6 +8,7 @@ use Forumify\Core\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use MajesticDev\CommandNet\Repository\ReportInRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 
 class PersonnelFileController extends AbstractController
@@ -15,10 +16,11 @@ class PersonnelFileController extends AbstractController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly SoldierProfileRepository $soldierProfileRepository,
+        private readonly ReportInRepository $reportInRepository,
     ) {
     }
 
-    #[Route('/roster/{username}', name: 'roster_profile')]
+    #[Route('/roster/{username}', name: 'roster_profile', methods: ['GET'])]
     public function __invoke(string $username): Response
     {
         $this->denyAccessUnlessGranted('command-net.roster.view');
@@ -40,6 +42,7 @@ class PersonnelFileController extends AbstractController
         return $this->render('@CommandNetPlugin/frontend/personnel/file.html.twig', [
             'profile' => $profile,
             'primaryAssignment' => $profile->getPrimaryAssignment(),
+            'latestReportIn' => $this->reportInRepository->findLatestFor($profile),
         ]);
     }
 }
