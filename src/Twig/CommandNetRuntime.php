@@ -8,6 +8,8 @@ use DateInterval;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Forumify\Core\Entity\User;
+use MajesticDev\CommandNet\Entity\ServiceRecord;
+use MajesticDev\CommandNet\Entity\SoldierProfile;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -31,5 +33,53 @@ class CommandNetRuntime implements RuntimeExtensionInterface
             ->setParameter('min', $min)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * The personnel file's per-tab record views (Award/Combat/Rank Record, etc.) are all
+     * the same underlying timeline, just filtered by type - there's no need for separate
+     * queries or entities per tab.
+     *
+     * @param string[] $types ServiceRecordType values to include
+     * @return ServiceRecord[] newest first
+     */
+    public function getRecordsByType(SoldierProfile $profile, array $types): array
+    {
+        $records = array_values(array_filter(
+            $profile->getServiceRecords()->toArray(),
+            static fn (ServiceRecord $record): bool => in_array($record->getType()->value, $types, true),
+        ));
+
+        usort($records, static fn (ServiceRecord $a, ServiceRecord $b): int => $b->getDate() <=> $a->getDate());
+
+        return $records;
+    }
+
+    /**
+     * A short "3 months" / "1 year, 2 months" / "1 day" string, the way a roster page
+     * usually shows time in service rather than the raw enlistment date.
+     */
+    public function getTimeInService(SoldierProfile $profile): ?string
+    {
+        $start = $profile->getEnlistmentDate();
+        if ($start === null) {
+            return null;
+        }
+
+        $end = $profile->getDischargeDate() ?? new DateTime();
+        $interval = $start->diff($end);
+
+        if ($interval->y > 0) {
+            $years = $interval->y . ' year' . ($interval->y === 1 ? '' : 's');
+            return $interval->m > 0
+                ? $years . ', ' . $interval->m . ' month' . ($interval->m === 1 ? '' : 's')
+                : $years;
+        }
+
+        if ($interval->m > 0) {
+            return $interval->m . ' month' . ($interval->m === 1 ? '' : 's');
+        }
+
+        return $interval->d . ' day' . ($interval->d === 1 ? '' : 's');
     }
 }

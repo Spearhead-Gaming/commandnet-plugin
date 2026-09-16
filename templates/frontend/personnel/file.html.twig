@@ -17,28 +17,12 @@
                 <h2 class="mb-0">
                     {% if profile.rank %}{{ profile.rank.abbreviation }}{% endif %}
                     {{ profile.user.displayName }}
-                    {% if profile.status.value != 'active' %}
-                        <span class="tag {{ profile.status.value == 'awol' ? 'tag-error' : '' }} text-regular ml-2">
-                            {{ profile.status.label }}
-                        </span>
-                    {% endif %}
+                    <span class="tag {{ profile.status.value == 'active' ? 'tag-success' : (profile.status.value == 'awol' ? 'tag-error' : '') }} text-regular ml-2">
+                        {{ profile.status.label }}
+                    </span>
                 </h2>
                 {% if profile.callsign %}
-                    <p class="text-small mb-2">"{{ profile.callsign }}"</p>
-                {% endif %}
-
-                {% if primaryAssignment %}
-                    <p class="mb-1">
-                        <i class="ph ph-flag"></i>
-                        {{ primaryAssignment.unit.name }}
-                        {% if primaryAssignment.position %} &middot; {{ primaryAssignment.position.title }}{% endif %}
-                    </p>
-                {% endif %}
-                {% if profile.serviceNumber %}
-                    <p class="text-small mb-1">{{ 'command_net.personnel.service_number'|trans }}: {{ profile.serviceNumber }}</p>
-                {% endif %}
-                {% if profile.enlistmentDate %}
-                    <p class="text-small mb-0">{{ 'command_net.personnel.enlisted'|trans }}: {{ profile.enlistmentDate|format_date }}</p>
+                    <p class="text-small mb-0">"{{ profile.callsign }}"</p>
                 {% endif %}
             </div>
         </div>
@@ -69,145 +53,308 @@
     <div class="grid gap-4">
         <div class="col-xs-12 col-md-4 flex flex-col gap-4">
             <div class="card">
-                <div class="card-title">{{ 'command_net.personnel.awards'|trans }}</div>
-                {% if profile.awards is empty %}
-                    <div class="card-body">
-                        <p class="text-small">{{ 'command_net.personnel.no_awards'|trans }}</p>
-                    </div>
-                {% else %}
-                    <div class="card-body grid-xs-6 grid-md-4 gap-4 items-center">
-                        {% for soldierAward in profile.awards %}
-                            <div class="flex flex-col items-center gap-1">
-                                {% if soldierAward.award.icon %}
-                                    <img
-                                        width="100%"
-                                        height="auto"
-                                        src="{{ asset(soldierAward.award.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}"
-                                        title="{{ soldierAward.award.name }} - {{ soldierAward.dateAwarded|format_date }}"
-                                    >
-                                {% else %}
-                                    <div class="text-center text-small" title="{{ soldierAward.award.name }} - {{ soldierAward.dateAwarded|format_date }}">
-                                        <i class="ph ph-medal" style="font-size: 2rem;"></i>
-                                        <div>{{ soldierAward.award.name }}</div>
-                                    </div>
-                                {% endif %}
-                                {% if is_granted('command-net.admin.awards.manage') %}
-                                    <form method="post" action="{{ path('command_net_roster_award_delete', { username: profile.user.username, id: soldierAward.id }) }}" onsubmit="return confirm('Remove this award? This cannot be undone.');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_award_delete_' ~ soldierAward.id) }}">
-                                        <button type="submit" class="btn-link btn-small text-small" title="Remove award"><i class="ph ph-trash"></i></button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+                <div class="card-title">Assignment</div>
+                <div class="card-body">
+                    {% if primaryAssignment %}
+                        <p class="text-bold mb-1">
+                            {{ primaryAssignment.unit.name }}
+                            {% if primaryAssignment.unit.parent %}
+                                <span class="text-regular text-small">({{ primaryAssignment.unit.parent.abbreviation }})</span>
+                            {% endif %}
+                        </p>
+                        {% if primaryAssignment.position %}
+                            <p class="text-small mb-0">{{ primaryAssignment.position.title }}</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-small mb-0">No current assignment.</p>
+                    {% endif %}
+                </div>
             </div>
             <div class="card">
-                <div class="card-title">{{ 'command_net.personnel.qualifications'|trans }}</div>
-                {% if profile.qualifications is empty %}
-                    <div class="card-body">
-                        <p class="text-small">{{ 'command_net.personnel.no_qualifications'|trans }}</p>
-                    </div>
-                {% else %}
-                    <div class="card-body grid-xs-6 grid-md-4 gap-4 items-center">
-                        {% for soldierQualification in profile.qualifications %}
-                            <div class="flex flex-col items-center gap-1">
-                                {% if soldierQualification.qualification.icon %}
-                                    <img
-                                        width="100%"
-                                        height="auto"
-                                        src="{{ asset(soldierQualification.qualification.icon, 'forumify.asset')|imagine_filter('avatar_lg') }}"
-                                        title="{{ soldierQualification.qualification.name }} - {{ soldierQualification.dateEarned|format_date }}"
-                                    >
-                                {% else %}
-                                    <div class="text-center text-small" title="{{ soldierQualification.qualification.name }} - {{ soldierQualification.dateEarned|format_date }}">
-                                        <i class="ph ph-certificate" style="font-size: 2rem;"></i>
-                                        <div>{{ soldierQualification.qualification.name }}</div>
-                                    </div>
-                                {% endif %}
-                                {% if is_granted('command-net.admin.qualifications.manage') %}
-                                    <form method="post" action="{{ path('command_net_roster_qualification_delete', { username: profile.user.username, id: soldierQualification.id }) }}" onsubmit="return confirm('Remove this qualification? This cannot be undone.');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_qualification_delete_' ~ soldierQualification.id) }}">
-                                        <button type="submit" class="btn-link btn-small text-small" title="Remove qualification"><i class="ph ph-trash"></i></button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            {% if profile.bio %}
-                <div class="card">
-                    <div class="card-title">{{ 'command_net.personnel.bio'|trans }}</div>
-                    <div class="card-body">
-                        <p>{{ profile.bio }}</p>
-                    </div>
+                <div class="card-title">Length in service</div>
+                <div class="card-body">
+                    {% set timeInService = command_net_time_in_service(profile) %}
+                    {% if timeInService %}
+                        <p class="text-small mb-1">Time in service</p>
+                        <p class="text-bold mb-0">{{ timeInService }}</p>
+                    {% else %}
+                        <p class="text-small mb-0">No enlistment date recorded.</p>
+                    {% endif %}
                 </div>
-            {% endif %}
+            </div>
         </div>
 
-        <div class="col-xs-12 col-md-8 flex flex-col gap-4">
-            <div class="card">
-                <div class="card-title">Assignment History</div>
-                {% if profile.assignments is empty %}
-                    <div class="card-body">
-                        <p class="text-small">No assignments recorded.</p>
+        <div class="col-xs-12 col-md-8">
+            <div class="card cnf-tabs">
+                <div class="cnf-tab-bar">
+                    <div class="cnf-tab-buttons" role="tablist">
+                        <button type="button" class="cnf-tab" data-tab="profile" role="tab" aria-selected="true">Profile</button>
+                        <button type="button" class="cnf-tab" data-tab="service" role="tab" aria-selected="false">Service Record</button>
+                        <button type="button" class="cnf-tab" data-tab="award" role="tab" aria-selected="false">Award Record</button>
+                        <button type="button" class="cnf-tab" data-tab="combat" role="tab" aria-selected="false">Combat Record</button>
+                        <button type="button" class="cnf-tab" data-tab="rank" role="tab" aria-selected="false">Rank Record</button>
+                        <button type="button" class="cnf-tab" data-tab="assignment" role="tab" aria-selected="false">Assignment Record</button>
+                        <button type="button" class="cnf-tab" data-tab="qualification" role="tab" aria-selected="false">Qualification Record</button>
                     </div>
-                {% else %}
-                    <ul class="card-body p-0">
-                        {% for assignment in profile.assignments %}
-                            <li class="p-2 pr-4 pl-4 flex items-center justify-between gap-2{% if not loop.last %} border-b{% endif %}">
-                                <div>
-                                    <div class="text-bold">
-                                        {{ assignment.unit.name }}{% if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
-                                        {% if assignment.isPrimary and assignment.endDate is null %}<span class="tag ml-2">Primary</span>{% endif %}
-                                    </div>
-                                    <div class="text-small">
-                                        {{ assignment.startDate|format_date }} &ndash; {{ assignment.endDate ? assignment.endDate|format_date : 'Present' }}
-                                    </div>
-                                </div>
-                                {% if is_granted('command-net.admin.personnel.manage') %}
-                                    <form method="post" action="{{ path('command_net_roster_assignment_delete', { username: profile.user.username, id: assignment.id }) }}" onsubmit="return confirm('Remove this assignment? This cannot be undone.');">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_assignment_delete_' ~ assignment.id) }}">
-                                        <button type="submit" class="btn-link btn-small" title="Remove assignment"><i class="ph ph-trash"></i></button>
-                                    </form>
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-            <div class="card">
-                <div class="card-title">{{ 'command_net.personnel.service_record'|trans }}</div>
-                {% if profile.serviceRecords is empty %}
-                    <div class="card-body">
-                        <p class="text-small">{{ 'command_net.personnel.no_service_records'|trans }}</p>
+                    <input type="search" class="cnf-search" placeholder="Search records" aria-label="Search records">
+                </div>
+
+                <div class="card-body">
+                    {# ---------- Profile ---------- #}
+                    <div class="cnf-panel" data-tab-panel="profile">
+                        <dl class="cnf-fields">
+                            {% if profile.serviceNumber %}
+                                <div><dt>{{ 'command_net.personnel.service_number'|trans }}</dt><dd>{{ profile.serviceNumber }}</dd></div>
+                            {% endif %}
+                            {% if profile.enlistmentDate %}
+                                <div><dt>{{ 'command_net.personnel.enlisted'|trans }}</dt><dd>{{ profile.enlistmentDate|format_date }}</dd></div>
+                            {% endif %}
+                            {% if profile.dischargeDate %}
+                                <div><dt>Discharged</dt><dd>{{ profile.dischargeDate|format_date }}</dd></div>
+                            {% endif %}
+                        </dl>
+                        {% if profile.bio %}
+                            <p class="mb-0">{{ profile.bio }}</p>
+                        {% elseif not profile.serviceNumber and not profile.enlistmentDate %}
+                            <p class="text-small mb-0">No profile information recorded.</p>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <ul class="card-body p-0">
-                        {% for record in profile.serviceRecords %}
-                            <li class="p-2 pr-4 pl-4 flex flex-col gap-1{% if not loop.last %} border-b{% endif %}">
-                                <div class="flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-2">
-                                        <span class="tag">{{ record.type.label }}</span>
-                                        <span class="text-bold">{{ record.title }}</span>
-                                    </div>
-                                    {% if is_granted('command-net.admin.personnel.manage') %}
-                                        <form method="post" action="{{ path('command_net_roster_service_record_delete', { username: profile.user.username, id: record.id }) }}" onsubmit="return confirm('Remove this service record? This cannot be undone.');">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('roster_service_record_delete_' ~ record.id) }}">
-                                            <button type="submit" class="btn-link btn-small" title="Remove entry"><i class="ph ph-trash"></i></button>
-                                        </form>
-                                    {% endif %}
-                                </div>
-                                {% if record.description %}
-                                    <p class="mb-0 text-small">{{ record.description }}</p>
-                                {% endif %}
-                                <div class="text-small">{{ record.date|format_date }}</div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
+
+                    {# ---------- Service Record (everything, unified) ---------- #}
+                    <div class="cnf-panel" data-tab-panel="service" hidden>
+                        {% if profile.serviceRecords is empty %}
+                            <p class="text-small mb-0">{{ 'command_net.personnel.no_service_records'|trans }}</p>
+                        {% else %}
+                            {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
+                                rows: profile.serviceRecords,
+                                profile: profile,
+                                showType: true,
+                            } only %}
+                        {% endif %}
+                    </div>
+
+                    {# ---------- Award Record ---------- #}
+                    <div class="cnf-panel" data-tab-panel="award" hidden>
+                        {% if profile.awards is empty %}
+                            <p class="text-small mb-0">{{ 'command_net.personnel.no_awards'|trans }}</p>
+                        {% else %}
+                            <table class="cnf-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="date">Date <i class="ph ph-caret-up-down"></i></th>
+                                        <th data-sort="text">Award <i class="ph ph-caret-up-down"></i></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for soldierAward in profile.awards %}
+                                        <tr data-date="{{ soldierAward.dateAwarded|date('Y-m-d') }}">
+                                            <td>{{ soldierAward.dateAwarded|format_date }}</td>
+                                            <td>
+                                                {{ soldierAward.award.name }}
+                                                {% if soldierAward.citation %}<span class="text-small">&mdash; {{ soldierAward.citation }}</span>{% endif %}
+                                            </td>
+                                            <td class="cnf-row-actions">
+                                                {% if is_granted('command-net.admin.awards.manage') %}
+                                                    <form method="post" action="{{ path('command_net_roster_award_delete', { username: profile.user.username, id: soldierAward.id }) }}" onsubmit="return confirm('Remove this award? This cannot be undone.');">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_award_delete_' ~ soldierAward.id) }}">
+                                                        <button type="submit" class="btn-link btn-small" title="Remove award"><i class="ph ph-trash"></i></button>
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+
+                    {# ---------- Combat Record ---------- #}
+                    <div class="cnf-panel" data-tab-panel="combat" hidden>
+                        {% set combatRecords = command_net_records_by_type(profile, ['combat']) %}
+                        {% if combatRecords is empty %}
+                            <p class="text-small mb-0">No combat records.</p>
+                        {% else %}
+                            {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
+                                rows: combatRecords,
+                                profile: profile,
+                                showType: false,
+                            } only %}
+                        {% endif %}
+                    </div>
+
+                    {# ---------- Rank Record ---------- #}
+                    <div class="cnf-panel" data-tab-panel="rank" hidden>
+                        {% set rankRecords = command_net_records_by_type(profile, ['promotion', 'demotion', 'enlistment']) %}
+                        {% if rankRecords is empty %}
+                            <p class="text-small mb-0">No rank history.</p>
+                        {% else %}
+                            {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
+                                rows: rankRecords,
+                                profile: profile,
+                                showType: true,
+                            } only %}
+                        {% endif %}
+                    </div>
+
+                    {# ---------- Assignment Record ---------- #}
+                    <div class="cnf-panel" data-tab-panel="assignment" hidden>
+                        {% if profile.assignments is empty %}
+                            <p class="text-small mb-0">No assignments recorded.</p>
+                        {% else %}
+                            <table class="cnf-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="date">Date <i class="ph ph-caret-up-down"></i></th>
+                                        <th data-sort="text">Assignment <i class="ph ph-caret-up-down"></i></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for assignment in profile.assignments %}
+                                        <tr data-date="{{ assignment.startDate|date('Y-m-d') }}">
+                                            <td>{{ assignment.startDate|format_date }} &ndash; {{ assignment.endDate ? assignment.endDate|format_date : 'Present' }}</td>
+                                            <td>
+                                                {{ assignment.unit.name }}{% if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                                                {% if assignment.isPrimary and assignment.endDate is null %}<span class="tag ml-2">Primary</span>{% endif %}
+                                            </td>
+                                            <td class="cnf-row-actions">
+                                                {% if is_granted('command-net.admin.personnel.manage') %}
+                                                    <form method="post" action="{{ path('command_net_roster_assignment_delete', { username: profile.user.username, id: assignment.id }) }}" onsubmit="return confirm('Remove this assignment? This cannot be undone.');">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_assignment_delete_' ~ assignment.id) }}">
+                                                        <button type="submit" class="btn-link btn-small" title="Remove assignment"><i class="ph ph-trash"></i></button>
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+
+                    {# ---------- Qualification Record ---------- #}
+                    <div class="cnf-panel" data-tab-panel="qualification" hidden>
+                        {% if profile.qualifications is empty %}
+                            <p class="text-small mb-0">{{ 'command_net.personnel.no_qualifications'|trans }}</p>
+                        {% else %}
+                            <table class="cnf-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="date">Date <i class="ph ph-caret-up-down"></i></th>
+                                        <th data-sort="text">Qualification <i class="ph ph-caret-up-down"></i></th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for soldierQualification in profile.qualifications %}
+                                        <tr data-date="{{ soldierQualification.dateEarned|date('Y-m-d') }}">
+                                            <td>{{ soldierQualification.dateEarned|format_date }}</td>
+                                            <td>{{ soldierQualification.qualification.name }}</td>
+                                            <td class="cnf-row-actions">
+                                                {% if is_granted('command-net.admin.qualifications.manage') %}
+                                                    <form method="post" action="{{ path('command_net_roster_qualification_delete', { username: profile.user.username, id: soldierQualification.id }) }}" onsubmit="return confirm('Remove this qualification? This cannot be undone.');">
+                                                        <input type="hidden" name="_token" value="{{ csrf_token('roster_qualification_delete_' ~ soldierQualification.id) }}">
+                                                        <button type="submit" class="btn-link btn-small" title="Remove qualification"><i class="ph ph-trash"></i></button>
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <style>
+        .cnf-tab-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border-color, #ddd); }
+        .cnf-tab-buttons { display: flex; flex-wrap: wrap; gap: 2px; }
+        .cnf-tab { font: inherit; font-size: 13px; padding: 8px 12px; border: 0; background: none; cursor: pointer; border-bottom: 2px solid transparent; color: inherit; opacity: .7; }
+        .cnf-tab[aria-selected="true"] { opacity: 1; border-bottom-color: currentColor; font-weight: 600; }
+        .cnf-search { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--border-color, #ccc); border-radius: 4px; background: transparent; color: inherit; min-width: 180px; }
+        .cnf-fields { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 0 0 12px; }
+        .cnf-fields > div { display: flex; flex-direction: column; gap: 2px; }
+        .cnf-fields dt { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .65; }
+        .cnf-fields dd { margin: 0; font-weight: 600; }
+        table.cnf-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table.cnf-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .65; padding: 8px 4px; cursor: pointer; white-space: nowrap; user-select: none; }
+        table.cnf-table th i { font-size: 12px; opacity: .6; }
+        table.cnf-table td { padding: 10px 4px; border-top: 1px solid var(--border-color, #eee); vertical-align: top; }
+        table.cnf-table .cnf-row-actions { width: 1%; text-align: right; white-space: nowrap; }
+        table.cnf-table tr[hidden] { display: none; }
+    </style>
+    <script>
+        (function () {
+            var root = document.querySelector('.cnf-tabs');
+            if (!root) return;
+
+            var tabs = root.querySelectorAll('.cnf-tab');
+            var panels = root.querySelectorAll('.cnf-panel');
+            var search = root.querySelector('.cnf-search');
+
+            function activate(name) {
+                tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'); });
+                panels.forEach(function (p) { p.hidden = p.dataset.tabPanel !== name; });
+                if (search) {
+                    search.value = '';
+                    filterActivePanel('');
+                }
+            }
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () { activate(tab.dataset.tab); });
+            });
+
+            function activePanel() {
+                var found = null;
+                panels.forEach(function (p) { if (!p.hidden) found = p; });
+                return found;
+            }
+
+            function filterActivePanel(query) {
+                var panel = activePanel();
+                if (!panel) return;
+                var rows = panel.querySelectorAll('tbody tr');
+                var needle = query.trim().toLowerCase();
+                rows.forEach(function (row) {
+                    row.hidden = needle !== '' && row.textContent.toLowerCase().indexOf(needle) === -1;
+                });
+            }
+
+            if (search) {
+                search.addEventListener('input', function () { filterActivePanel(search.value); });
+            }
+
+            root.querySelectorAll('table.cnf-table thead th[data-sort]').forEach(function (th) {
+                th.addEventListener('click', function () {
+                    var table = th.closest('table');
+                    var tbody = table.querySelector('tbody');
+                    var index = Array.prototype.indexOf.call(th.parentNode.children, th);
+                    var ascending = th.dataset.dir !== 'asc';
+                    table.querySelectorAll('th[data-sort]').forEach(function (other) { delete other.dataset.dir; });
+                    th.dataset.dir = ascending ? 'asc' : 'desc';
+
+                    var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+                    rows.sort(function (a, b) {
+                        var av, bv;
+                        if (th.dataset.sort === 'date') {
+                            av = a.dataset.date || '';
+                            bv = b.dataset.date || '';
+                        } else {
+                            av = a.children[index].textContent.trim().toLowerCase();
+                            bv = b.children[index].textContent.trim().toLowerCase();
+                        }
+                        if (av < bv) return ascending ? -1 : 1;
+                        if (av > bv) return ascending ? 1 : -1;
+                        return 0;
+                    });
+                    rows.forEach(function (row) { tbody.appendChild(row); });
+                });
+            });
+        })();
+    </script>
 {% endblock %}
