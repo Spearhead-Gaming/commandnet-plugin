@@ -3,11 +3,18 @@
 {% block title_page %}{{ 'command_net.roster.title'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="mb-4 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
         <h1 class="mb-0">{{ 'command_net.roster.title'|trans }}</h1>
-        <p class="text-small">
-            {{ 'command_net.roster.count'|trans({ count: roster|length }) }}
-        </p>
+        <div class="flex items-center gap-3">
+            {% if is_granted('command-net.attendance.view_own') or is_granted('command-net.attendance.view_all') %}
+                <a class="btn-outlined btn-small" href="{{ path('command_net_attendance') }}">
+                    <i class="ph ph-chart-bar"></i> Attendance
+                </a>
+            {% endif %}
+            <p class="text-small mb-0">
+                {{ 'command_net.roster.count'|trans({ count: roster|length }) }}
+            </p>
+        </div>
     </div>
 
     {% if roster is empty %}
