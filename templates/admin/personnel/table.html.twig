@@ -1,0 +1,31 @@
+{#
+    Only table_wrapper is overridden here - the checkbox column itself is a normal
+    server-rendered column (see SoldierProfileTable::buildTable()), so the shared
+    head/body/footer blocks don't need to change at all.
+#}
+{% extends '@!Forumify/components/table/table.html.twig' %}
+
+{% block table_wrapper %}
+    {% if is_granted('command-net.admin.personnel.manage') %}
+        {% set selectedCount = this.selected|length %}
+        <div class="flex items-center gap-2 mb-2">
+            <span class="text-small">{{ selectedCount }} selected</span>
+            <select data-model="bulkStatus">
+                <option value="">Set status&hellip;</option>
+                {% for statusCase in this.soldierStatuses %}
+                    <option value="{{ statusCase.value }}">{{ statusCase.label }}</option>
+                {% endfor %}
+            </select>
+            <button
+                type="button"
+                class="btn-outlined btn-small"
+                data-action="live#action"
+                data-live-action-param="bulkApplyStatus"
+                {{ this.bulkStatus ? '' : 'disabled' }}
+            >
+                Apply
+            </button>
+        </div>
+    {% endif %}
+    {{ parent() }}
+{% endblock %}
