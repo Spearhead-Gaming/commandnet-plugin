@@ -56,6 +56,12 @@
                                             {{ aar.objectivesMet ? 'command_net.operations.objectives_met'|trans : 'command_net.operations.objectives_not_met'|trans }}
                                         </span>
                                     {% endif %}
+                                    {% if aar.submittedBy == app.user or is_granted('command-net.admin.operations.manage') %}
+                                        <form method="post" action="{{ path('command_net_operation_aar_delete', { id: operation.id, aarId: aar.id }) }}" onsubmit="return confirm('Remove this after-action report? This cannot be undone.');" class="ml-auto">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('operation_aar_delete_' ~ aar.id) }}">
+                                            <button type="submit" class="btn-link btn-small" title="Remove report"><i class="ph ph-trash"></i></button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                                 {{ aar.summary|rich }}
                                 {% if aar.notes %}

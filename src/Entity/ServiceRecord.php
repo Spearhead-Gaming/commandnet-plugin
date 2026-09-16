@@ -28,14 +28,16 @@ class ServiceRecord
     use BlameableEntityTrait;
 
     /**
-     * Identifies the award/qualification/assignment that generated this entry, so deleting
-     * that record can find and remove this one too. Records created directly (a manual note,
-     * a promotion, an AAR-driven combat entry) leave both null - there's nothing to clean up
-     * if those are ever deleted individually.
+     * Identifies the award/qualification/assignment/AAR that generated this entry, so
+     * deleting that record can find and remove this one too. An AAR can generate several
+     * of these at once (one combat record per attendee), all sharing the same source id.
+     * Records created directly (a manual note, a promotion) leave both null - there's
+     * nothing to clean up if those are ever deleted individually.
      */
     public const SOURCE_AWARD = 'soldier_award';
     public const SOURCE_QUALIFICATION = 'soldier_qualification';
     public const SOURCE_ASSIGNMENT = 'assignment';
+    public const SOURCE_OPERATION_AAR = 'operation_aar';
 
     #[ORM\ManyToOne(targetEntity: SoldierProfile::class, inversedBy: 'serviceRecords')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
