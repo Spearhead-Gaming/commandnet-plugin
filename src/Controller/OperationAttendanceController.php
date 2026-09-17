@@ -10,16 +10,18 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
+use MajesticDev\CommandNet\Service\AwolService;
 
 /**
  * Lets a leader mark who actually showed up, independent of what they RSVP'd. This is
  * the switch that turns OperationRSVP::attended from "always null" into real data, which
- * is what the AAR submission flow and the Attendance module both key off of.
+ * is what the AAR submission flow, the Attendance module, and AWOL detection all key off of.
  */
 class OperationAttendanceController extends AbstractController
 {
     public function __construct(
         private readonly OperationRSVPRepository $rsvpRepository,
+        private readonly AwolService $awolService,
     ) {
     }
 
@@ -50,6 +52,7 @@ class OperationAttendanceController extends AbstractController
 
         $rsvp->setAttended($attended);
         $this->rsvpRepository->save($rsvp);
+        $this->awolService->checkAfterAttendanceChange($rsvp->getSoldier());
 
         $this->addFlash('success', 'Attendance updated.');
         return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);

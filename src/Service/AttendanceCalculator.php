@@ -22,9 +22,12 @@ class AttendanceCalculator
         $lastAttended = null;
         $streak = 0;
         $streakBroken = false;
+        $missStreak = 0;
+        $missStreakBroken = false;
 
-        // History is newest-operation-first, so the streak is just "how many attended
-        // records in a row before hitting the first no-show".
+        // History is newest-operation-first, so each streak is just "how many records of
+        // that kind in a row before hitting the first record of the other kind" - the miss
+        // streak (for AWOL detection) is the exact mirror of the existing attended streak.
         foreach ($history as $rsvp) {
             if ($rsvp->getAttended() === true) {
                 ++$attended;
@@ -34,15 +37,19 @@ class AttendanceCalculator
                 if (!$streakBroken) {
                     ++$streak;
                 }
+                $missStreakBroken = true;
             } else {
                 ++$noShows;
                 $streakBroken = true;
+                if (!$missStreakBroken) {
+                    ++$missStreak;
+                }
             }
         }
 
         $total = $attended + $noShows;
         $noShowRate = $total > 0 ? round($noShows / $total * 100, 1) : null;
 
-        return new AttendanceStats($attended, $noShows, $noShowRate, $lastAttended, $streak);
+        return new AttendanceStats($attended, $noShows, $noShowRate, $lastAttended, $streak, $missStreak);
     }
 }

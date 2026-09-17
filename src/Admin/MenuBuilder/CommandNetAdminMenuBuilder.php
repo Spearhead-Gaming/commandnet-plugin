@@ -42,6 +42,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Operations', $url('forumify_admin_command_net_operations_list'), [
                 'permission' => 'command-net.admin.operations.view',
             ]),
+            new MenuItem('AWOL Settings', $url('forumify_admin_command_net_awol_settings'), [
+                'permission' => 'command-net.admin.awol.manage',
+            ]),
         ]));
     }
 }

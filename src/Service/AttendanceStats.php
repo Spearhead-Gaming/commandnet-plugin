@@ -18,6 +18,7 @@ final class AttendanceStats
         public readonly ?float $noShowRate,
         public readonly ?DateTime $lastAttended,
         public readonly int $currentStreak,
+        public readonly int $currentMissStreak,
     ) {
     }
 
