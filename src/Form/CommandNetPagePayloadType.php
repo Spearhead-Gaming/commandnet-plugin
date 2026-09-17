@@ -23,9 +23,12 @@ class CommandNetPagePayloadType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('route', ChoiceType::class, [
+        $builder->add('pages', ChoiceType::class, [
             'choices' => self::PAGES,
-            'placeholder' => 'Select a page',
+            'multiple' => true,
+            'expanded' => true,
+            'label' => 'Pages',
+            'help' => 'Check every page this menu item should link to.',
         ]);
     }
 }

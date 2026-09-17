@@ -5,27 +5,37 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\MenuBuilder;
 
 use Forumify\Core\Entity\MenuItem;
-use Forumify\Core\MenuBuilder\MenuType\UrlMenuType;
+use Forumify\Core\MenuBuilder\MenuType\AbstractMenuType;
 use MajesticDev\CommandNet\Form\CommandNetPagePayloadType;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Service\Attribute\Required;
+use Twig\Environment;
 
 /**
- * A friendlier alternative to the generic "Route" menu type for this plugin's own pages:
- * admins pick "Roster" / "Operations" / etc. by name instead of finding the right
- * command_net_* entry in a dropdown of every route on the site. Only lists pages that make
- * sense as a static menu link - command_net_roster_profile/operation_detail need a
- * {username}/{id} and were left out of CommandNetPagePayloadType::PAGES for that reason.
+ * A single "Command Net" menu item covering every page in this plugin: the admin checks
+ * which pages (Roster, Operations, ...) it should link to, and it renders as one dropdown
+ * of just those pages - the same "one item, one page per toggle" shape MILHQ's own Menu
+ * Builder integration uses, rather than making the admin create a separate Route-typed menu
+ * item (and a parent Collection item) for every page individually.
  */
-class CommandNetMenuType extends UrlMenuType
+class CommandNetMenuType extends AbstractMenuType
 {
+    private Environment $twig;
+
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
+    #[Required]
+    public function setTwig(Environment $twig): void
+    {
+        $this->twig = $twig;
+    }
+
     public function getType(): string
     {
-        return 'command_net_page';
+        return 'command_net';
     }
 
     public function getPayloadFormType(): ?string
@@ -33,13 +43,30 @@ class CommandNetMenuType extends UrlMenuType
         return CommandNetPagePayloadType::class;
     }
 
-    protected function getUrl(MenuItem $item): string
+    protected function render(MenuItem $item): string
     {
-        $route = $item->getPayloadValue('route');
-        if (!in_array($route, CommandNetPagePayloadType::PAGES, true)) {
+        $selected = $item->getPayloadValue('pages') ?? [];
+        $inner = '';
+        foreach (CommandNetPagePayloadType::PAGES as $label => $route) {
+            if (!in_array($route, $selected, true)) {
+                continue;
+            }
+
+            $inner .= $this->twig->render('@Forumify/frontend/menu/url.html.twig', [
+                'url' => $this->urlGenerator->generate($route),
+                'label' => $label,
+                'external' => false,
+            ]);
+        }
+
+        if ($inner === '') {
             return '';
         }
 
-        return $this->urlGenerator->generate($route);
+        return $this->twig->render('@Forumify/frontend/menu/collection.html.twig', [
+            'name' => $item->getName(),
+            'placement' => $item->getParent() === null ? 'bottom-start' : 'right-start',
+            'inner' => $inner,
+        ]);
     }
 }
