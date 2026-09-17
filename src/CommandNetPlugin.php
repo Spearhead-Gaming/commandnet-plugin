@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet;
 
 use Forumify\Calendar\ForumifyCalendarPlugin;
+use Forumify\Discord\ForumifyDiscordPlugin;
 use Forumify\Plugin\AbstractForumifyPlugin;
 use Forumify\Plugin\PluginMetadata;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -75,6 +76,10 @@ class CommandNetPlugin extends AbstractForumifyPlugin
 
         if ($this->isPluginLoaded($builder, ForumifyCalendarPlugin::class)) {
             $container->import($this->getPath() . '/config/calendar.php');
+        }
+
+        if ($this->isPluginLoaded($builder, ForumifyDiscordPlugin::class)) {
+            $container->import($this->getPath() . '/config/discord.php');
         }
     }
 

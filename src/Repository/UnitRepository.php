@@ -34,4 +34,21 @@ class UnitRepository extends AbstractRepository
 
         return $ids;
     }
+
+    /**
+     * Matches on name or abbreviation, e.g. for the Discord "/command-net-unit" command's
+     * free-text search ("1-501st" should find "1st Battalion, 501st Infantry").
+     *
+     * @return Unit[]
+     */
+    public function findByNameLike(string $name): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.name LIKE :name')
+            ->orWhere('u.abbreviation LIKE :name')
+            ->setParameter('name', '%' . $name . '%')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult();
+    }
 }

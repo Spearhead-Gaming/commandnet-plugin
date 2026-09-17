@@ -37,4 +37,24 @@ class SoldierProfileRepository extends AbstractRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Matches on the linked forumify user's display name or username, e.g. for the
+     * Discord "/command-net-soldier" command's free-text search.
+     *
+     * @return SoldierProfile[]
+     */
+    public function findByNameLike(string $name): array
+    {
+        return $this->createQueryBuilder('s')
+            ->addSelect('soldierRank', 'user')
+            ->leftJoin('s.rank', 'soldierRank')
+            ->leftJoin('s.user', 'user')
+            ->where('user.displayName LIKE :name')
+            ->orWhere('user.username LIKE :name')
+            ->setParameter('name', '%' . $name . '%')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult();
+    }
 }
