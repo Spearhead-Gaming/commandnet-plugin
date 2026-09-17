@@ -51,6 +51,14 @@ class Operation
     #[ORM\Column(length: 20, enumType: OperationStatus::class)]
     private OperationStatus $status = OperationStatus::SCHEDULED;
 
+    /**
+     * Id of the mirrored Forumify\Calendar\Entity\CalendarEvent, if the optional calendar
+     * plugin is installed (see OperationCalendarSyncer). A plain int, not a Doctrine
+     * relation - that entity's class may not exist at all when the plugin isn't installed.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $calendarEventId = null;
+
     /** @var Collection<int, OperationRSVP> */
     #[ORM\OneToMany(mappedBy: 'operation', targetEntity: OperationRSVP::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $rsvps;
@@ -140,6 +148,16 @@ class Operation
     public function getStatus(): OperationStatus
     {
         return $this->status;
+    }
+
+    public function getCalendarEventId(): ?int
+    {
+        return $this->calendarEventId;
+    }
+
+    public function setCalendarEventId(?int $calendarEventId): void
+    {
+        $this->calendarEventId = $calendarEventId;
     }
 
     public function setStatus(OperationStatus $status): void
