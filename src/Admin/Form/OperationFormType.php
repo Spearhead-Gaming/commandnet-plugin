@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Admin\Form;
 
+use Forumify\Calendar\Entity\Calendar;
 use Forumify\Core\Form\RichTextEditorType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -67,5 +68,15 @@ class OperationFormType extends AbstractType
                 'choice_label' => fn (OperationStatus $s) => $s->label(),
             ])
         ;
+
+        if (class_exists(Calendar::class)) {
+            $builder->add('calendar', EntityType::class, [
+                'class' => Calendar::class,
+                'required' => false,
+                'choice_label' => 'title',
+                'placeholder' => 'Do not create a calendar event',
+                'help' => 'Automatically create a calendar event after saving this operation.',
+            ]);
+        }
     }
 }

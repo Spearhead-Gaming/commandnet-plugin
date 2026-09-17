@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet;
 
+use Forumify\Calendar\ForumifyCalendarPlugin;
 use Forumify\Plugin\AbstractForumifyPlugin;
 use Forumify\Plugin\PluginMetadata;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /**
  * The entry point forumify uses to recognise this package as a plugin.
@@ -25,9 +28,9 @@ class CommandNetPlugin extends AbstractForumifyPlugin
     {
         return new PluginMetadata(
             'Command Net',
-            'Your Unit',
+            'MDEV ',
             'Personnel & unit management system built for our community.',
-            'https://example.com',
+            'https://example.com', // TODO: replace with real domain once purchased
         );
     }
 
@@ -64,5 +67,25 @@ class CommandNetPlugin extends AbstractForumifyPlugin
             'courses' => ['enroll'],
             'reportin' => ['submit'],
         ];
+    }
+
+    public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
+    {
+        parent::loadExtension($config, $container, $builder);
+
+        if ($this->isPluginLoaded($builder, ForumifyCalendarPlugin::class)) {
+            $container->import($this->getPath() . '/config/calendar.php');
+        }
+    }
+
+    /**
+     * @param class-string $pluginClass
+     */
+    private function isPluginLoaded(ContainerBuilder $builder, string $pluginClass): bool
+    {
+        /** @var array<string, class-string> $bundles */
+        $bundles = $builder->getParameter('kernel.bundles');
+
+        return in_array($pluginClass, $bundles, true);
     }
 }

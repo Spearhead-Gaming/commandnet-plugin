@@ -4,199 +4,58 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Entity;
 
-use DateTime;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Forumify\Core\Entity\BlameableEntityTrait;
-use Forumify\Core\Entity\IdentifiableEntityTrait;
-use Forumify\Core\Entity\TimestampableEntityTrait;
-use MajesticDev\CommandNet\Entity\Enum\OperationStatus;
-use MajesticDev\CommandNet\Entity\Enum\OperationType;
+use Forumify\Calendar\Entity\Calendar;
+use Forumify\Calendar\Entity\CalendarEvent;
 use MajesticDev\CommandNet\Repository\OperationRepository;
 
 /**
  * A scheduled operation, training, or meeting. The "content" field is the OPORD/WARNORD
  * body, written with the same rich text editor used for forum posts.
+ *
+ * Declared twice, like MILHQ's Mission entity, so the calendar/calendarEvent relations only
+ * exist when the optional calendar plugin is actually installed - a Doctrine mapping can't
+ * reference a class that might not exist at all. See OperationCalendarListener.
  */
-#[ORM\Entity(OperationRepository::class)]
-class Operation
-{
-    use IdentifiableEntityTrait;
-    use BlameableEntityTrait;
-    use TimestampableEntityTrait;
-
-    #[ORM\Column(length: 255)]
-    private string $title = '';
-
-    #[ORM\Column(length: 20, enumType: OperationType::class)]
-    private OperationType $type = OperationType::OPERATION;
-
-    #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $content = null;
-
-    #[ORM\Column(type: 'datetime')]
-    private DateTime $startDateTime;
-
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    private ?DateTime $endDateTime = null;
-
-    #[ORM\Column(length: 150, nullable: true)]
-    private ?string $location = null;
-
-    #[ORM\ManyToOne(targetEntity: Unit::class)]
-    #[ORM\JoinColumn(name: 'unit_id', onDelete: 'SET NULL')]
-    private ?Unit $unit = null;
-
-    #[ORM\Column(length: 20, enumType: OperationStatus::class)]
-    private OperationStatus $status = OperationStatus::SCHEDULED;
-
-    /**
-     * Id of the mirrored Forumify\Calendar\Entity\CalendarEvent, if the optional calendar
-     * plugin is installed (see OperationCalendarSyncer). A plain int, not a Doctrine
-     * relation - that entity's class may not exist at all when the plugin isn't installed.
-     */
-    #[ORM\Column(nullable: true)]
-    private ?int $calendarEventId = null;
-
-    /** @var Collection<int, OperationRSVP> */
-    #[ORM\OneToMany(mappedBy: 'operation', targetEntity: OperationRSVP::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    private Collection $rsvps;
-
-    /** @var Collection<int, OperationAAR> */
-    #[ORM\OneToMany(mappedBy: 'operation', targetEntity: OperationAAR::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[ORM\OrderBy(['createdAt' => 'DESC'])]
-    private Collection $aars;
-
-    public function __construct()
+if (class_exists(\Forumify\Calendar\ForumifyCalendarPlugin::class)) {
+    #[ORM\Entity(OperationRepository::class)]
+    class Operation
     {
-        $this->startDateTime = new DateTime();
-        $this->rsvps = new ArrayCollection();
-        $this->aars = new ArrayCollection();
-    }
+        use OperationFields;
 
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
+        #[ORM\ManyToOne(targetEntity: Calendar::class)]
+        #[ORM\JoinColumn(onDelete: 'SET NULL')]
+        private ?Calendar $calendar = null;
 
-    public function setTitle(string $title): void
-    {
-        $this->title = $title;
-    }
+        #[ORM\OneToOne(targetEntity: CalendarEvent::class)]
+        #[ORM\JoinColumn(onDelete: 'SET NULL')]
+        private ?CalendarEvent $calendarEvent = null;
 
-    public function getType(): OperationType
-    {
-        return $this->type;
-    }
-
-    public function setType(OperationType $type): void
-    {
-        $this->type = $type;
-    }
-
-    public function getContent(): ?string
-    {
-        return $this->content;
-    }
-
-    public function setContent(?string $content): void
-    {
-        $this->content = $content;
-    }
-
-    public function getStartDateTime(): DateTime
-    {
-        return $this->startDateTime;
-    }
-
-    public function setStartDateTime(DateTime $startDateTime): void
-    {
-        $this->startDateTime = $startDateTime;
-    }
-
-    public function getEndDateTime(): ?DateTime
-    {
-        return $this->endDateTime;
-    }
-
-    public function setEndDateTime(?DateTime $endDateTime): void
-    {
-        $this->endDateTime = $endDateTime;
-    }
-
-    public function getLocation(): ?string
-    {
-        return $this->location;
-    }
-
-    public function setLocation(?string $location): void
-    {
-        $this->location = $location;
-    }
-
-    public function getUnit(): ?Unit
-    {
-        return $this->unit;
-    }
-
-    public function setUnit(?Unit $unit): void
-    {
-        $this->unit = $unit;
-    }
-
-    public function getStatus(): OperationStatus
-    {
-        return $this->status;
-    }
-
-    public function getCalendarEventId(): ?int
-    {
-        return $this->calendarEventId;
-    }
-
-    public function setCalendarEventId(?int $calendarEventId): void
-    {
-        $this->calendarEventId = $calendarEventId;
-    }
-
-    public function setStatus(OperationStatus $status): void
-    {
-        $this->status = $status;
-    }
-
-    /**
-     * @return Collection<int, OperationRSVP>
-     */
-    public function getRsvps(): Collection
-    {
-        return $this->rsvps;
-    }
-
-    /**
-     * Finds this operation's existing RSVP for a soldier, if one has been recorded yet.
-     */
-    public function getRsvpFor(SoldierProfile $soldier): ?OperationRSVP
-    {
-        foreach ($this->rsvps as $rsvp) {
-            if ($rsvp->getSoldier() === $soldier) {
-                return $rsvp;
-            }
+        public function getCalendar(): ?Calendar
+        {
+            return $this->calendar;
         }
 
-        return null;
-    }
+        public function setCalendar(?Calendar $calendar): void
+        {
+            $this->calendar = $calendar;
+        }
 
-    /**
-     * @return Collection<int, OperationAAR>
-     */
-    public function getAars(): Collection
-    {
-        return $this->aars;
-    }
+        public function getCalendarEvent(): ?CalendarEvent
+        {
+            return $this->calendarEvent;
+        }
 
-    public function __toString(): string
+        public function setCalendarEvent(?CalendarEvent $calendarEvent): void
+        {
+            $this->calendarEvent = $calendarEvent;
+        }
+    }
+} else {
+    #[ORM\Entity(OperationRepository::class)]
+    // phpcs:ignore
+    class Operation
     {
-        return $this->title;
+        use OperationFields;
     }
 }
