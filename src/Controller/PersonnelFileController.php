@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Controller;
 
 use Forumify\Core\Repository\UserRepository;
+use Forumify\OAuth\Idp\DiscordIdp;
+use Forumify\OAuth\Repository\IdentityProviderUserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -17,6 +19,7 @@ class PersonnelFileController extends AbstractController
         private readonly UserRepository $userRepository,
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly ReportInRepository $reportInRepository,
+        private readonly IdentityProviderUserRepository $identityProviderUserRepository,
     ) {
     }
 
@@ -39,10 +42,22 @@ class PersonnelFileController extends AbstractController
             throw $this->createNotFoundException('This user has no personnel file.');
         }
 
+        // Discord linkage lives on forumify core's generic OAuth identity system, not the
+        // optional Discord plugin - this works whether or not that plugin is installed,
+        // as long as a Discord identity provider is configured and the user linked it.
+        $discordIdentity = null;
+        foreach ($this->identityProviderUserRepository->findBy(['user' => $user]) as $idpUser) {
+            if ($idpUser->getIdentityProvider()->getType() === DiscordIdp::getType()) {
+                $discordIdentity = $idpUser;
+                break;
+            }
+        }
+
         return $this->render('@CommandNetPlugin/frontend/personnel/file.html.twig', [
             'profile' => $profile,
             'primaryAssignment' => $profile->getPrimaryAssignment(),
             'latestReportIn' => $this->reportInRepository->findLatestFor($profile),
+            'discordUsername' => $discordIdentity?->getExternalUsername(),
         ]);
     }
 }

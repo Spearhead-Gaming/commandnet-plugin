@@ -40,6 +40,13 @@ class SoldierProfile
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $callsign = null;
 
+    /**
+     * SteamID64. Manually entered - forumify has no Steam identity provider to pull this
+     * from (unlike Discord, which links via Forumify\OAuth\Entity\IdentityProviderUser).
+     */
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $steamId = null;
+
     #[ORM\Column(length: 20, enumType: SoldierStatus::class)]
     private SoldierStatus $status = SoldierStatus::ACTIVE;
 
@@ -126,6 +133,16 @@ class SoldierProfile
     public function setCallsign(?string $callsign): void
     {
         $this->callsign = $callsign;
+    }
+
+    public function getSteamId(): ?string
+    {
+        return $this->steamId;
+    }
+
+    public function setSteamId(?string $steamId): void
+    {
+        $this->steamId = $steamId;
     }
 
     public function getStatus(): SoldierStatus

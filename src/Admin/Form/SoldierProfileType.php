@@ -70,6 +70,11 @@ class SoldierProfileType extends AbstractType
             ->add('callsign', TextType::class, [
                 'required' => false,
             ])
+            ->add('steamId', TextType::class, [
+                'label' => 'Steam ID',
+                'required' => false,
+                'help' => 'SteamID64, e.g. from steamid.io.',
+            ])
             ->add('status', EnumType::class, [
                 'class' => SoldierStatus::class,
                 'choice_label' => fn (SoldierStatus $s) => $s->label(),
