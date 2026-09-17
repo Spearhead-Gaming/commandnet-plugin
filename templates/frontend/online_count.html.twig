@@ -1,0 +1,12 @@
+{#
+    Tiny partial so command-net-theme can show this plugin's live online count without
+    calling command_net_online_count() directly from its own Twig source. A direct call
+    would fail Twig's compile-time function lookup whenever this plugin isn't installed
+    at all (no bundle, no Twig extension) - `{% if %}` guards only skip execution, they
+    don't skip Twig validating that the function exists while parsing the template. This
+    partial lives in the plugin's own namespace, so the theme can safely load it with
+    `{% include '@CommandNetPlugin/frontend/online_count.html.twig' ignore missing %}`:
+    if the plugin isn't installed, the include silently resolves to nothing instead of
+    failing to compile.
+#}
+{{ command_net_online_count() }}

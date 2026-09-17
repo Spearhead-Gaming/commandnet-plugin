@@ -1,0 +1,62 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Org Chart{% endblock %}
+
+{% macro unit_node(unit) %}
+    <li class="cnf-org-node">
+        <div class="cnf-org-card">
+            <div class="cnf-org-name">
+                {{ unit.abbreviation }}
+                <span class="text-regular text-small">{{ unit.name }}</span>
+            </div>
+            <div class="cnf-org-meta text-small">
+                {% set activeCount = unit.assignments|filter(a => a.isPrimary and a.endDate is null)|length %}
+                {{ activeCount }} assigned
+                &middot;
+                {% if unit.commander %}
+                    CO: {{ unit.commander.rank ? unit.commander.rank.abbreviation ~ ' ' : '' }}{{ unit.commander.user.displayName }}
+                {% else %}
+                    CO: Vacant
+                {% endif %}
+            </div>
+        </div>
+        {% if unit.children is not empty %}
+            <ul class="cnf-org-children">
+                {% for child in unit.children %}
+                    {{ _self.unit_node(child) }}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{% block body %}
+    <h1 class="mb-4">Org Chart</h1>
+
+    {% if topLevelUnits is empty %}
+        <div class="card">
+            <div class="card-body">
+                <p class="text-small mb-0">No units configured.</p>
+            </div>
+        </div>
+    {% else %}
+        <ul class="cnf-org-tree">
+            {% for unit in topLevelUnits %}
+                {{ _self.unit_node(unit) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <style>
+        .cnf-org-tree, .cnf-org-children { list-style: none; margin: 0; padding: 0; }
+        .cnf-org-children { margin: 8px 0 8px 22px; padding-left: 18px; border-left: 1px solid var(--border-color, #ddd); display: flex; flex-direction: column; gap: 8px; }
+        .cnf-org-node { position: relative; }
+        .cnf-org-node + .cnf-org-node { margin-top: 8px; }
+        .cnf-org-card { display: inline-block; padding: 10px 14px; border: 1px solid var(--border-color, #ddd); border-radius: 6px; background: var(--card-background, rgba(127,127,127,.05)); }
+        .cnf-org-name { font-weight: 600; }
+        .cnf-org-meta { opacity: .75; margin-top: 2px; }
+        @media (max-width: 600px) {
+            .cnf-org-children { margin-left: 10px; padding-left: 10px; }
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,55 @@
+{#
+    Shared row renderer for any list of ServiceRecord entries (the unified Service Record
+    tab, and the Combat/Rank Record tabs, which are just that same timeline filtered by
+    type). Deleting a row that was written by an award/qualification/assignment goes
+    through that module's own delete route so it also cleans up the source entity, not
+    just this timeline entry; everything else (a promotion/demotion, or a combat record
+    whose AAR isn't reachable from here) falls back to removing the timeline entry alone.
+
+    Params: rows (iterable<ServiceRecord>), profile (SoldierProfile), showType (bool)
+#}
+<table class="cnf-table">
+    <thead>
+        <tr>
+            <th data-sort="date">Date <i class="ph ph-caret-up-down"></i></th>
+            {% if showType %}<th>Type</th>{% endif %}
+            <th data-sort="text">Text <i class="ph ph-caret-up-down"></i></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in rows %}
+            <tr data-date="{{ record.date|date('Y-m-d') }}">
+                <td>{{ record.date|format_date }}</td>
+                {% if showType %}<td class="text-small">{{ record.type.label }}</td>{% endif %}
+                <td>
+                    {{ record.title }}
+                    {% if record.description %}<span class="text-small">&mdash; {{ record.description }}</span>{% endif %}
+                </td>
+                <td class="cnf-row-actions">
+                    {% if record.sourceType == 'soldier_award' and is_granted('command-net.admin.awards.manage') %}
+                        <form method="post" action="{{ path('command_net_roster_award_delete', { username: profile.user.username, id: record.sourceId }) }}" onsubmit="return confirm('Remove this award? This cannot be undone.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('roster_award_delete_' ~ record.sourceId) }}">
+                            <button type="submit" class="btn-link btn-small" title="Remove award"><i class="ph ph-trash"></i></button>
+                        </form>
+                    {% elseif record.sourceType == 'soldier_qualification' and is_granted('command-net.admin.qualifications.manage') %}
+                        <form method="post" action="{{ path('command_net_roster_qualification_delete', { username: profile.user.username, id: record.sourceId }) }}" onsubmit="return confirm('Remove this qualification? This cannot be undone.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('roster_qualification_delete_' ~ record.sourceId) }}">
+                            <button type="submit" class="btn-link btn-small" title="Remove qualification"><i class="ph ph-trash"></i></button>
+                        </form>
+                    {% elseif record.sourceType == 'assignment' and is_granted('command-net.admin.personnel.manage') %}
+                        <form method="post" action="{{ path('command_net_roster_assignment_delete', { username: profile.user.username, id: record.sourceId }) }}" onsubmit="return confirm('Remove this assignment? This cannot be undone.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('roster_assignment_delete_' ~ record.sourceId) }}">
+                            <button type="submit" class="btn-link btn-small" title="Remove assignment"><i class="ph ph-trash"></i></button>
+                        </form>
+                    {% elseif is_granted('command-net.admin.personnel.manage') %}
+                        <form method="post" action="{{ path('command_net_roster_service_record_delete', { username: profile.user.username, id: record.id }) }}" onsubmit="return confirm('Remove this entry? This cannot be undone.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('roster_service_record_delete_' ~ record.id) }}">
+                            <button type="submit" class="btn-link btn-small" title="Remove entry"><i class="ph ph-trash"></i></button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

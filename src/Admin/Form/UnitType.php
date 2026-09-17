@@ -17,12 +17,17 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
+use MajesticDev\CommandNet\Repository\UnitRepository;
 
 /**
  * @extends AbstractType<Unit>
  */
 class UnitType extends AbstractType
 {
+    public function __construct(private readonly UnitRepository $unitRepository)
+    {
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
@@ -60,19 +65,25 @@ class UnitType extends AbstractType
 
         // Added in an event listener rather than buildForm() directly so we have access
         // to the entity being edited, letting us exclude it (and keep the dropdown fresh).
+        // Excludes the unit's own descendants too, not just itself - picking a child as a
+        // unit's own parent would otherwise create a cycle the tree isn't built to handle.
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
             $unit = $event->getData();
-            $excludeId = $unit instanceof Unit ? $unit->getId() : null;
+            $excludeIds = [];
+            if ($unit instanceof Unit && $unit->getId() !== null) {
+                $excludeIds[] = $unit->getId();
+                array_push($excludeIds, ...$this->unitRepository->getDescendantIds($unit));
+            }
 
             $event->getForm()->add('parent', EntityType::class, [
                 'class' => Unit::class,
                 'required' => false,
                 'placeholder' => 'None (top-level unit)',
                 'choice_label' => 'name',
-                'query_builder' => function (EntityRepository $er) use ($excludeId) {
+                'query_builder' => function (EntityRepository $er) use ($excludeIds) {
                     $qb = $er->createQueryBuilder('u')->orderBy('u.name', 'ASC');
-                    if ($excludeId !== null) {
-                        $qb->andWhere('u.id != :excludeId')->setParameter('excludeId', $excludeId);
+                    if ($excludeIds !== []) {
+                        $qb->andWhere('u.id NOT IN (:excludeIds)')->setParameter('excludeIds', $excludeIds);
                     }
                     return $qb;
                 },

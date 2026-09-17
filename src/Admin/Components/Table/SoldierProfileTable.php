@@ -7,22 +7,83 @@ namespace MajesticDev\CommandNet\Admin\Components\Table;
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 
-#[AsLiveComponent('SoldierProfileTable', '@Forumify/components/table/table.html.twig')]
+#[AsLiveComponent('SoldierProfileTable', '@CommandNetPlugin/admin/personnel/table.html.twig')]
 #[IsGranted('command-net.admin.personnel.view')]
 class SoldierProfileTable extends AbstractDoctrineTable
 {
+    /**
+     * Every checkbox in the select column binds to this same array prop via its
+     * `value` attribute - LiveComponent's checkbox handling appends/removes that value
+     * on check/uncheck, the same way a native multi-select checkbox group works.
+     *
+     * @var string[]
+     */
+    #[LiveProp(writable: true)]
+    public array $selected = [];
+
+    #[LiveProp(writable: true)]
+    public string $bulkStatus = '';
+
     protected function getEntityClass(): string
     {
         return SoldierProfile::class;
     }
 
+    /**
+     * @return SoldierStatus[]
+     */
+    public function getSoldierStatuses(): array
+    {
+        return SoldierStatus::cases();
+    }
+
+    /**
+     * Mass status change after a roll call is the concrete case this exists for - marking
+     * everyone who no-showed as AWOL, or a batch of departures as discharged, without
+     * opening each personnel file individually.
+     */
+    #[LiveAction]
+    public function bulkApplyStatus(): void
+    {
+        if (!$this->isGranted('command-net.admin.personnel.manage')) {
+            return;
+        }
+
+        $status = SoldierStatus::tryFrom($this->bulkStatus);
+        $ids = array_map('intval', $this->selected);
+        if ($status === null || $ids === []) {
+            return;
+        }
+
+        $soldiers = $this->repository->findBy(['id' => $ids]);
+        foreach ($soldiers as $soldier) {
+            $soldier->setStatus($status);
+        }
+        $this->repository->saveAll($soldiers);
+
+        $this->selected = [];
+        $this->bulkStatus = '';
+    }
+
     protected function buildTable(): void
     {
+        if ($this->isGranted('command-net.admin.personnel.manage')) {
+            $this->addColumn('select', [
+                'label' => '',
+                'field' => 'id',
+                'searchable' => false,
+                'sortable' => false,
+                'renderer' => static fn (int $id): string => '<input type="checkbox" value="' . $id . '" data-model="selected">',
+            ]);
+        }
+
         $this
             // "user" is a real single-level association, safe to sort/search on.
             ->addColumn('user', [

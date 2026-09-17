@@ -93,6 +93,13 @@
                                 </form>
                             {% endif %}
                         {% endfor %}
+                        {% if myRsvp and myRsvp.status.value != 'no_response' %}
+                            <form method="post" action="{{ path('command_net_operation_rsvp', { id: operation.id }) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('operation_rsvp_' ~ operation.id) }}">
+                                <input type="hidden" name="status" value="no_response">
+                                <button type="submit" class="btn-link btn-small w-full">Withdraw RSVP</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             {% endif %}

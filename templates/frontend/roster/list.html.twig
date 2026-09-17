@@ -3,11 +3,29 @@
 {% block title_page %}{{ 'command_net.roster.title'|trans }}{% endblock %}
 
 {% block body %}
-    <div class="mb-4 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between flex-wrap gap-2">
         <h1 class="mb-0">{{ 'command_net.roster.title'|trans }}</h1>
-        <p class="text-small">
-            {{ 'command_net.roster.count'|trans({ count: roster|length }) }}
-        </p>
+        <div class="flex items-center gap-3">
+            <a class="btn-outlined btn-small" href="{{ path('command_net_units') }}">
+                <i class="ph ph-sitemap"></i> Org Chart
+            </a>
+            {% if is_granted('command-net.attendance.view_own') or is_granted('command-net.attendance.view_all') %}
+                <a class="btn-outlined btn-small" href="{{ path('command_net_attendance') }}">
+                    <i class="ph ph-chart-bar"></i> Attendance
+                </a>
+            {% endif %}
+            {% if is_granted('command-net.reportin.submit') %}
+                <form method="post" action="{{ path('command_net_report_in') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('report_in') }}">
+                    <button type="submit" class="btn-primary btn-small">
+                        <i class="ph ph-map-pin-line"></i> Report In
+                    </button>
+                </form>
+            {% endif %}
+            <p class="text-small mb-0">
+                {{ 'command_net.roster.count'|trans({ count: roster|length }) }}
+            </p>
+        </div>
     </div>
 
     {% if roster is empty %}
@@ -38,6 +56,11 @@
                                 <p class="mb-0 text-small">
                                     {{ assignment.unit.name }}
                                     {%- if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                                </p>
+                            {% endif %}
+                            {% if is_granted('command-net.admin.reportin.view') %}
+                                <p class="mb-0 text-small">
+                                    {{ soldier.lastReportIn ? 'Reported in ' ~ soldier.lastReportIn|format_date(true) : 'Never reported in' }}
                                 </p>
                             {% endif %}
                         </div>
