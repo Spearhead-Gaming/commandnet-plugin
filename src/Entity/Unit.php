@@ -67,6 +67,16 @@ class Unit implements SortableEntityInterface
     #[ORM\JoinColumn(name: 'role_id', onDelete: 'SET NULL')]
     private ?Role $role = null;
 
+    /**
+     * The Discord server (guild) this unit's own notifications - AWOL alerts, operation
+     * posts, and the like - should go to. Deliberately a plain snowflake string rather
+     * than a Doctrine relation to the Discord plugin's DiscordConnection entity: this
+     * plugin has no hard dependency on the Discord plugin being installed at all, and a
+     * string keeps it that way. Left blank, a unit falls back to the community server.
+     */
+    #[ORM\Column(length: 32, nullable: true)]
+    private ?string $discordGuildId = null;
+
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'unit', targetEntity: Assignment::class)]
     private Collection $assignments;
@@ -153,6 +163,16 @@ class Unit implements SortableEntityInterface
     public function setRole(?Role $role): void
     {
         $this->role = $role;
+    }
+
+    public function getDiscordGuildId(): ?string
+    {
+        return $this->discordGuildId;
+    }
+
+    public function setDiscordGuildId(?string $discordGuildId): void
+    {
+        $this->discordGuildId = $discordGuildId;
     }
 
     /**

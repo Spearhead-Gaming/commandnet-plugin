@@ -68,7 +68,12 @@ class UnitType extends AbstractType
                 'placeholder' => 'None',
                 'choice_label' => 'title',
                 'label' => 'Discord/forumify role',
-                'help' => 'Granted to a soldier while this is their primary unit. Map it to a Discord role in the Discord plugin\'s own settings to sync Discord roles automatically.',
+                'help' => 'Granted to a soldier while this is their primary unit. Map it to a Discord role in the Discord plugin\'s own connection settings to sync Discord roles automatically.',
+            ])
+            ->add('discordGuildId', TextType::class, [
+                'label' => 'Discord Server (Guild) ID',
+                'required' => false,
+                'help' => 'Leave blank to use the community server. Set this to target this unit\'s own private Discord server for AWOL/operation notifications - must match a connection configured in the Discord plugin.',
             ])
         ;
 
