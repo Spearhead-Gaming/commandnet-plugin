@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Forumify\Core\Entity\IdentifiableEntityTrait;
+use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\SortableEntityInterface;
 use Forumify\Core\Entity\SortableEntityTrait;
 use Forumify\Core\Entity\TimestampableEntityTrait;
@@ -56,6 +57,15 @@ class Unit implements SortableEntityInterface
     #[ORM\ManyToOne(targetEntity: SoldierProfile::class)]
     #[ORM\JoinColumn(name: 'commander_id', onDelete: 'SET NULL')]
     private ?SoldierProfile $commander = null;
+
+    /**
+     * Grant this to a soldier's forumify account whenever this is their primary unit
+     * (see UnitRoleSyncer). Discord role sync is then the discord plugin's own job, via its
+     * existing forumify-role -> discord-role mapping - no discord-specific code needed here.
+     */
+    #[ORM\ManyToOne(targetEntity: Role::class)]
+    #[ORM\JoinColumn(name: 'role_id', onDelete: 'SET NULL')]
+    private ?Role $role = null;
 
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'unit', targetEntity: Assignment::class)]
@@ -133,6 +143,16 @@ class Unit implements SortableEntityInterface
     public function setCommander(?SoldierProfile $commander): void
     {
         $this->commander = $commander;
+    }
+
+    public function getRole(): ?Role
+    {
+        return $this->role;
+    }
+
+    public function setRole(?Role $role): void
+    {
+        $this->role = $role;
     }
 
     /**

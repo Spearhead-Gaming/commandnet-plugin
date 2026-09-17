@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Admin\Form;
 
 use Doctrine\ORM\EntityRepository;
+use Forumify\Core\Entity\Role;
 use Forumify\Core\Form\UploadType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -60,6 +61,14 @@ class UnitType extends AbstractType
                 'required' => false,
                 'placeholder' => 'Vacant',
                 'choice_label' => fn (SoldierProfile $s) => (string)$s,
+            ])
+            ->add('role', EntityType::class, [
+                'class' => Role::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'title',
+                'label' => 'Discord/forumify role',
+                'help' => 'Granted to a soldier while this is their primary unit. Map it to a Discord role in the Discord plugin\'s own settings to sync Discord roles automatically.',
             ])
         ;
 

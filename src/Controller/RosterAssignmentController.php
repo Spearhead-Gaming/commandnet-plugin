@@ -18,6 +18,7 @@ use MajesticDev\CommandNet\Form\CreateAssignmentType;
 use MajesticDev\CommandNet\Repository\AssignmentRepository;
 use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\UnitRoleSyncer;
 
 class RosterAssignmentController extends AbstractController
 {
@@ -26,6 +27,7 @@ class RosterAssignmentController extends AbstractController
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly AssignmentRepository $assignmentRepository,
         private readonly ServiceRecordRepository $serviceRecordRepository,
+        private readonly UnitRoleSyncer $unitRoleSyncer,
     ) {
     }
 
@@ -77,6 +79,7 @@ class RosterAssignmentController extends AbstractController
             }
 
             $this->assignmentRepository->remove($assignment);
+            $this->unitRoleSyncer->sync($profile);
             $this->addFlash('success', 'Assignment removed.');
         }
 
@@ -111,6 +114,7 @@ class RosterAssignmentController extends AbstractController
         }
 
         $this->assignmentRepository->save($assignment);
+        $this->unitRoleSyncer->sync($profile);
 
         $record = new ServiceRecord(
             $profile,
