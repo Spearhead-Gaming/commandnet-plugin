@@ -4,6 +4,9 @@ command_net:
         title: 'Roster'
         count: '{count, plural, =0 {No personnel} =1 {# soldier} other {# soldiers}}'
         empty: 'No active personnel yet.'
+    qualifications:
+        title: 'Qualifications'
+        empty: 'No qualifications have been added to the board yet.'
     personnel:
         service_number: 'Service Number'
         enlisted: 'Enlisted'

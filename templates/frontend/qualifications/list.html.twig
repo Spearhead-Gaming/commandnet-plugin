@@ -1,0 +1,66 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ 'command_net.qualifications.title'|trans }}{% endblock %}
+
+{% block body %}
+    <h1>{{ 'command_net.qualifications.title'|trans }}</h1>
+
+    {% if tiers is empty %}
+        <div class="card">
+            <div class="card-body">
+                <p class="text-small">{{ 'command_net.qualifications.empty'|trans }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="cn-quals">
+            {% for entry in tiers %}
+                <section class="cn-quals-tier cn-quals-tier--{{ loop.index0 % 3 + 1 }}">
+                    <h2 class="cn-quals-tier-heading">{{ entry.tier.label }}</h2>
+                    <div class="cn-quals-grid">
+                        {% for qualification in entry.qualifications %}
+                            <div class="cn-quals-badge">
+                                <div class="cn-quals-badge-icon">
+                                    {% if qualification.icon %}
+                                        <img src="{{ asset(qualification.icon, 'forumify.asset') }}" alt="">
+                                    {% else %}
+                                        <i class="ph ph-seal-check" aria-hidden="true"></i>
+                                    {% endif %}
+                                </div>
+                                <p class="cn-quals-badge-name">{{ qualification.name }}</p>
+                                {% if qualification.description %}
+                                    <p class="cn-quals-badge-desc">{{ qualification.description }}</p>
+                                {% endif %}
+                                {% if qualification.units is not empty %}
+                                    <p class="cn-quals-badge-units">
+                                        <i class="ph ph-shield-star" aria-hidden="true"></i>
+                                        {{ qualification.units|map(u => u.abbreviation)|join(', ') }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .cn-quals { display: flex; flex-direction: column; gap: 24px; margin-top: 16px; }
+        .cn-quals-tier { border: 1px solid var(--border-color, #333); border-radius: var(--border-radius, 6px); padding: 16px; background: var(--c-elevation-1, #171c1a); }
+        .cn-quals-tier--1 { border-left: 4px solid #3d8bd6; }
+        .cn-quals-tier--2 { border-left: 4px solid #c0392b; }
+        .cn-quals-tier--3 { border-left: 4px solid #8a5fc0; }
+        .cn-quals-tier-heading { margin: 0 0 16px; font-size: 16px; text-transform: uppercase; letter-spacing: .06em; }
+        .cn-quals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+        .cn-quals-badge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 14px 10px; border: 1px solid var(--border-color, #333); border-radius: var(--border-radius, 6px); background: var(--c-elevation-2, #111613); }
+        .cn-quals-badge-icon { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; }
+        .cn-quals-badge-icon img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .cn-quals-badge-icon i { font-size: 40px; color: var(--c-primary, #d2a548); }
+        .cn-quals-badge-name { margin: 0; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+        .cn-quals-badge-desc { margin: 0; font-size: 12px; color: var(--c-text-secondary, #9a9b93); }
+        .cn-quals-badge-units { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--c-primary, #d2a548); }
+    </style>
+{% endblock %}

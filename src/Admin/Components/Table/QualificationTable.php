@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Admin\Components\Table;
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use MajesticDev\CommandNet\Entity\Enum\QualificationTier;
 use MajesticDev\CommandNet\Entity\Qualification;
 
 #[AsLiveComponent('QualificationTable', '@Forumify/components/table/table.html.twig')]
@@ -26,6 +27,11 @@ class QualificationTable extends AbstractDoctrineTable
             ->addPositionColumn()
             ->addColumn('name', [
                 'field' => 'name',
+            ])
+            ->addColumn('tier', [
+                'field' => 'tier',
+                'searchable' => false,
+                'renderer' => fn (?QualificationTier $tier) => $tier?->label() ?? '-',
             ])
             ->addActionColumn($this->renderActionColumn(...));
     }
