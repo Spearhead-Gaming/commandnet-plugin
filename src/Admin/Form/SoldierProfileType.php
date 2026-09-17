@@ -6,6 +6,7 @@ namespace MajesticDev\CommandNet\Admin\Form;
 
 use Doctrine\ORM\EntityRepository;
 use Forumify\Core\Entity\User;
+use Forumify\Core\Form\UploadType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
@@ -17,6 +18,7 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
@@ -83,6 +85,15 @@ class SoldierProfileType extends AbstractType
             ->add('bio', TextareaType::class, [
                 'required' => false,
                 'empty_data' => '',
+            ])
+            ->add('uniformImage', UploadType::class, [
+                'label' => 'Uniform Image',
+                'required' => false,
+                'help' => 'Full-body uniform/character photo shown on the personnel file.',
+                'filesystem' => 'asset.storage',
+                'asset_package' => 'forumify.asset',
+                'accept' => 'image/*',
+                'file_constraints' => [new Assert\Image(maxSize: '5M')],
             ])
         ;
 

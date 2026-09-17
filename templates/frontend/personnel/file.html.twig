@@ -6,23 +6,34 @@
 
 {% block body %}
     <div class="card mb-4">
-        <div class="card-body grid-2">
-            <div class="text-right border-r pr-3 mr-3">
-                {% include '@Forumify/components/avatar.html.twig' with {
-                    user: profile.user,
-                    className: 'avatar-lg',
-                } only %}
+        <div class="card-body grid gap-4">
+            <div class="col-xs-12 col-md-8">
+                <div class="flex items-center gap-3 mb-1">
+                    {% include '@Forumify/components/avatar.html.twig' with {
+                        user: profile.user,
+                        className: 'avatar-lg',
+                    } only %}
+                    <div>
+                        <h2 class="mb-0">
+                            {% if profile.rank %}{{ profile.rank.abbreviation }}{% endif %}
+                            {{ profile.user.displayName }}
+                            <span class="tag {{ profile.status.value == 'active' ? 'tag-success' : (profile.status.value == 'awol' ? 'tag-error' : '') }} text-regular ml-2">
+                                {{ profile.status.label }}
+                            </span>
+                        </h2>
+                        {% if profile.callsign %}
+                            <p class="text-small mb-0">"{{ profile.callsign }}"</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <div>
-                <h2 class="mb-0">
-                    {% if profile.rank %}{{ profile.rank.abbreviation }}{% endif %}
-                    {{ profile.user.displayName }}
-                    <span class="tag {{ profile.status.value == 'active' ? 'tag-success' : (profile.status.value == 'awol' ? 'tag-error' : '') }} text-regular ml-2">
-                        {{ profile.status.label }}
-                    </span>
-                </h2>
-                {% if profile.callsign %}
-                    <p class="text-small mb-0">"{{ profile.callsign }}"</p>
+            <div class="col-xs-12 col-md-4 flex items-center justify-center">
+                {% if profile.uniformImage %}
+                    <img
+                        src="{{ asset(profile.uniformImage, 'forumify.asset') }}"
+                        alt="{{ profile.user.displayName }} uniform"
+                        class="cn-uniform-image"
+                    >
                 {% endif %}
             </div>
         </div>
@@ -371,4 +382,11 @@
             });
         })();
     </script>
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .cn-uniform-image { max-width: 100%; max-height: 220px; object-fit: contain; border-radius: var(--border-radius, 6px); }
+    </style>
 {% endblock %}

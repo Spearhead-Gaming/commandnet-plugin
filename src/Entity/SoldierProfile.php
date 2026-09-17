@@ -53,6 +53,14 @@ class SoldierProfile
     private ?string $bio = null;
 
     /**
+     * A full-body/uniform photo shown on the personnel file, distinct from the soldier's
+     * forumify avatar - the same "uniform photo" concept MILHQ has, kept local to this
+     * plugin's own profile rather than depending on that optional integration.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $uniformImage = null;
+
+    /**
      * Cache of the latest Report In. Kept here (rather than always querying ReportIn)
      * so the roster list and AWOL checks are a single indexed column read.
      */
@@ -158,6 +166,16 @@ class SoldierProfile
     public function setBio(?string $bio): void
     {
         $this->bio = $bio;
+    }
+
+    public function getUniformImage(): ?string
+    {
+        return $this->uniformImage;
+    }
+
+    public function setUniformImage(?string $uniformImage): void
+    {
+        $this->uniformImage = $uniformImage;
     }
 
     public function getLastReportIn(): ?DateTime
