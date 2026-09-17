@@ -22,12 +22,9 @@ class AttendanceCalculator
         $lastAttended = null;
         $streak = 0;
         $streakBroken = false;
-        $missStreak = 0;
-        $missStreakBroken = false;
 
-        // History is newest-operation-first, so each streak is just "how many records of
-        // that kind in a row before hitting the first record of the other kind" - the miss
-        // streak (for AWOL detection) is the exact mirror of the existing attended streak.
+        // History is newest-operation-first, so the streak is just "how many attended
+        // records in a row before hitting the first no-show".
         foreach ($history as $rsvp) {
             if ($rsvp->getAttended() === true) {
                 ++$attended;
@@ -37,19 +34,34 @@ class AttendanceCalculator
                 if (!$streakBroken) {
                     ++$streak;
                 }
-                $missStreakBroken = true;
             } else {
                 ++$noShows;
                 $streakBroken = true;
-                if (!$missStreakBroken) {
-                    ++$missStreak;
-                }
             }
         }
 
         $total = $attended + $noShows;
         $noShowRate = $total > 0 ? round($noShows / $total * 100, 1) : null;
 
-        return new AttendanceStats($attended, $noShows, $noShowRate, $lastAttended, $streak, $missStreak);
+        return new AttendanceStats($attended, $noShows, $noShowRate, $lastAttended, $streak, $this->missStreakFrom($history));
+    }
+
+    /**
+     * Current consecutive-miss streak for an arbitrary (newest-first) attendance history -
+     * exposed separately from calculate() so AWOL detection can scope the history to a
+     * soldier's current unit rather than their entire attendance record.
+     *
+     * @param \MajesticDev\CommandNet\Entity\OperationRSVP[] $history
+     */
+    public function missStreakFrom(array $history): int
+    {
+        $missStreak = 0;
+        foreach ($history as $rsvp) {
+            if ($rsvp->getAttended() === true) {
+                break;
+            }
+            ++$missStreak;
+        }
+        return $missStreak;
     }
 }
