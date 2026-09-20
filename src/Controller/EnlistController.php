@@ -6,6 +6,7 @@ namespace MajesticDev\CommandNet\Controller;
 
 use DomainException;
 use Forumify\Core\Entity\User;
+use MajesticDev\CommandNet\Entity\EnlistmentApplication;
 use MajesticDev\CommandNet\Form\EnlistmentApplicationType;
 use MajesticDev\CommandNet\Repository\EnlistmentApplicationRepository;
 use MajesticDev\CommandNet\Service\EnlistmentService;
@@ -43,8 +44,10 @@ class EnlistController extends AbstractController
             $form->handleRequest($request);
 
             if ($form->isSubmitted() && $form->isValid()) {
+                /** @var EnlistmentApplication $application */
+                $application = $form->getData();
                 try {
-                    $this->enlistmentService->submit($form->getData());
+                    $this->enlistmentService->submit($application);
                 } catch (DomainException $e) {
                     $this->addFlash('error', $e->getMessage());
                     return $this->redirectToRoute('command_net_enlist');
