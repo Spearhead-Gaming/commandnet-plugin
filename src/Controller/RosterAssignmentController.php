@@ -78,6 +78,7 @@ class RosterAssignmentController extends AbstractController
                 $this->serviceRecordRepository->remove($record, false);
             }
 
+            $profile->getAssignments()->removeElement($assignment);
             $this->assignmentRepository->remove($assignment);
             $this->unitRoleSyncer->sync($profile);
             $this->addFlash('success', 'Assignment removed.');
@@ -113,6 +114,9 @@ class RosterAssignmentController extends AbstractController
             }
         }
 
+        // Saving doesn't add it to the soldier's already-loaded assignments (the getPrimaryAssignment()
+        // call above loads them), and the role sync below reads that collection.
+        $profile->addAssignment($assignment);
         $this->assignmentRepository->save($assignment);
         $this->unitRoleSyncer->sync($profile);
 
