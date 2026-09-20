@@ -9,19 +9,20 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Operation;
-use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
-use MajesticDev\CommandNet\Service\AwolService;
+use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
 /**
- * Lets a leader mark who actually showed up, independent of what they RSVP'd. This is
+ * Lets a leader mark who actually showed up, independent of what they RSVP'd (or whether
+ * they did at all). This is
  * the switch that turns OperationRSVP::attended from "always null" into real data, which
  * is what the AAR submission flow, the Attendance module, and AWOL detection all key off of.
  */
 class OperationAttendanceController extends AbstractController
 {
     public function __construct(
-        private readonly OperationRSVPRepository $rsvpRepository,
-        private readonly AwolService $awolService,
+        private readonly SoldierProfileRepository $soldierProfileRepository,
+        private readonly OperationAttendanceService $attendanceService,
     ) {
     }
 
@@ -36,10 +37,9 @@ class OperationAttendanceController extends AbstractController
             return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
         }
 
-        $rsvpId = $request->request->getInt('rsvp_id');
-        $rsvp = $operation->getRsvps()->filter(fn ($r) => $r->getId() === $rsvpId)->first() ?: null;
-        if ($rsvp === null) {
-            $this->addFlash('error', 'Unknown RSVP.');
+        $soldier = $this->soldierProfileRepository->find($request->request->getInt('soldier_id'));
+        if ($soldier === null) {
+            $this->addFlash('error', 'Unknown soldier.');
             return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
         }
 
@@ -50,9 +50,7 @@ class OperationAttendanceController extends AbstractController
             default => null,
         };
 
-        $rsvp->setAttended($attended);
-        $this->rsvpRepository->save($rsvp);
-        $this->awolService->checkAfterAttendanceChange($rsvp->getSoldier());
+        $this->attendanceService->mark($operation, $soldier, $attended);
 
         $this->addFlash('success', 'Attendance updated.');
         return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);

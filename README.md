@@ -56,8 +56,8 @@ bin/console doctrine:migrations:migrate
 | `command_net_operations` | `/operations` | Upcoming/past operations. |
 | `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
 | `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
-| `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent. |
-| `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; writes a combat service record for every soldier marked attended. |
+| `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent; creates the RSVP row if they never responded. |
+| `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; combat service records are kept at one per soldier marked attended, however many AARs exist. |
 | `command_net_operation_aar_delete` | `/operations/{id}/aar/{aarId}/delete` (POST) | Remove a report (its submitter or an operations manager only) and every service record it wrote. |
 
 ## Admin

@@ -19,6 +19,24 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
+     * Soldiers who could be expected at an operation: active ones, plus AWOL ones - an AWOL
+     * soldier who turns up has to be markable as attended, or nothing could ever clear the flag.
+     *
+     * @return SoldierProfile[]
+     */
+    public function findAttendanceCandidates(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->addSelect('user')
+            ->join('s.user', 'user')
+            ->where('s.status IN (:statuses)')
+            ->setParameter('statuses', [SoldierStatus::ACTIVE, SoldierStatus::AWOL])
+            ->orderBy('user.displayName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Active roster, senior-to-junior then alphabetically. Joins rank/user up front so
      * the roster template isn't triggering N+1 lazy loads per row.
      *

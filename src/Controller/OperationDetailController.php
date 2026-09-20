@@ -11,11 +11,13 @@ use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
 class OperationDetailController extends AbstractController
 {
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
+        private readonly OperationAttendanceService $attendanceService,
     ) {
     }
 
@@ -34,6 +36,13 @@ class OperationDetailController extends AbstractController
             'operation' => $operation,
             'myProfile' => $myProfile,
             'myRsvp' => $myProfile !== null ? $operation->getRsvpFor($myProfile) : null,
+            // Leaders see everyone expected (to mark attendance); everyone else just sees RSVPs.
+            'attendanceRows' => $this->isGranted('command-net.admin.operations.manage')
+                ? $this->attendanceService->rows($operation)
+                : array_map(
+                    static fn ($rsvp) => ['soldier' => $rsvp->getSoldier(), 'rsvp' => $rsvp],
+                    $operation->getRsvps()->toArray(),
+                ),
             'rsvpStatuses' => RsvpStatus::cases(),
         ]);
     }

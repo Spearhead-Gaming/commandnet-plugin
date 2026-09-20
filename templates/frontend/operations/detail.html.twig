@@ -107,27 +107,28 @@
             <div class="card">
                 <div class="card-title">{{ 'command_net.operations.roster'|trans }}</div>
                 {% set canMarkAttendance = is_granted('command-net.admin.operations.manage') %}
-                {% if operation.rsvps is empty %}
+                {% if attendanceRows is empty %}
                     <div class="card-body">
                         <p class="text-small">{{ 'command_net.operations.no_rsvps'|trans }}</p>
                     </div>
                 {% else %}
                     <ul class="card-body p-0">
-                        {% for rsvp in operation.rsvps %}
+                        {% for row in attendanceRows %}
+                            {% set rsvp = row.rsvp %}
                             <li class="p-2 pr-4 pl-4 flex items-center justify-between gap-2{% if not loop.last %} border-b{% endif %}">
-                                <span>{{ rsvp.soldier.user.displayName }}</span>
+                                <span>{{ row.soldier.user.displayName }}</span>
                                 <div class="flex items-center gap-2">
-                                    <span class="tag {{ rsvp.status.value == 'declined' ? 'tag-error' : '' }}">
-                                        {{ rsvp.status.label }}
+                                    <span class="tag {{ rsvp is not null and rsvp.status.value == 'declined' ? 'tag-error' : '' }}">
+                                        {{ rsvp is not null ? rsvp.status.label : 'No response' }}
                                     </span>
                                     {% if canMarkAttendance %}
                                         <form method="post" action="{{ path('command_net_operation_attendance', { id: operation.id }) }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('operation_attendance_' ~ operation.id) }}">
-                                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
-                                            <input type="hidden" name="attended" value="{{ rsvp.attended is same as(true) ? '' : '1' }}">
+                                            <input type="hidden" name="soldier_id" value="{{ row.soldier.id }}">
+                                            <input type="hidden" name="attended" value="{{ rsvp is not null and rsvp.attended is same as(true) ? '' : '1' }}">
                                             <button
                                                 type="submit"
-                                                class="btn-small {{ rsvp.attended is same as(true) ? 'btn-primary' : 'btn-outlined' }}"
+                                                class="btn-small {{ rsvp is not null and rsvp.attended is same as(true) ? 'btn-primary' : 'btn-outlined' }}"
                                                 title="{{ 'command_net.operations.mark_attended'|trans }}"
                                             >
                                                 <i class="ph ph-check"></i>
@@ -135,11 +136,11 @@
                                         </form>
                                         <form method="post" action="{{ path('command_net_operation_attendance', { id: operation.id }) }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('operation_attendance_' ~ operation.id) }}">
-                                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
-                                            <input type="hidden" name="attended" value="{{ rsvp.attended is same as(false) ? '' : '0' }}">
+                                            <input type="hidden" name="soldier_id" value="{{ row.soldier.id }}">
+                                            <input type="hidden" name="attended" value="{{ rsvp is not null and rsvp.attended is same as(false) ? '' : '0' }}">
                                             <button
                                                 type="submit"
-                                                class="btn-small {{ rsvp.attended is same as(false) ? 'btn-primary' : 'btn-outlined' }}"
+                                                class="btn-small {{ rsvp is not null and rsvp.attended is same as(false) ? 'btn-primary' : 'btn-outlined' }}"
                                                 title="{{ 'command_net.operations.mark_absent'|trans }}"
                                             >
                                                 <i class="ph ph-x"></i>
