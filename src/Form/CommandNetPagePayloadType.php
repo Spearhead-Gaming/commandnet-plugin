@@ -20,6 +20,7 @@ class CommandNetPagePayloadType extends AbstractType
         'Attendance' => 'command_net_attendance',
         'Qualifications' => 'command_net_qualifications',
         'Enlist' => 'command_net_enlist',
+        'Forms' => 'command_net_forms',
     ];
 
     public function buildForm(FormBuilderInterface $builder, array $options): void

@@ -1,0 +1,56 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Forms{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Forms</h1>
+
+    <div class="card mb-4">
+        <div class="card-title">Available forms</div>
+        <div class="card-body">
+            {% if forms is empty %}
+                <p class="text-small mb-0">There are no forms open right now.</p>
+            {% else %}
+                <ul class="p-0" style="list-style: none;">
+                    {% for form in forms %}
+                        <li class="mb-2">
+                            <a class="text-bold" href="{{ path('command_net_form_fill', { id: form.id }) }}">{{ form.name }}</a>
+                            {% if form.description %}<p class="text-small mb-0">{{ form.description }}</p>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Your submissions</div>
+        <div class="card-body">
+            {% if submissions is empty %}
+                <p class="text-small mb-0">You have not submitted anything yet.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Form</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for submission in submissions %}
+                            <tr>
+                                <td>{{ submission.formName }}</td>
+                                <td>{{ submission.createdAt|format_date }}</td>
+                                <td>
+                                    {{ submission.status.label }}
+                                    {% if submission.decisionNote %}<span class="text-small">&mdash; {{ submission.decisionNote }}</span>{% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
