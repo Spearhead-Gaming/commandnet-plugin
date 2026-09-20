@@ -41,6 +41,36 @@ class OperationRSVPRepository extends AbstractRepository
     }
 
     /**
+     * findAttendanceHistory() for many soldiers in one query, grouped by soldier id.
+     *
+     * @param array<SoldierProfile> $soldiers
+     * @return array<int, array<OperationRSVP>> soldier id => history, newest operation first
+     */
+    public function findAttendanceHistoryForSoldiers(array $soldiers): array
+    {
+        if ($soldiers === []) {
+            return [];
+        }
+
+        $rsvps = $this->createQueryBuilder('r')
+            ->addSelect('operation')
+            ->join('r.operation', 'operation')
+            ->where('r.soldier IN (:soldiers)')
+            ->andWhere('r.attended IS NOT NULL')
+            ->setParameter('soldiers', array_map(static fn (SoldierProfile $s) => $s->getId(), $soldiers))
+            ->orderBy('operation.startDateTime', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $history = [];
+        foreach ($rsvps as $rsvp) {
+            $history[$rsvp->getSoldier()->getId()][] = $rsvp;
+        }
+
+        return $history;
+    }
+
+    /**
      * Same as findAttendanceHistory(), but for AWOL detection: only operations tied to the
      * given unit count toward the streak (an operation open to everyone, with no unit set,
      * still counts) - so transferring units resets the miss streak instead of carrying over

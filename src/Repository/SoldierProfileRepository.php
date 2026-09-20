@@ -37,17 +37,22 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
-     * Active roster, senior-to-junior then alphabetically. Joins rank/user up front so
-     * the roster template isn't triggering N+1 lazy loads per row.
+     * Active roster, senior-to-junior then alphabetically. Joins rank/user and every
+     * assignment with its unit and position up front, so pages that show each soldier's
+     * posting (getPrimaryAssignment()) don't lazy-load per row. All assignments are joined,
+     * not just the open ones, so the collection is complete rather than partially filled.
      *
      * @return array<SoldierProfile>
      */
     public function findRoster(): array
     {
         return $this->createQueryBuilder('s')
-            ->addSelect('soldierRank', 'user')
+            ->addSelect('soldierRank', 'user', 'assignment', 'assignmentUnit', 'assignmentPosition')
             ->leftJoin('s.rank', 'soldierRank')
             ->leftJoin('s.user', 'user')
+            ->leftJoin('s.assignments', 'assignment')
+            ->leftJoin('assignment.unit', 'assignmentUnit')
+            ->leftJoin('assignment.position', 'assignmentPosition')
             ->where('s.status = :status')
             ->setParameter('status', SoldierStatus::ACTIVE)
             ->orderBy('soldierRank.position', 'DESC')
