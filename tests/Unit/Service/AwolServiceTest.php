@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Tests\Unit\Service;
 
 use DateTime;
+use DateTimeInterface;
 use Forumify\Core\Entity\User;
 use Forumify\Core\Notification\NotificationService;
 use Forumify\Core\Repository\RoleRepository;
@@ -32,6 +33,8 @@ class AwolServiceTest extends TestCase
     private array $history = [];
     /** @var ServiceRecord[] */
     private array $saved = [];
+    /** The $since the history query was last called with. */
+    private ?DateTimeInterface $queriedSince = null;
 
     protected function setUp(): void
     {
@@ -39,7 +42,11 @@ class AwolServiceTest extends TestCase
         $settings->method('all')->willReturn(['enabled' => true, 'missThreshold' => 2, 'role' => null]);
 
         $rsvpRepository = $this->createMock(OperationRSVPRepository::class);
-        $rsvpRepository->method('findAttendanceHistoryForUnit')->willReturnCallback(fn () => $this->history);
+        $rsvpRepository->method('findAttendanceHistoryForUnit')->willReturnCallback(function ($soldier, $unit, $since = null) {
+            $this->queriedSince = $since;
+
+            return $this->history;
+        });
 
         $recordRepository = $this->createMock(ServiceRecordRepository::class);
         $recordRepository->method('save')->willReturnCallback(function (ServiceRecord $record): void {
@@ -120,6 +127,33 @@ class AwolServiceTest extends TestCase
         $soldier->setStatus(SoldierStatus::AWOL);
 
         $this->assertFalse($soldier->isAwolAutoFlagged());
+    }
+
+    public function testOnlyCountsOperationsSinceTheSoldierBecameActiveAgain(): void
+    {
+        $soldier = $this->soldier(SoldierStatus::LOA);
+        $soldier->setStatus(SoldierStatus::ACTIVE);
+        $this->setHistory($soldier, [true]);
+
+        $this->service->checkAfterAttendanceChange($soldier);
+
+        $this->assertNotNull($soldier->getActiveSince());
+        $this->assertSame($soldier->getActiveSince(), $this->queriedSince);
+    }
+
+    public function testActiveSinceOnlyChangesWhenBecomingActive(): void
+    {
+        $soldier = $this->soldier(SoldierStatus::ACTIVE);
+        $this->assertNull($soldier->getActiveSince(), 'A soldier who was never away keeps their whole history.');
+
+        $soldier->setStatus(SoldierStatus::ACTIVE);
+        $this->assertNull($soldier->getActiveSince());
+
+        $soldier->setStatus(SoldierStatus::LOA);
+        $this->assertNull($soldier->getActiveSince());
+
+        $soldier->setStatus(SoldierStatus::ACTIVE);
+        $this->assertNotNull($soldier->getActiveSince());
     }
 
     public function testDoesNotFlagSoldiersOnLoa(): void

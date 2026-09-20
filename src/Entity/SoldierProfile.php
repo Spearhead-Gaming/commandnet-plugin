@@ -74,6 +74,14 @@ class SoldierProfile
     private ?DateTime $lastReportIn = null;
 
     /**
+     * When the soldier last became Active again (from LOA, AWOL, ...). AWOL detection only
+     * counts operations that started after this, so absences while on leave don't count against
+     * them the moment they return. Null means never changed, so all history counts.
+     */
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?DateTime $activeSince = null;
+
+    /**
      * True only while the current AWOL status was set by attendance detection, so an
      * admin-set AWOL is never auto-cleared. Any status change resets it - see setStatus().
      */
@@ -168,6 +176,9 @@ class SoldierProfile
         if ($status !== $this->status) {
             $this->awolAutoFlagged = false;
             $this->reportInFlagged = false;
+            if ($status === SoldierStatus::ACTIVE) {
+                $this->activeSince = new DateTime();
+            }
         }
         $this->status = $status;
     }
@@ -210,6 +221,11 @@ class SoldierProfile
     public function setUniformImage(?string $uniformImage): void
     {
         $this->uniformImage = $uniformImage;
+    }
+
+    public function getActiveSince(): ?DateTime
+    {
+        return $this->activeSince;
     }
 
     public function isAwolAutoFlagged(): bool
