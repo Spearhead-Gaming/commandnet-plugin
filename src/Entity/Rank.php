@@ -45,6 +45,18 @@ class Rank implements SortableEntityInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $insignia = null;
 
+    /**
+     * Requirements to be promoted INTO this rank, checked by PromotionEligibility.
+     * Null means no minimum time in grade.
+     */
+    #[ORM\Column(nullable: true)]
+    private ?int $minTimeInGradeDays = null;
+
+    /** @var Collection<int, Qualification> */
+    #[ORM\ManyToMany(targetEntity: Qualification::class)]
+    #[ORM\JoinTable(name: 'rank_required_qualification')]
+    private Collection $requiredQualifications;
+
     /** @var Collection<int, SoldierProfile> */
     #[ORM\OneToMany(mappedBy: 'rank', targetEntity: SoldierProfile::class)]
     private Collection $soldiers;
@@ -52,6 +64,37 @@ class Rank implements SortableEntityInterface
     public function __construct()
     {
         $this->soldiers = new ArrayCollection();
+        $this->requiredQualifications = new ArrayCollection();
+    }
+
+    public function getMinTimeInGradeDays(): ?int
+    {
+        return $this->minTimeInGradeDays;
+    }
+
+    public function setMinTimeInGradeDays(?int $minTimeInGradeDays): void
+    {
+        $this->minTimeInGradeDays = $minTimeInGradeDays;
+    }
+
+    /**
+     * @return Collection<int, Qualification>
+     */
+    public function getRequiredQualifications(): Collection
+    {
+        return $this->requiredQualifications;
+    }
+
+    public function addRequiredQualification(Qualification $qualification): void
+    {
+        if (!$this->requiredQualifications->contains($qualification)) {
+            $this->requiredQualifications->add($qualification);
+        }
+    }
+
+    public function removeRequiredQualification(Qualification $qualification): void
+    {
+        $this->requiredQualifications->removeElement($qualification);
     }
 
     public function getName(): string
