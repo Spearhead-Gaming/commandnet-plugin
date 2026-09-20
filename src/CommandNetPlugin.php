@@ -31,7 +31,8 @@ class CommandNetPlugin extends AbstractForumifyPlugin
             'Command Net',
             'MDEV ',
             'Personnel & unit management system built for our community.',
-            'https://example.com', // TODO: replace with real domain once purchased
+            // TODO: replace with real domain once purchased
+            'https://example.com',
         );
     }
 

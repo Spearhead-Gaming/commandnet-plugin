@@ -29,7 +29,7 @@ class PromotionEligibility
     /**
      * One row per active soldier who has a next rank to be promoted into.
      *
-     * @return array<int, array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: Qualification[], eligible: bool}>
+     * @return array<int, array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: array<Qualification>, eligible: bool}>
      */
     public function evaluateRoster(): array
     {
@@ -49,7 +49,7 @@ class PromotionEligibility
     /**
      * Null when the soldier has no rank or is already at the top one.
      *
-     * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: Qualification[], eligible: bool}|null
+     * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: array<Qualification>, eligible: bool}|null
      */
     public function evaluateSoldier(SoldierProfile $soldier): ?array
     {
@@ -60,7 +60,7 @@ class PromotionEligibility
     }
 
     /**
-     * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: Qualification[], eligible: bool}
+     * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: array<Qualification>, eligible: bool}
      */
     public function evaluate(SoldierProfile $soldier, Rank $nextRank): array
     {
@@ -91,7 +91,8 @@ class PromotionEligibility
     private function daysInGrade(SoldierProfile $soldier): ?int
     {
         $since = $soldier->getEnlistmentDate();
-        foreach ($soldier->getServiceRecords() as $record) { // newest first
+        // Service records are ordered newest first.
+        foreach ($soldier->getServiceRecords() as $record) {
             if (in_array($record->getType(), [ServiceRecordType::PROMOTION, ServiceRecordType::DEMOTION], true)) {
                 $since = $record->getDate();
                 break;

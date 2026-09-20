@@ -34,6 +34,11 @@ jobs:
         if: ${{ matrix.plugin }}
         run: composer require --no-progress "${{ matrix.plugin }}:^1.1"
 
+      # The unit tests never load forms, controllers or Twig-facing code, so a syntax error there
+      # would otherwise pass CI.
+      - name: Lint PHP
+        run: find src tests migrations -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
       - name: Run tests
         run: vendor/bin/phpunit
 
@@ -61,4 +66,5 @@ jobs:
         run: vendor/bin/phpcs -s --standard=phpcs.xml
 
       - name: PHPStan
+        if: ${{ !cancelled() }}
         run: vendor/bin/phpstan analyze -v

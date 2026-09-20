@@ -58,7 +58,7 @@ class RankType extends AbstractType
                 'placeholder' => 'None',
                 'choice_label' => 'title',
                 'label' => 'Discord/forumify role',
-                'help' => 'Granted to a soldier while this is their rank, and removed when they change rank. Map it to a Discord role in the Discord plugin's own connection settings to sync Discord automatically.',
+                'help' => 'Granted to a soldier while this is their rank, and removed when they change rank. Map it to a Discord role in the Discord plugin\'s own connection settings to sync Discord automatically.',
             ])
             ->add('insignia', UploadType::class, [
                 'label' => 'Insignia',

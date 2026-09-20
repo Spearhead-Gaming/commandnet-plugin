@@ -34,7 +34,7 @@ class ReportInRepository extends AbstractRepository
     }
 
     /**
-     * @return ReportIn[] newest first
+     * @return array<ReportIn> newest first
      */
     public function findHistoryFor(SoldierProfile $soldier, int $limit = 20): array
     {

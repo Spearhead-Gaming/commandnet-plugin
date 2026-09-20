@@ -23,7 +23,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
      * `value` attribute - LiveComponent's checkbox handling appends/removes that value
      * on check/uncheck, the same way a native multi-select checkbox group works.
      *
-     * @var string[]
+     * @var array<string>
      */
     #[LiveProp(writable: true)]
     public array $selected = [];
@@ -37,7 +37,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
     }
 
     /**
-     * @return SoldierStatus[]
+     * @return array<SoldierStatus>
      */
     public function getSoldierStatuses(): array
     {

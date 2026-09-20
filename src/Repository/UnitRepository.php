@@ -22,7 +22,7 @@ class UnitRepository extends AbstractRepository
      * collections rather than a recursive SQL query - org trees are small enough that
      * this is simpler than a database-specific recursive CTE.
      *
-     * @return int[]
+     * @return array<int>
      */
     public function getDescendantIds(Unit $unit): array
     {
@@ -39,7 +39,7 @@ class UnitRepository extends AbstractRepository
      * Matches on name or abbreviation, e.g. for the Discord "/command-net-unit" command's
      * free-text search ("1-501st" should find "1st Battalion, 501st Infantry").
      *
-     * @return Unit[]
+     * @return array<Unit>
      */
     public function findByNameLike(string $name): array
     {

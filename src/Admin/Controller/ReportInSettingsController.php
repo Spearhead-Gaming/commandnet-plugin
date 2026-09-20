@@ -6,7 +6,8 @@ namespace MajesticDev\CommandNet\Admin\Controller;
 
 use MajesticDev\CommandNet\Service\ReportInSettings;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Form\Extension\Core\Type\{CheckboxType, IntegerType};
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
