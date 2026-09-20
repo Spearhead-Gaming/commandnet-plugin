@@ -1,0 +1,30 @@
+<a class="card" href="{{ path('command_net_roster_profile', { username: soldier.user.username }) }}">
+    <div class="card-body flex items-center gap-3">
+        {% include '@Forumify/components/avatar.html.twig' with {
+            user: soldier.user,
+            className: 'avatar-md',
+        } only %}
+        <div>
+            <p class="mb-0 text-bold">
+                {% if soldier.rank %}{{ soldier.rank.abbreviation }}{% endif %}
+                {{ soldier.user.displayName }}
+            </p>
+            {% if soldier.callsign %}
+                <p class="mb-0 text-small">"{{ soldier.callsign }}"</p>
+            {% endif %}
+            {% set assignment = soldier.primaryAssignment %}
+            {% if assignment %}
+                <p class="mb-0 text-small">
+                    {{ assignment.unit.name }}
+                    {%- if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                    {%- if soldier.specialty %} &middot; {{ soldier.specialty.abbreviation }}{% endif %}
+                </p>
+            {% endif %}
+            {% if is_granted('command-net.admin.reportin.view') %}
+                <p class="mb-0 text-small">
+                    {{ soldier.lastReportIn ? 'Reported in ' ~ soldier.lastReportIn|format_date(true) : 'Never reported in' }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</a>

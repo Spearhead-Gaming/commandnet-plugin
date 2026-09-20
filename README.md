@@ -76,6 +76,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | Permission | Grants |
 | --- | --- |
 | `command-net.roster.view` | View the roster and personnel files. |
+| `command-net.admin.rosters.view` / `.manage` | View / edit the roster tabs. |
 | `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
 | `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
 | `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
@@ -103,6 +104,16 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `admin.attendance` is also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting it today has no effect.
+
+## Rosters
+
+By default `/roster` is one list of every active soldier. Under Admin → Command Net → Rosters
+(`command-net.admin.rosters.view` / `.manage`) staff can define named **rosters**, each made of
+some units and arranged in the order they should appear, such as Combat units and Support. Once at
+least one exists the roster page shows a tab per roster (the first is selected, or pick one with
+`?roster=`), listing the roster's units in their order with the soldiers whose current primary
+assignment is that unit, senior first. A soldier in none of a roster's units is not on it, and
+child units are not folded into their parent. Delete every roster to go back to the single list.
 
 ## Courses
 
