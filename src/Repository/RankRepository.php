@@ -16,4 +16,20 @@ class RankRepository extends AbstractRepository
     {
         return Rank::class;
     }
+
+    /**
+     * Every rank in ladder order with its required qualifications already loaded, so checking
+     * promotion requirements doesn't load them one rank at a time.
+     *
+     * @return array<Rank>
+     */
+    public function findAllWithRequirements(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('q')
+            ->leftJoin('r.requiredQualifications', 'q')
+            ->orderBy('r.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }
