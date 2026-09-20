@@ -1,0 +1,64 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests${{ matrix.plugin && format(' (with {0})', matrix.plugin) || '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Operation entity changes shape when the calendar plugin is installed, so run both.
+        plugin: ['', 'forumify/forumify-calendar-plugin']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          extensions: mbstring, xml, ctype, iconv, intl
+
+      # composer.lock is not committed and dependencies are deliberately not cached, so this is
+      # always a genuinely fresh resolution - what a new install of the plugin would get.
+      - name: Install dependencies
+        run: composer install --no-progress
+
+      - name: Install optional plugin
+        if: ${{ matrix.plugin }}
+        run: composer require --no-progress "${{ matrix.plugin }}:^1.1"
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  quality:
+    name: Code quality
+    runs-on: ubuntu-latest
+    # Non-blocking until the first clean run: phpcs and phpstan (level 8) have never been run
+    # against this code. Remove continue-on-error once it is green.
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          extensions: mbstring, xml, ctype, iconv, intl
+
+      - name: Install dependencies
+        run: composer install --no-progress
+
+      - name: PHP_CodeSniffer
+        run: vendor/bin/phpcs -s --standard=phpcs.xml
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyze -v
