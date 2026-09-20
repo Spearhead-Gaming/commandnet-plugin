@@ -1,0 +1,13 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}Discharge {{ soldier.user.displayName }}{% endblock %}
+{% block body %}
+    <h1 class="mb-2">Discharge {{ soldier.user.displayName }}</h1>
+    <p class="mb-4 text-small">
+        Ends their open assignments, removes their unit, rank and AWOL roles, writes a discharge
+        record and takes them off the roster. Their personnel file and history are kept.
+    </p>
+    {% include '@Forumify/admin/components/simple_form.html.twig' with {
+        form: form,
+        cancelPath: path('forumify_admin_command_net_personnel_edit', { identifier: soldier.id })
+    } %}
+{% endblock %}

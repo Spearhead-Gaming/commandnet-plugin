@@ -21,10 +21,14 @@ class RankRoleSyncer
     ) {
     }
 
-    public function sync(SoldierProfile $profile): void
+    /**
+     * With $revokeAll, no rank role is kept - for a soldier leaving the unit, who keeps their
+     * rank on file but shouldn't keep the role that goes with it.
+     */
+    public function sync(SoldierProfile $profile, bool $revokeAll = false): void
     {
         $user = $profile->getUser();
-        $keepRole = $profile->getRank()?->getRole();
+        $keepRole = $revokeAll ? null : $profile->getRank()?->getRole();
 
         $changed = false;
         foreach ($this->rankRepository->findAll() as $rank) {

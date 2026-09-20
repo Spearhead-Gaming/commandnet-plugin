@@ -31,7 +31,7 @@ class OperationRsvpController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $profile = $this->soldierProfileRepository->findOneBy(['user' => $user]);
-        if ($profile === null) {
+        if ($profile === null || !$profile->isEnlisted()) {
             $this->addFlash('error', 'Only enlisted personnel can RSVP.');
             return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
         }

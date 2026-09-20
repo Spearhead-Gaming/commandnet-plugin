@@ -228,6 +228,14 @@ class SoldierProfile
         return $this->activeSince;
     }
 
+    /**
+     * False once discharged or retired, until they enlist again.
+     */
+    public function isEnlisted(): bool
+    {
+        return !in_array($this->status, [SoldierStatus::DISCHARGED, SoldierStatus::RETIRED], true);
+    }
+
     public function isAwolAutoFlagged(): bool
     {
         return $this->awolAutoFlagged;

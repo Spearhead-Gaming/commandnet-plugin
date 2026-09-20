@@ -100,6 +100,15 @@ class AwolService
         $this->logAndNotify($profile, 'Returned to Active', $recordText, $notificationText);
     }
 
+    /**
+     * Takes the AWOL role off without touching status or writing a record - for a soldier who is
+     * leaving, where the discharge itself is what gets recorded.
+     */
+    public function revokeRole(SoldierProfile $profile): void
+    {
+        $this->syncRole($profile, $this->settings->all()['role'], grant: false);
+    }
+
     public function notify(SoldierProfile $profile, string $title, string $text): void
     {
         $this->notificationService->sendNotification(new Notification(

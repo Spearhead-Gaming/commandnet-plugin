@@ -77,6 +77,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | --- | --- |
 | `command-net.roster.view` | View the roster and personnel files. |
 | `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
+| `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -112,6 +113,19 @@ already enlisted, can't.
 
 Unlike MILHQ, the application is a fixed form rather than one built in a form builder, and it
 doesn't open a forum topic for recruiters; both come with a forms feature, which doesn't exist yet.
+
+## Discharge
+
+**Discharge** appears on each row of Admin → Command Net → Personnel and on the personnel edit
+screen, for people with `command-net.admin.personnel.discharge`. Pick General, Honorable,
+Dishonorable or Retirement (retirement sets the status to Retired, the others to Discharged), an
+effective date and an optional reason. It ends the soldier's open assignments, removes their unit,
+rank and AWOL roles, and writes a discharge service record. The soldier leaves the roster, and can
+no longer RSVP or report in.
+
+Unlike MILHQ it keeps everything: rank, awards, qualifications and the full service record stay
+on the personnel file rather than being cleared, and it doesn't offer a final rank or new posting
+as part of the discharge. Enlistment can bring a discharged soldier back, keeping their history.
 
 ## Promotions
 
