@@ -59,8 +59,13 @@ jobs:
           tools: composer
           extensions: mbstring, xml, ctype, iconv, intl
 
+      # PHPStan needs the optional calendar plugin to resolve the classes Operation and its
+      # listener reference. The Discord plugin is private, so src/Discord is excluded instead
+      # (see phpstan.neon).
       - name: Install dependencies
-        run: composer install --no-progress
+        run: |
+          composer require --no-update --no-progress "forumify/forumify-calendar-plugin:^1.1"
+          composer install --no-progress
 
       - name: PHP_CodeSniffer
         run: vendor/bin/phpcs -s --standard=phpcs.xml

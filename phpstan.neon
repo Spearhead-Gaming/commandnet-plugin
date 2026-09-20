@@ -5,6 +5,9 @@ parameters:
     level: 8
     paths:
         - src
+    # Depends on the private MajesticDev\Discord plugin, which CI can't install.
+    excludePaths:
+        - src/Discord
     # The exclusions below don't apply until you add code that triggers them.
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
