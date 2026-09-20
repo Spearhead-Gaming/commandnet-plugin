@@ -47,6 +47,19 @@ class PromotionEligibility
     }
 
     /**
+     * Null when the soldier has no rank or is already at the top one.
+     *
+     * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: Qualification[], eligible: bool}|null
+     */
+    public function evaluateSoldier(SoldierProfile $soldier): ?array
+    {
+        $rank = $soldier->getRank();
+        $nextRank = $rank !== null ? ($this->buildNextRankMap()[$rank->getId()] ?? null) : null;
+
+        return $nextRank !== null ? $this->evaluate($soldier, $nextRank) : null;
+    }
+
+    /**
      * @return array{soldier: SoldierProfile, nextRank: Rank, daysInGrade: ?int, missingDays: int, missingQualifications: Qualification[], eligible: bool}
      */
     public function evaluate(SoldierProfile $soldier, Rank $nextRank): array
