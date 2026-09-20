@@ -55,6 +55,14 @@ class Rank implements SortableEntityInterface
     private ?Role $role = null;
 
     /**
+     * The promotion track this rank belongs to; promotion only moves within a group.
+     * Ranks with no group share one ladder.
+     */
+    #[ORM\ManyToOne(targetEntity: RankGroup::class, inversedBy: 'ranks')]
+    #[ORM\JoinColumn(name: 'group_id', onDelete: 'SET NULL')]
+    private ?RankGroup $group = null;
+
+    /**
      * Requirements to be promoted INTO this rank, checked by PromotionEligibility.
      * Null means no minimum time in grade.
      */
@@ -84,6 +92,16 @@ class Rank implements SortableEntityInterface
     public function setMinTimeInGradeDays(?int $minTimeInGradeDays): void
     {
         $this->minTimeInGradeDays = $minTimeInGradeDays;
+    }
+
+    public function getGroup(): ?RankGroup
+    {
+        return $this->group;
+    }
+
+    public function setGroup(?RankGroup $group): void
+    {
+        $this->group = $group;
     }
 
     public function getRole(): ?Role

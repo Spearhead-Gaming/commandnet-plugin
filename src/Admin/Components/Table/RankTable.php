@@ -8,6 +8,7 @@ use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use MajesticDev\CommandNet\Entity\Rank;
+use MajesticDev\CommandNet\Entity\RankGroup;
 
 #[AsLiveComponent('RankTable', '@Forumify/components/table/table.html.twig')]
 #[IsGranted('command-net.admin.ranks.view')]
@@ -29,6 +30,12 @@ class RankTable extends AbstractDoctrineTable
             ])
             ->addColumn('abbreviation', [
                 'field' => 'abbreviation',
+            ])
+            ->addColumn('group', [
+                'field' => 'group',
+                'searchable' => false,
+                'sortable' => false,
+                'renderer' => fn (?RankGroup $group) => $group !== null ? $group->getName() : '',
             ])
             ->addColumn('payGrade', [
                 'label' => 'Pay Grade',
