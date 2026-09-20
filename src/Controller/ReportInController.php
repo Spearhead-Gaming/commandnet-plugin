@@ -12,12 +12,14 @@ use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\ReportIn;
 use MajesticDev\CommandNet\Repository\ReportInRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\ReportInService;
 
 class ReportInController extends AbstractController
 {
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly ReportInRepository $reportInRepository,
+        private readonly ReportInService $reportInService,
     ) {
     }
 
@@ -43,6 +45,7 @@ class ReportInController extends AbstractController
         $this->reportInRepository->save($reportIn);
         $profile->setLastReportIn($reportIn->getReportedAt());
         $this->soldierProfileRepository->save($profile);
+        $this->reportInService->handleReportedIn($profile);
 
         $this->addFlash('success', 'Reported in.');
         return $this->redirectToRoute('command_net_roster');

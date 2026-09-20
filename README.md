@@ -90,6 +90,17 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet (see
 below) — granting them today has no effect.
 
+## Report In
+
+Soldiers with `command-net.reportin.submit` get a **Report In** button on the roster. Turn on
+enforcement under **Admin → Command Net → Report In Settings**: a daily scheduled task
+(`command-net:report-in:run-checks`, 08:00) flags an active soldier AWOL once they go past
+the configured number of days without reporting in, and optionally warns them as the deadline
+approaches. Reporting in again restores Active. It reuses the AWOL role from AWOL Settings and
+writes the same audit record and notification. A soldier with no report in on file gets a
+baseline entry rather than being failed, so enabling this doesn't flag everyone at once. An AWOL
+set by an admin or by missed operations is never cleared by reporting in.
+
 ## Design notes
 
 - **Corrections happen by deletion, not editing.** Awards, qualifications, assignments,
@@ -115,9 +126,6 @@ you rely on them:
   real install, not by an automated suite.
 - **Rank changes don't write a service record.** Editing a soldier's rank in the admin
   form updates the field silently, in either direction.
-- **`SoldierProfile::$lastReportIn`** is wired up (getter/setter) but nothing ever sets
-  it — scaffolding for a "Report In" / muster feature (see `reportin.*` permissions above)
-  that hasn't been built yet.
 - **No cycle guard on the unit tree.** The parent-unit picker excludes the unit itself but
   not its descendants.
 - **OperationRSVP has no "withdraw."** A soldier can change their RSVP any time but can't

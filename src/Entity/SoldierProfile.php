@@ -81,6 +81,13 @@ class SoldierProfile
     #[ORM\Column(options: ['default' => false])]
     private bool $awolAutoFlagged = false;
 
+    /**
+     * True while the current AWOL status came from failing to report in, so the next report
+     * in restores Active. Reset on any status change, same as awolAutoFlagged.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $reportInFlagged = false;
+
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'soldier', targetEntity: Assignment::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $assignments;
@@ -161,6 +168,7 @@ class SoldierProfile
     {
         if ($status !== $this->status) {
             $this->awolAutoFlagged = false;
+            $this->reportInFlagged = false;
         }
         $this->status = $status;
     }
@@ -213,6 +221,16 @@ class SoldierProfile
     public function setAwolAutoFlagged(bool $awolAutoFlagged): void
     {
         $this->awolAutoFlagged = $awolAutoFlagged;
+    }
+
+    public function isReportInFlagged(): bool
+    {
+        return $this->reportInFlagged;
+    }
+
+    public function setReportInFlagged(bool $reportInFlagged): void
+    {
+        $this->reportInFlagged = $reportInFlagged;
     }
 
     public function getLastReportIn(): ?DateTime

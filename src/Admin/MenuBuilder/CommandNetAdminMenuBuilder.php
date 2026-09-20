@@ -45,6 +45,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('AWOL Settings', $url('forumify_admin_command_net_awol_settings'), [
                 'permission' => 'command-net.admin.awol.manage',
             ]),
+            new MenuItem('Report In Settings', $url('forumify_admin_command_net_report_in_settings'), [
+                'permission' => 'command-net.admin.reportin.manage',
+            ]),
         ]));
     }
 }

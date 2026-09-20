@@ -56,13 +56,8 @@ class AwolService
         $missStreak = $this->attendanceCalculator->missStreakFrom($history);
 
         if ($missStreak >= (int)$settings['missThreshold'] && $profile->getStatus() === SoldierStatus::ACTIVE) {
-            $profile->setStatus(SoldierStatus::AWOL);
-            $profile->setAwolAutoFlagged(true);
-            $this->soldierProfileRepository->save($profile);
-            $this->syncRole($profile, $settings['role'], grant: true);
-            $this->logAndNotify(
+            $this->flagAwol(
                 $profile,
-                'Flagged AWOL',
                 "Flagged AWOL after $missStreak consecutive missed operations.",
                 "You've missed $missStreak operations in a row and have been marked AWOL. Please contact your leadership.",
             );
@@ -71,16 +66,53 @@ class AwolService
 
         // Only undo an AWOL this service set - an admin-set one stays until an admin clears it.
         if ($missStreak === 0 && $profile->getStatus() === SoldierStatus::AWOL && $profile->isAwolAutoFlagged()) {
-            $profile->setStatus(SoldierStatus::ACTIVE);
-            $this->soldierProfileRepository->save($profile);
-            $this->syncRole($profile, $settings['role'], grant: false);
-            $this->logAndNotify(
+            $this->clearAwol(
                 $profile,
-                'Returned to Active',
                 'Returned to Active status after attending an operation.',
                 'Welcome back - your status has been reverted to Active.',
             );
         }
+    }
+
+    /**
+     * Flags a soldier AWOL, grants the AWOL role, and writes the audit record and notification.
+     * $byReportIn marks the flag as coming from a missed report in rather than from attendance,
+     * which decides what is allowed to clear it again.
+     */
+    public function flagAwol(SoldierProfile $profile, string $recordText, string $notificationText, bool $byReportIn = false): void
+    {
+        $profile->setStatus(SoldierStatus::AWOL);
+        if ($byReportIn) {
+            $profile->setReportInFlagged(true);
+        } else {
+            $profile->setAwolAutoFlagged(true);
+        }
+        $this->soldierProfileRepository->save($profile);
+        $this->syncRole($profile, $this->settings->all()['role'], grant: true);
+        $this->logAndNotify($profile, 'Flagged AWOL', $recordText, $notificationText);
+    }
+
+    public function clearAwol(SoldierProfile $profile, string $recordText, string $notificationText): void
+    {
+        $profile->setStatus(SoldierStatus::ACTIVE);
+        $this->soldierProfileRepository->save($profile);
+        $this->syncRole($profile, $this->settings->all()['role'], grant: false);
+        $this->logAndNotify($profile, 'Returned to Active', $recordText, $notificationText);
+    }
+
+    public function notify(SoldierProfile $profile, string $title, string $text): void
+    {
+        $this->notificationService->sendNotification(new Notification(
+            GenericNotificationType::TYPE,
+            $profile->getUser(),
+            [
+                'title' => $title,
+                'description' => $text,
+                'url' => $this->urlGenerator->generate('command_net_roster_profile', [
+                    'username' => $profile->getUser()->getUsername(),
+                ]),
+            ],
+        ));
     }
 
     private function syncRole(SoldierProfile $profile, ?int $roleId, bool $grant): void
@@ -116,16 +148,6 @@ class AwolService
         $record->setDescription($recordText);
         $this->serviceRecordRepository->save($record);
 
-        $this->notificationService->sendNotification(new Notification(
-            GenericNotificationType::TYPE,
-            $profile->getUser(),
-            [
-                'title' => $title,
-                'description' => $notificationText,
-                'url' => $this->urlGenerator->generate('command_net_roster_profile', [
-                    'username' => $profile->getUser()->getUsername(),
-                ]),
-            ],
-        ));
+        $this->notify($profile, $title, $notificationText);
     }
 }
