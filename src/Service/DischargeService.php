@@ -39,10 +39,12 @@ class DischargeService
         }
 
         foreach ($soldier->getAssignments() as $assignment) {
-            if ($assignment->getEndDate() === null) {
-                $assignment->setEndDate($date);
-                $this->assignmentRepository->save($assignment, false);
+            if ($assignment->getEndDate() !== null) {
+                continue;
             }
+
+            $assignment->setEndDate($date);
+            $this->assignmentRepository->save($assignment, false);
         }
 
         $soldier->setStatus($kind->status());
