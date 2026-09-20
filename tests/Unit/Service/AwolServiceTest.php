@@ -42,11 +42,12 @@ class AwolServiceTest extends TestCase
         $settings->method('all')->willReturn(['enabled' => true, 'missThreshold' => 2, 'role' => null]);
 
         $rsvpRepository = $this->createMock(OperationRSVPRepository::class);
-        $rsvpRepository->method('findAttendanceHistoryForUnit')->willReturnCallback(function ($soldier, $unit, $since = null) {
-            $this->queriedSince = $since;
+        $rsvpRepository->method('findAttendanceHistoryForUnit')
+            ->willReturnCallback(function ($soldier, $unit, $since = null) {
+                $this->queriedSince = $since;
 
-            return $this->history;
-        });
+                return $this->history;
+            });
 
         $recordRepository = $this->createMock(ServiceRecordRepository::class);
         $recordRepository->method('save')->willReturnCallback(function (ServiceRecord $record): void {
