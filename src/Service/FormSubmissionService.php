@@ -42,6 +42,7 @@ class FormSubmissionService
     /**
      * Adds one input per field to a Symfony form builder, named by the field key.
      *
+     * @param FormBuilderInterface<mixed> $builder
      * @param array<FormFieldDefinition> $fields
      */
     public function addFields(FormBuilderInterface $builder, array $fields): void
