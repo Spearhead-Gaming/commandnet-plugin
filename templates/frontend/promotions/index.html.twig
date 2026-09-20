@@ -1,0 +1,50 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Promotions{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Promotion Eligibility</h1>
+
+    <div class="card">
+        <div class="card-body">
+            {% if rows is empty %}
+                <p class="text-small mb-0">No active personnel with a higher rank available.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="text">Soldier <i class="ph ph-caret-up-down"></i></th>
+                            <th data-sort="text">Next rank <i class="ph ph-caret-up-down"></i></th>
+                            <th data-sort="num">Days in rank <i class="ph ph-caret-up-down"></i></th>
+                            <th data-sort="text">Status <i class="ph ph-caret-up-down"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                <td>
+                                    <a href="{{ path('command_net_roster_profile', { username: row.soldier.user.username }) }}">
+                                        {% if row.soldier.rank %}{{ row.soldier.rank.abbreviation }}{% endif %}
+                                        {{ row.soldier.user.displayName }}
+                                    </a>
+                                </td>
+                                <td>{{ row.nextRank.name }}</td>
+                                <td>{{ row.daysInGrade is not null ? row.daysInGrade : '—' }}</td>
+                                <td>
+                                    {% if row.eligible %}
+                                        Eligible
+                                    {% else %}
+                                        {% if row.missingDays > 0 %}{{ row.missingDays }} more days{% endif %}
+                                        {% if row.missingQualifications %}
+                                            {% if row.missingDays > 0 %}; {% endif %}missing {{ row.missingQualifications|map(q => q.name)|join(', ') }}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

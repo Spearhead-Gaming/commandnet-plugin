@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Admin\Form;
 
 use Forumify\Core\Form\UploadType;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
+use MajesticDev\CommandNet\Entity\Qualification;
 use MajesticDev\CommandNet\Entity\Rank;
 
 /**
@@ -34,6 +37,19 @@ class RankType extends AbstractType
             ->add('payGrade', TextType::class, [
                 'required' => false,
                 'help' => 'Optional, e.g. "E-5".',
+            ])
+            ->add('minTimeInGradeDays', IntegerType::class, [
+                'required' => false,
+                'label' => 'Minimum time in previous rank (days)',
+                'help' => 'To be promoted into this rank. Leave empty for no minimum.',
+                'attr' => ['min' => 0],
+            ])
+            ->add('requiredQualifications', EntityType::class, [
+                'class' => Qualification::class,
+                'choice_label' => 'name',
+                'multiple' => true,
+                'required' => false,
+                'help' => 'Qualifications a soldier must hold to be promoted into this rank.',
             ])
             ->add('insignia', UploadType::class, [
                 'label' => 'Insignia',
