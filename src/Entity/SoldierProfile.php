@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Mapping as ORM;
 use Forumify\Core\Entity\IdentifiableEntityTrait;
 use Forumify\Core\Entity\TimestampableEntityTrait;
@@ -90,6 +91,7 @@ class SoldierProfile
 
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'soldier', targetEntity: Assignment::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, Assignment>&Selectable<int, Assignment> */
     private Collection $assignments;
 
     /** @var Collection<int, SoldierAward> */

@@ -22,11 +22,17 @@ class AwolSettings
     {
     }
 
+    /**
+     * @return array{enabled: bool, missThreshold: int, role: int|null}
+     */
     public function all(): array
     {
         return array_replace(self::DEFAULTS, (array)$this->settings->get('command_net.awol'));
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function save(array $data): void
     {
         $this->settings->set('command_net.awol', array_intersect_key($data, self::DEFAULTS));

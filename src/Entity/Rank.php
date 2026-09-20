@@ -86,9 +86,6 @@ class Rank implements SortableEntityInterface
         $this->minTimeInGradeDays = $minTimeInGradeDays;
     }
 
-    /**
-     * @return Collection<int, Qualification>
-     */
     public function getRole(): ?Role
     {
         return $this->role;
@@ -99,6 +96,9 @@ class Rank implements SortableEntityInterface
         $this->role = $role;
     }
 
+    /**
+     * @return Collection<int, Qualification>
+     */
     public function getRequiredQualifications(): Collection
     {
         return $this->requiredQualifications;

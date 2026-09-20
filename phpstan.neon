@@ -11,6 +11,10 @@ parameters:
     # The exclusions below don't apply until you add code that triggers them.
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
+        # Private plugin CI can't install; only referenced by ::class.
+        -
+            message: '#Class MajesticDev\\Discord\\CommandNetDiscordPlugin not found#'
+            path: src/CommandNetPlugin.php
         # Doctrine assigns entity properties, phpstan cannot see it happen.
         -
             messages:

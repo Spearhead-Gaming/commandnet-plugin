@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Admin\Components\Table;
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
 
 /**
@@ -46,7 +47,7 @@ class UnitTable extends AbstractDoctrineTable
                 'field' => 'commander',
                 'searchable' => false,
                 'sortable' => false,
-                'renderer' => fn (?object $commander) => $commander !== null ? (string)$commander : 'Vacant',
+                'renderer' => fn (?SoldierProfile $commander) => $commander !== null ? (string)$commander : 'Vacant',
             ])
             ->addActionColumn($this->renderActionColumn(...));
     }
