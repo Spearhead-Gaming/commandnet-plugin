@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MajesticDev\CommandNet\Repository;
+
+use Forumify\Core\Repository\AbstractRepository;
+use MajesticDev\CommandNet\Entity\Course;
+
+/**
+ * @extends AbstractRepository<Course>
+ */
+class CourseRepository extends AbstractRepository
+{
+    public static function getEntityClass(): string
+    {
+        return Course::class;
+    }
+}

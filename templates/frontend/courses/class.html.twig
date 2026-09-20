@@ -1,0 +1,65 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ class.course.name }}{% endblock %}
+
+{% block body %}
+    <p class="text-small mb-1"><a href="{{ path('command_net_courses') }}">&larr; Courses</a></p>
+    <h1 class="mb-1">{{ class.course.name }}</h1>
+    <p class="mb-4">
+        {{ class.startsAt|date('Y-m-d H:i') }}{% if class.endsAt %} &ndash; {{ class.endsAt|date('Y-m-d H:i') }}{% endif %}
+        {% if class.instructor %} &middot; Instructor: {{ class.instructor.user.displayName }}{% endif %}
+    </p>
+    {% if class.notes %}<p class="mb-4">{{ class.notes|nl2br }}</p>{% endif %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            {% if profile and class.studentFor(profile) and not class.started %}
+                <form method="post" action="{{ path('command_net_course_class_withdraw', { id: class.id }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('course_withdraw_' ~ class.id) }}">
+                    <button type="submit" class="btn-outlined">Withdraw</button>
+                </form>
+            {% elseif reason %}
+                <p class="text-small mb-0">{{ reason }}</p>
+            {% else %}
+                <form method="post" action="{{ path('command_net_course_class_enroll', { id: class.id }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('course_enroll_' ~ class.id) }}">
+                    <button type="submit" class="btn-primary">Enrol</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Students ({{ class.students|length }}{% if class.studentSlots %} / {{ class.studentSlots }}{% endif %})</div>
+        <div class="card-body">
+            {% set canRecord = is_granted('command-net.admin.courses.manage') and class.started and not class.processed %}
+            {% if class.students is empty %}
+                <p class="text-small mb-0">Nobody has enrolled yet.</p>
+            {% else %}
+                {% if canRecord %}
+                    <form method="post" action="{{ path('command_net_course_class_results', { id: class.id }) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('course_results_' ~ class.id) }}">
+                {% endif %}
+                <ul class="p-0" style="list-style: none;">
+                    {% for student in class.students %}
+                        <li class="flex items-center justify-between gap-2 mb-1">
+                            <span>{{ student.soldier.user.displayName }}</span>
+                            {% if canRecord %}
+                                <select name="result[{{ student.id }}]">
+                                    <option value="">Result&hellip;</option>
+                                    {% for result in results %}<option value="{{ result.value }}">{{ result.label }}</option>{% endfor %}
+                                </select>
+                            {% elseif student.result %}
+                                <span class="tag">{{ student.result.label }}</span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if canRecord %}
+                        <button type="submit" class="btn-primary mt-2">Record results</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
