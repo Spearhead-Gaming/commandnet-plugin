@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Discord\Command;
 
-use Forumify\Discord\Api\DTO\DiscordCommandOption;
-use Forumify\Discord\Api\DTO\DiscordCommandResult;
-use Forumify\Discord\Api\DTO\DiscordEmbed;
-use Forumify\Discord\Api\Resource\DiscordCommandRun;
-use Forumify\Discord\Discord\DiscordCommandInterface;
+use MajesticDev\Discord\Api\DTO\DiscordCommandOption;
+use MajesticDev\Discord\Api\DTO\DiscordCommandResult;
+use MajesticDev\Discord\Api\DTO\DiscordEmbed;
+use MajesticDev\Discord\Api\Resource\DiscordCommandRun;
+use MajesticDev\Discord\Discord\DiscordCommandInterface;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
