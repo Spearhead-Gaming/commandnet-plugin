@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Admin\Form;
 
+use Forumify\Core\Entity\Role;
 use Forumify\Core\Form\UploadType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -50,6 +51,14 @@ class RankType extends AbstractType
                 'multiple' => true,
                 'required' => false,
                 'help' => 'Qualifications a soldier must hold to be promoted into this rank.',
+            ])
+            ->add('role', EntityType::class, [
+                'class' => Role::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'title',
+                'label' => 'Discord/forumify role',
+                'help' => 'Granted to a soldier while this is their rank, and removed when they change rank. Map it to a Discord role in the Discord plugin's own connection settings to sync Discord automatically.',
             ])
             ->add('insignia', UploadType::class, [
                 'label' => 'Insignia',

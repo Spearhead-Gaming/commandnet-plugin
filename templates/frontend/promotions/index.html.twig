@@ -17,6 +17,7 @@
                             <th data-sort="text">Next rank <i class="ph ph-caret-up-down"></i></th>
                             <th data-sort="num">Days in rank <i class="ph ph-caret-up-down"></i></th>
                             <th data-sort="text">Status <i class="ph ph-caret-up-down"></i></th>
+                            {% if is_granted('command-net.admin.personnel.manage') %}<th></th>{% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -40,6 +41,16 @@
                                         {% endif %}
                                     {% endif %}
                                 </td>
+                                {% if is_granted('command-net.admin.personnel.manage') %}
+                                    <td>
+                                        {% if row.eligible %}
+                                            <form method="post" action="{{ path('command_net_promotions_promote', { id: row.soldier.id }) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('promote_' ~ row.soldier.id) }}">
+                                                <button type="submit" class="btn-small btn-primary">Promote</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>

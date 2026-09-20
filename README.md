@@ -90,6 +90,19 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet (see
 below) — granting them today has no effect.
 
+## Promotions
+
+`/promotions` (permission `command-net.promotions.view`) lists active soldiers against the
+requirements of the next rank up — minimum time in the previous rank and required
+qualifications, both set on the target rank. Anyone with `command-net.admin.personnel.manage`
+also gets a **Promote** button on eligible rows; it re-checks the requirements, changes the
+rank, writes the promotion record and notifies the soldier. Skipping the requirements is a
+rank edit on the admin personnel form.
+
+A rank can be given a forumify **Role** in the admin. A soldier holds the role of their current
+rank and loses every other rank's role on any rank change, from either the Promote button or the
+admin form; map those roles to Discord roles in the Discord plugin to keep Discord in step.
+
 ## Report In
 
 Soldiers with `command-net.reportin.submit` get a **Report In** button on the roster. Turn on
