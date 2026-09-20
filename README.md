@@ -80,6 +80,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
 | `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
 | `command-net.admin.equipment.view` / `.manage` | View / edit the equipment catalog. |
+| `command-net.admin.documents.view` / `.manage` | View / edit the document templates. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -98,6 +99,19 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `admin.attendance`, `admin.forms`, `admin.courses`, `forms.submit`, and `courses.enroll` are also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting them today has no effect.
+
+## Documents
+
+A **document** is a reusable rich-text template with `{placeholders}`, such as an award citation or a
+promotion order (Admin → Command Net → Documents, `command-net.admin.documents.view` / `.manage`).
+When issuing an award, issuing a qualification or creating an assignment from a personnel file, you
+can pick one; it is shown under that entry in the service record, filled in for the soldier and
+record. The placeholders (`{user_name}`, `{user_rank}`, `{record_title}`, ...) are listed in the
+document editor. Values are HTML-escaped, and a placeholder that is not recognised is left as
+written.
+
+Not included yet: documents can not be attached to promotions or to entries created another way,
+and there is no print or download view.
 
 ## Equipment
 

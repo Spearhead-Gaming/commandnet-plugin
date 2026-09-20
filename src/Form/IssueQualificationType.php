@@ -12,6 +12,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use MajesticDev\CommandNet\Entity\Qualification;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\SoldierQualification;
 
 /**
@@ -47,6 +48,14 @@ class IssueQualificationType extends AbstractType
             ->add('dateEarned', DateType::class, [
                 'label' => 'Date earned',
                 'widget' => 'single_text',
+            ])
+            ->add('document', EntityType::class, [
+                'class' => Document::class,
+                'mapped' => false,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'help' => 'Optional. Shown with this entry on the personnel file, filled in for the soldier.',
             ])
         ;
     }

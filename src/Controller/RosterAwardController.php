@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\SoldierAward;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Form\AwardSoldierType;
@@ -42,7 +43,9 @@ class RosterAwardController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var SoldierAward $soldierAward */
             $soldierAward = $form->getData();
-            return $this->submit($soldierAward, $profile);
+            /** @var Document|null $document */
+            $document = $form->get('document')->getData();
+            return $this->submit($soldierAward, $profile, $document);
         }
 
         return $this->render('@CommandNetPlugin/frontend/personnel/award_form.html.twig', [
@@ -97,7 +100,7 @@ class RosterAwardController extends AbstractController
         return $profile;
     }
 
-    private function submit(SoldierAward $soldierAward, SoldierProfile $profile): RedirectResponse
+    private function submit(SoldierAward $soldierAward, SoldierProfile $profile, ?Document $document): RedirectResponse
     {
         $this->soldierAwardRepository->save($soldierAward);
 
@@ -109,6 +112,7 @@ class RosterAwardController extends AbstractController
         $record->setDate($soldierAward->getDateAwarded());
         $record->setDescription($soldierAward->getCitation());
         $record->setSource(ServiceRecord::SOURCE_AWARD, $soldierAward->getId());
+        $record->setDocument($document);
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Award issued.');
