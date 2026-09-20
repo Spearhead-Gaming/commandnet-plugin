@@ -74,6 +74,13 @@ class SoldierProfile
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $lastReportIn = null;
 
+    /**
+     * True only while the current AWOL status was set by attendance detection, so an
+     * admin-set AWOL is never auto-cleared. Any status change resets it - see setStatus().
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $awolAutoFlagged = false;
+
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'soldier', targetEntity: Assignment::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $assignments;
@@ -152,6 +159,9 @@ class SoldierProfile
 
     public function setStatus(SoldierStatus $status): void
     {
+        if ($status !== $this->status) {
+            $this->awolAutoFlagged = false;
+        }
         $this->status = $status;
     }
 
@@ -193,6 +203,16 @@ class SoldierProfile
     public function setUniformImage(?string $uniformImage): void
     {
         $this->uniformImage = $uniformImage;
+    }
+
+    public function isAwolAutoFlagged(): bool
+    {
+        return $this->awolAutoFlagged;
+    }
+
+    public function setAwolAutoFlagged(bool $awolAutoFlagged): void
+    {
+        $this->awolAutoFlagged = $awolAutoFlagged;
     }
 
     public function getLastReportIn(): ?DateTime

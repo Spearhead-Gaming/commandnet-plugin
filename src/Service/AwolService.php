@@ -57,6 +57,7 @@ class AwolService
 
         if ($missStreak >= (int)$settings['missThreshold'] && $profile->getStatus() === SoldierStatus::ACTIVE) {
             $profile->setStatus(SoldierStatus::AWOL);
+            $profile->setAwolAutoFlagged(true);
             $this->soldierProfileRepository->save($profile);
             $this->syncRole($profile, $settings['role'], grant: true);
             $this->logAndNotify(
@@ -68,7 +69,8 @@ class AwolService
             return;
         }
 
-        if ($missStreak === 0 && $profile->getStatus() === SoldierStatus::AWOL) {
+        // Only undo an AWOL this service set - an admin-set one stays until an admin clears it.
+        if ($missStreak === 0 && $profile->getStatus() === SoldierStatus::AWOL && $profile->isAwolAutoFlagged()) {
             $profile->setStatus(SoldierStatus::ACTIVE);
             $this->soldierProfileRepository->save($profile);
             $this->syncRole($profile, $settings['role'], grant: false);
@@ -110,7 +112,7 @@ class AwolService
 
     private function logAndNotify(SoldierProfile $profile, string $title, string $recordText, string $notificationText): void
     {
-        $record = new ServiceRecord($profile, ServiceRecordType::ASSIGNMENT, $title);
+        $record = new ServiceRecord($profile, ServiceRecordType::AWOL, $title);
         $record->setDescription($recordText);
         $this->serviceRecordRepository->save($record);
 
