@@ -28,6 +28,7 @@ class DischargeService
         private readonly AssignmentRepository $assignmentRepository,
         private readonly UnitRoleSyncer $unitRoleSyncer,
         private readonly RankRoleSyncer $rankRoleSyncer,
+        private readonly SpecialtyRoleSyncer $specialtyRoleSyncer,
         private readonly AwolService $awolService,
     ) {
     }
@@ -59,6 +60,7 @@ class DischargeService
         // Every open posting is closed, so this revokes every unit role.
         $this->unitRoleSyncer->sync($soldier);
         $this->rankRoleSyncer->sync($soldier, revokeAll: true);
+        $this->specialtyRoleSyncer->sync($soldier, revokeAll: true);
         $this->awolService->revokeRole($soldier);
     }
 }

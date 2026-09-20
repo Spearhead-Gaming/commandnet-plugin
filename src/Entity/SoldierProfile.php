@@ -33,6 +33,10 @@ class SoldierProfile
     #[ORM\JoinColumn(name: 'rank_id', onDelete: 'SET NULL')]
     private ?Rank $rank = null;
 
+    #[ORM\ManyToOne(targetEntity: Specialty::class)]
+    #[ORM\JoinColumn(name: 'specialty_id', onDelete: 'SET NULL')]
+    private ?Specialty $specialty = null;
+
     #[ORM\Column(length: 30, nullable: true, unique: true)]
     private ?string $serviceNumber = null;
 
@@ -134,6 +138,16 @@ class SoldierProfile
     public function setRank(?Rank $rank): void
     {
         $this->rank = $rank;
+    }
+
+    public function getSpecialty(): ?Specialty
+    {
+        return $this->specialty;
+    }
+
+    public function setSpecialty(?Specialty $specialty): void
+    {
+        $this->specialty = $specialty;
     }
 
     public function getServiceNumber(): ?string

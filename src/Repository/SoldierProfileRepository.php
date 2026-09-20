@@ -47,8 +47,9 @@ class SoldierProfileRepository extends AbstractRepository
     public function findRoster(): array
     {
         return $this->createQueryBuilder('s')
-            ->addSelect('soldierRank', 'user', 'assignment', 'assignmentUnit', 'assignmentPosition')
+            ->addSelect('soldierRank', 'user', 'specialty', 'assignment', 'assignmentUnit', 'assignmentPosition')
             ->leftJoin('s.rank', 'soldierRank')
+            ->leftJoin('s.specialty', 'specialty')
             ->leftJoin('s.user', 'user')
             ->leftJoin('s.assignments', 'assignment')
             ->leftJoin('assignment.unit', 'assignmentUnit')

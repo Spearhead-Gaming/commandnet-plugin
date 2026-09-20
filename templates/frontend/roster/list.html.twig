@@ -61,6 +61,7 @@
                                 <p class="mb-0 text-small">
                                     {{ assignment.unit.name }}
                                     {%- if assignment.position %} &middot; {{ assignment.position.title }}{% endif %}
+                                    {%- if soldier.specialty %} &middot; {{ soldier.specialty.abbreviation }}{% endif %}
                                 </p>
                             {% endif %}
                             {% if is_granted('command-net.admin.reportin.view') %}

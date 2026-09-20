@@ -24,6 +24,9 @@
                         {% if profile.callsign %}
                             <p class="text-small mb-0">"{{ profile.callsign }}"</p>
                         {% endif %}
+                        {% if profile.specialty %}
+                            <p class="text-small mb-0">{{ profile.specialty.name }}</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
