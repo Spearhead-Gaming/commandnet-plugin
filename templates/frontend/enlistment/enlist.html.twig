@@ -1,0 +1,42 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Enlist{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Enlist</h1>
+
+    {% if instructions %}
+        <div class="card mb-4">
+            <div class="card-body">{{ instructions|nl2br }}</div>
+        </div>
+    {% endif %}
+
+    {% if latest %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <p class="mb-1 text-bold">Your last application: {{ latest.status.label }}</p>
+                <p class="mb-0 text-small">Submitted {{ latest.createdAt|format_date(true) }}</p>
+                {% if not latest.pending and latest.decisionNote %}
+                    <p class="mb-0 mt-2">{{ latest.decisionNote|nl2br }}</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if form %}
+        <div class="card">
+            <div class="card-body">
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <div class="flex justify-end mt-4">
+                    <button class="btn-primary" type="submit">Submit application</button>
+                </div>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-body">{{ reason }}</div>
+        </div>
+    {% endif %}
+{% endblock %}
