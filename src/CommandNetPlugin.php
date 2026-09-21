@@ -29,7 +29,7 @@ class CommandNetPlugin extends AbstractForumifyPlugin
     {
         return new PluginMetadata(
             'Command Net',
-            'MDEV ',
+            'MajesticDev ',
             'Personnel & unit management system built for our community.',
             // TODO: replace with real domain once purchased
             'https://example.com',
