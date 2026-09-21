@@ -8,6 +8,8 @@ Each item says how far it has been checked:
 
 - **App test**: exercised end to end by `tests/Application` (real controllers, forms, CSRF buttons
   and a MySQL database), which runs in CI.
+- **Migration test**: the migration's real SQL is run against rows shaped like the data the old code
+  wrote, in a scratch MySQL database (`tests/Migration`), which runs in CI.
 - **Unit test**: the logic is covered by a unit test with mocked repositories, but nothing drives it
   through the real application.
 - **Not covered**: nobody has checked it yet.
@@ -18,7 +20,12 @@ The boxes stay unticked until someone has checked the item on staging with a cop
 
 On a throwaway install (fresh MySQL 8.4, Forumify 1.3.2), and now in CI on every pull request:
 
-- All 12 migrations, `20260920140000` to `20260920250000`, run cleanly and the plugin activates.
+- All 13 migrations, `20260920140000` to `20260920260000`, run cleanly and the plugin activates.
+- The AWOL backfill (`20260920140000`) and its correction (`20260920260000`) were run against
+  soldiers and records shaped like the old code wrote them: flagged and still AWOL, set AWOL by an
+  admin, flagged then returned then set AWOL by an admin, flagged twice, and unrelated records that
+  must not be retyped. The first version of the backfill marked the third kind as auto-flagged, so
+  they would have been returned to Active the next time they attended; the correction fixes that.
 - The container and Twig lint pass, and all 106 `command_net` routes register.
 - About 80 pages load as an administrator without an error: every frontend page, every admin list,
   create and edit screen, the discharge page, the settings pages and `/squad.xml`.
@@ -39,7 +46,8 @@ command-net permission; the CRUD edit screens refuse by redirecting to the list,
 The flow test also checks that each action creates the notification it should, for the right person:
 enlistment accepted and declined, promotion, form review, course results, the AWOL flag and return
 to Active, and the Report In warning. It checks that the notification exists with the expected
-title, not that it was delivered.
+title and that the platform's notification type shows a title, text and link on the site from it,
+not that it was delivered.
 
 A page content test checks what pages say and do: the specialty, Loadout card and record types on a
 personnel file, a member's name containing HTML inside a rendered document, the roster with and
@@ -47,7 +55,8 @@ without rosters (tabs, which soldiers each lists, their order), the squad file v
 DTD the plugin serves, the Rank form saving, what a discharged soldier is offered and refused, and
 that the Report In command is in the scheduler.
 
-What that run could not cover: real production data (including the AWOL backfill), the scheduler
+What that run could not cover: your real production data (the backfill is tested only on rows shaped
+like the old data), the scheduler
 worker actually running, delivery of notifications, the Discord plugin, and a real Arma client
 reading `/squad.xml`.
 
@@ -80,8 +89,12 @@ forms, report details) and none of the others.
 
 ## Fixes, Report In, promotions and rank roles (migrations `20260920140000` to `170000`)
 
-- [ ] Read the `20260920140000` backfill SQL against real data first: it retypes old AWOL records and
-      flags soldiers who are currently AWOL from detection. **Not covered** (the test database was empty).
+- [ ] Check the `20260920140000` backfill and its correction `20260920260000` against real data first:
+      they retype old AWOL records and mark soldiers who are AWOL from detection. **Migration test**
+      on rows shaped like the old data. Your real rows can still differ, so before rolling out run
+      `SELECT type, title, COUNT(*) FROM service_record WHERE title IN ('Flagged AWOL', 'Returned to
+      Active') GROUP BY type, title` and `SELECT COUNT(*) FROM soldier_profile WHERE status = 'awol'`,
+      and compare with what the migration reports afterwards. **Not covered** on real data.
 - [ ] Migrations run without errors. **App test** (CI runs them on every pull request).
 - [ ] `doctrine:schema:validate` reports no drift from this plugin. Checked once on the throwaway
       install, not in CI.
