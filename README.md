@@ -79,6 +79,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
 | `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
 | `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
+| `command-net.admin.equipment.view` / `.manage` | View / edit the equipment catalog. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -97,6 +98,18 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `admin.attendance`, `admin.forms`, `admin.courses`, `forms.submit`, and `courses.enroll` are also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting them today has no effect.
+
+## Equipment
+
+**Equipment** is a catalog of weapons and vehicles (Admin → Command Net → Equipment,
+`command-net.admin.equipment.view` / `.manage`). Each is a primary weapon, a secondary weapon or a
+vehicle. Positions list the primary and secondary weapons their holder may use, and units list the
+vehicles they have. A soldier's personnel file shows a **Loadout** card worked out from the position
+and unit of their primary assignment; nothing is stored per soldier, so changing a position or unit
+changes it for everyone who holds it.
+
+Not included yet: the Discord soldier and unit replies do not show equipment, and there is no
+Squad XML export like MILHQ's.
 
 ## Specialties
 

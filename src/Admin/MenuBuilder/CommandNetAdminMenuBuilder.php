@@ -39,6 +39,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Specialties', $url('forumify_admin_command_net_specialties_list'), [
                 'permission' => 'command-net.admin.specialties.view',
             ]),
+            new MenuItem('Equipment', $url('forumify_admin_command_net_equipment_list'), [
+                'permission' => 'command-net.admin.equipment.view',
+            ]),
             new MenuItem('Awards', $url('forumify_admin_command_net_awards_list'), [
                 'permission' => 'command-net.admin.awards.view',
             ]),

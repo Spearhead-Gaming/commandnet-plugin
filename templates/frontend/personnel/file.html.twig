@@ -84,6 +84,19 @@
                     {% endif %}
                 </div>
             </div>
+            {% if loadout.primaryWeapons or loadout.secondaryWeapons or loadout.vehicles %}
+                <div class="card">
+                    <div class="card-title">Loadout</div>
+                    <div class="card-body">
+                        {% for label, items in {'Primary weapons': loadout.primaryWeapons, 'Secondary weapons': loadout.secondaryWeapons, 'Vehicles': loadout.vehicles} %}
+                            {% if items %}
+                                <p class="text-small mb-1">{{ label }}</p>
+                                <p class="text-bold mb-2">{{ items|join(', ') }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
             <div class="card">
                 <div class="card-title">Length in service</div>
                 <div class="card-body">

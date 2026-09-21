@@ -81,10 +81,36 @@ class Unit implements SortableEntityInterface
     #[ORM\OneToMany(mappedBy: 'unit', targetEntity: Assignment::class)]
     private Collection $assignments;
 
+    /** @var Collection<int, Equipment> */
+    #[ORM\ManyToMany(targetEntity: Equipment::class)]
+    #[ORM\JoinTable(name: 'unit_vehicle')]
+    private Collection $vehicles;
+
     public function __construct()
     {
+        $this->vehicles = new ArrayCollection();
         $this->children = new ArrayCollection();
         $this->assignments = new ArrayCollection();
+    }
+
+    /**
+     * @return Collection<int, Equipment>
+     */
+    public function getVehicles(): Collection
+    {
+        return $this->vehicles;
+    }
+
+    public function addVehicle(Equipment $vehicle): void
+    {
+        if (!$this->vehicles->contains($vehicle)) {
+            $this->vehicles->add($vehicle);
+        }
+    }
+
+    public function removeVehicle(Equipment $vehicle): void
+    {
+        $this->vehicles->removeElement($vehicle);
     }
 
     public function getName(): string

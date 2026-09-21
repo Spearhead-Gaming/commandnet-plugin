@@ -17,6 +17,8 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Entity\Equipment;
+use MajesticDev\CommandNet\Entity\Enum\EquipmentType;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
 
@@ -69,6 +71,17 @@ class UnitType extends AbstractType
                 'choice_label' => 'title',
                 'label' => 'Discord/forumify role',
                 'help' => 'Granted to a soldier while this is their primary unit. Map it to a Discord role in the Discord plugin\'s own connection settings to sync Discord roles automatically.',
+            ])
+            ->add('vehicles', EntityType::class, [
+                'class' => Equipment::class,
+                'multiple' => true,
+                'required' => false,
+                'choice_label' => 'name',
+                'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('e')
+                    ->where('e.type = :type')
+                    ->setParameter('type', EquipmentType::VEHICLE)
+                    ->orderBy('e.name', 'ASC'),
+                'help' => 'Vehicles this unit has.',
             ])
             ->add('discordGuildId', TextType::class, [
                 'label' => 'Discord Server (Guild) ID',

@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Repository\ReportInRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\SoldierLoadout;
 
 class PersonnelFileController extends AbstractController
 {
@@ -20,6 +21,7 @@ class PersonnelFileController extends AbstractController
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly ReportInRepository $reportInRepository,
         private readonly IdentityProviderUserRepository $identityProviderUserRepository,
+        private readonly SoldierLoadout $soldierLoadout,
     ) {
     }
 
@@ -56,6 +58,7 @@ class PersonnelFileController extends AbstractController
         return $this->render('@CommandNetPlugin/frontend/personnel/file.html.twig', [
             'profile' => $profile,
             'primaryAssignment' => $profile->getPrimaryAssignment(),
+            'loadout' => $this->soldierLoadout->forSoldier($profile),
             'latestReportIn' => $this->reportInRepository->findLatestFor($profile),
             'discordUsername' => $discordIdentity?->getExternalUsername(),
         ]);
