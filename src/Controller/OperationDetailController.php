@@ -8,6 +8,8 @@ use Forumify\Core\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
@@ -18,6 +20,7 @@ class OperationDetailController extends AbstractController
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly OperationAttendanceService $attendanceService,
+        private readonly UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
@@ -44,6 +47,22 @@ class OperationDetailController extends AbstractController
                     $operation->getRsvps()->toArray(),
                 ),
             'rsvpStatuses' => RsvpStatus::cases(),
+            'briefingUrl' => $this->briefingUrl($operation),
         ]);
+    }
+
+    /**
+     * Link to the Command Net S3 plugin's briefing page. That plugin is optional, so the link
+     * only exists when its route is registered and the user may view briefings.
+     */
+    private function briefingUrl(Operation $operation): ?string
+    {
+        try {
+            $url = $this->urlGenerator->generate('command_net_s3_briefing', ['id' => $operation->getId()]);
+        } catch (RouteNotFoundException) {
+            return null;
+        }
+
+        return $this->isGranted('command-net-s3.briefing.view') ? $url : null;
     }
 }
