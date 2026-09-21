@@ -92,6 +92,29 @@ class SoldierProfileRepository extends AbstractRepository
      *
      * @return array<SoldierProfile>
      */
+    /**
+     * Loads the assignments (with their units) of these soldiers in one query, so reading
+     * getPrimaryAssignment() on each of them does not query per soldier. Fetch-joining the
+     * collection into the page query itself would break its LIMIT, hence a second query.
+     *
+     * @param array<SoldierProfile> $soldiers
+     */
+    public function loadAssignmentsFor(array $soldiers): void
+    {
+        if ($soldiers === []) {
+            return;
+        }
+
+        $this->createQueryBuilder('s')
+            ->select('s', 'assignment', 'assignmentUnit')
+            ->leftJoin('s.assignments', 'assignment')
+            ->leftJoin('assignment.unit', 'assignmentUnit')
+            ->where('s IN (:soldiers)')
+            ->setParameter('soldiers', $soldiers)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByNameLike(string $name): array
     {
         return $this->createQueryBuilder('s')
