@@ -81,6 +81,8 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
 | `command-net.admin.equipment.view` / `.manage` | View / edit the equipment catalog. |
 | `command-net.admin.documents.view` / `.manage` | View / edit the document templates. |
+| `command-net.admin.forms.view` / `.manage` | View forms and submissions / edit forms and review submissions. |
+| `command-net.forms.submit` | See and fill in open forms at `/forms`. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -96,9 +98,28 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.reportin.view` / `.manage` | See each soldier's last report in / remove report ins and edit Report In Settings. |
 | `command-net.admin.awol.manage` | Edit AWOL Settings. |
 
-`admin.attendance`, `admin.forms`, `admin.courses`, `forms.submit`, and `courses.enroll` are also
+`admin.attendance`, `admin.courses` and `courses.enroll` are also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting them today has no effect.
+
+## Forms
+
+Staff build forms under Admin → Command Net → Forms (`command-net.admin.forms.view` / `.manage`), such
+as a leave request or a transfer request. Fields are written as text, one per line, and checked when
+the form is saved:
+
+    type | Label | required | options
+
+Types are `text`, `textarea`, `number`, `boolean`, `date` and `select` (only select takes options,
+comma separated); the third part is `required` or `optional`. For example
+`select | Branch | required | Army, Navy, Air Force`. Members with `command-net.forms.submit` see open
+forms at `/forms` and can follow the status of what they submitted. Staff review submissions under
+Admin → Command Net → Form Submissions: accept or decline with an optional note, and the submitter is
+notified. Answers are saved as text next to the question, so editing a form later never changes what
+was already submitted.
+
+Not included yet (MILHQ has): a point-and-click field editor, help text per field, custom statuses,
+supervisor routing and using a form for enlistment.
 
 ## Documents
 
