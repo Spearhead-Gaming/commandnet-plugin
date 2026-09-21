@@ -9,3 +9,6 @@
 /tests/vendor
 /tests/config/reference.php
 composer.lock
+
+# Local dev server login details - never commit.
+/dev-credentials.local.md
