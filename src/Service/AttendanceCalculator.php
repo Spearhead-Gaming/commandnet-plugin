@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Service;
 
+use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
 
@@ -15,8 +16,32 @@ class AttendanceCalculator
 
     public function calculate(SoldierProfile $soldier): AttendanceStats
     {
-        $history = $this->rsvpRepository->findAttendanceHistory($soldier);
+        return $this->statsFrom($this->rsvpRepository->findAttendanceHistory($soldier));
+    }
 
+    /**
+     * calculate() for many soldiers with one history query instead of one each.
+     *
+     * @param array<SoldierProfile> $soldiers
+     * @return array<int, AttendanceStats> soldier id => stats
+     */
+    public function calculateMany(array $soldiers): array
+    {
+        $histories = $this->rsvpRepository->findAttendanceHistoryForSoldiers($soldiers);
+
+        $stats = [];
+        foreach ($soldiers as $soldier) {
+            $stats[$soldier->getId()] = $this->statsFrom($histories[$soldier->getId()] ?? []);
+        }
+
+        return $stats;
+    }
+
+    /**
+     * @param array<OperationRSVP> $history newest operation first
+     */
+    private function statsFrom(array $history): AttendanceStats
+    {
         $attended = 0;
         $noShows = 0;
         $lastAttended = null;

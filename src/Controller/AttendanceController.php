@@ -35,12 +35,11 @@ class AttendanceController extends AbstractController
 
         $roster = null;
         if ($canViewAll) {
+            $soldiers = $this->soldierProfileRepository->findRoster();
+            $stats = $this->attendanceCalculator->calculateMany($soldiers);
             $roster = array_map(
-                fn ($soldier) => [
-                    'soldier' => $soldier,
-                    'stats' => $this->attendanceCalculator->calculate($soldier),
-                ],
-                $this->soldierProfileRepository->findRoster(),
+                static fn ($soldier) => ['soldier' => $soldier, 'stats' => $stats[$soldier->getId()]],
+                $soldiers,
             );
         }
 

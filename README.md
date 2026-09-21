@@ -153,8 +153,6 @@ you rely on them:
   submissions, courses, a discharge flow, specialties, equipment and documents.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
   `MajesticDev\Discord` plugin.
-- **The roster and attendance pages** load some data per soldier and haven't been optimised
-  for large rosters the way `/promotions` has.
 
 ## Works well with
 
