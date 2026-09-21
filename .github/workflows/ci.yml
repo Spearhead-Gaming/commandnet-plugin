@@ -14,6 +14,15 @@ jobs:
       matrix:
         # The Operation entity changes shape when the calendar plugin is installed, so run both.
         plugin: ['', 'forumify/forumify-calendar-plugin']
+    # The application tests run the plugin inside a real Forumify install, so they need MySQL.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,7 +32,7 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer
-          extensions: mbstring, xml, ctype, iconv, intl
+          extensions: mbstring, xml, ctype, iconv, intl, mysql
 
       # composer.lock is not committed and dependencies are deliberately not cached, so this is
       # always a genuinely fresh resolution - what a new install of the plugin would get.
@@ -38,6 +47,16 @@ jobs:
       # would otherwise pass CI.
       - name: Lint PHP
         run: find src tests migrations -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      # Drops and recreates the test database, runs every migration and activates this plugin.
+      - name: Prepare the test install
+        working-directory: tests
+        run: php bin/console forumify:plugins:test-setup --env=test
+
+      - name: Activate optional plugin
+        if: ${{ matrix.plugin }}
+        working-directory: tests
+        run: php bin/console forumify:plugins:activate "${{ matrix.plugin }}" --env=test
 
       - name: Run tests
         run: vendor/bin/phpunit

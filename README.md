@@ -316,10 +316,12 @@ groups, enlistment, discharge, specialties, equipment, documents, forms, courses
 fixes) has only been through CI so far; `docs/merge-and-test-plan.md` lists what to check on a
 staging copy before relying on it.
 
-- **Tests cover the services, not the whole plugin.** CI runs PHPUnit, phpcs and PHPStan, but
-  the unit tests mock the repositories, so controllers, forms, templates, migrations, DQL
-  queries and the scheduled Report In task are only verified by booting the plugin against a
-  real install.
+- **Tests are thinner than the plugin.** CI runs PHPUnit, phpcs and PHPStan. The unit tests mock
+  the repositories. Two application tests boot the plugin in a real Forumify install on MySQL
+  (`tests/Application`): one loads every page as an administrator, the other drives the main
+  submit-and-review flows (enlistment, promotion, RSVP and attendance, transfers, discharge,
+  forms, courses) and checks the database. Permissions for ordinary members, notifications, the
+  scheduled Report In task and the Discord integration are not covered.
 - **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
   builder, several instructors per course class, calendar sync for classes, and the Discord
   `/award`, `/qualification` and `/rank` commands. The section for each feature above lists what its
