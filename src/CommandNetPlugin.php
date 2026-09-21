@@ -50,7 +50,7 @@ class CommandNetPlugin extends AbstractForumifyPlugin
     {
         return [
             'admin' => [
-                'personnel' => ['view', 'manage'],
+                'personnel' => ['view', 'manage', 'discharge'],
                 'units' => ['view', 'manage'],
                 'ranks' => ['view', 'manage'],
                 'awards' => ['view', 'manage'],

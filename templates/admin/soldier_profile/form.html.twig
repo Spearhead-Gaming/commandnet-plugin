@@ -1,6 +1,9 @@
 {% extends '@Forumify/admin/crud/form.html.twig' %}
 {% block form_actions %}
     {{ parent() }}
+    {% if data and data.enlisted and is_granted('command-net.admin.personnel.discharge') %}
+        <a class="btn-outlined" href="{{ path('forumify_admin_command_net_personnel_discharge', { id: data.id }) }}">Discharge</a>
+    {% endif %}
     {% if data %}
         {# majesticdev/forumify-id-card-plugin is optional; this whole block is inert and
            renders nothing if it isn't installed. #}

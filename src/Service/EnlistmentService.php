@@ -63,7 +63,7 @@ class EnlistmentService
         }
 
         $profile = $this->soldierProfileRepository->findOneBy(['user' => $user]);
-        if ($profile !== null && !in_array($profile->getStatus(), [SoldierStatus::DISCHARGED, SoldierStatus::RETIRED], true)) {
+        if ($profile !== null && $profile->isEnlisted()) {
             return 'You are already enlisted.';
         }
 

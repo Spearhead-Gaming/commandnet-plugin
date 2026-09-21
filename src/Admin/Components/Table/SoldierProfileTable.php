@@ -119,6 +119,10 @@ class SoldierProfileTable extends AbstractDoctrineTable
         $actions = '';
         $actions .= $this->renderAction('forumify_admin_command_net_personnel_edit', ['identifier' => $id], 'pencil-simple-line');
 
+        if ($this->security->isGranted('command-net.admin.personnel.discharge')) {
+            $actions .= $this->renderAction('forumify_admin_command_net_personnel_discharge', ['id' => $id], 'sign-out');
+        }
+
         if ($this->security->isGranted('command-net.admin.personnel.manage')) {
             $actions .= $this->renderAction('forumify_admin_command_net_personnel_delete', ['identifier' => $id], 'x');
         }

@@ -50,6 +50,20 @@ class RankRoleSyncerTest extends TestCase
         $this->assertFalse($user->getRoleEntities()->contains($role));
     }
 
+    public function testRevokeAllRemovesTheCurrentRanksRoleToo(): void
+    {
+        $role = new Role();
+        $rank = $this->rank($role);
+        $user = new User();
+        $user->addRoleEntity($role);
+        $soldier = new SoldierProfile($user);
+        $soldier->setRank($rank);
+
+        $this->syncer([$rank])->sync($soldier, true);
+
+        $this->assertFalse($user->getRoleEntities()->contains($role));
+    }
+
     public function testDoesNotSaveWhenNothingChanged(): void
     {
         $role = new Role();

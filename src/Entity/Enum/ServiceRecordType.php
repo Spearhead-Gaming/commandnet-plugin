@@ -15,6 +15,7 @@ enum ServiceRecordType: string
     case COMBAT = 'combat';
     case DISCIPLINARY = 'disciplinary';
     case AWOL = 'awol';
+    case DISCHARGE = 'discharge';
     case NOTE = 'note';
 
     public function label(): string
@@ -29,6 +30,7 @@ enum ServiceRecordType: string
             self::COMBAT => 'Combat Record',
             self::DISCIPLINARY => 'Disciplinary',
             self::AWOL => 'AWOL',
+            self::DISCHARGE => 'Discharge',
             self::NOTE => 'Note',
         };
     }
