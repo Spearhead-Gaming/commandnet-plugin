@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Form;
 
+use DateTime;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -12,6 +13,7 @@ use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Position;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
@@ -72,6 +74,8 @@ class CreateAssignmentType extends AbstractType
             ->add('startDate', DateType::class, [
                 'label' => 'Start date',
                 'widget' => 'single_text',
+                'data' => new DateTime('today'),
+                'constraints' => [new Assert\NotBlank()],
             ])
             ->add('endDate', DateType::class, [
                 'label' => 'End date',
