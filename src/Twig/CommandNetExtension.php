@@ -13,6 +13,7 @@ class CommandNetExtension extends AbstractExtension
     {
         return [
             new TwigFunction('command_net_online_count', [CommandNetRuntime::class, 'getOnlineCount']),
+            new TwigFunction('command_net_document', [CommandNetRuntime::class, 'renderDocument']),
             new TwigFunction('command_net_records_by_type', [CommandNetRuntime::class, 'getRecordsByType']),
             new TwigFunction('command_net_time_in_service', [CommandNetRuntime::class, 'getTimeInService']),
         ];

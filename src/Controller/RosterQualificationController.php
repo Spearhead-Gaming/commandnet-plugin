@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\SoldierQualification;
 use MajesticDev\CommandNet\Form\IssueQualificationType;
@@ -42,7 +43,9 @@ class RosterQualificationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var SoldierQualification $soldierQualification */
             $soldierQualification = $form->getData();
-            return $this->submit($soldierQualification, $profile);
+            /** @var Document|null $document */
+            $document = $form->get('document')->getData();
+            return $this->submit($soldierQualification, $profile, $document);
         }
 
         return $this->render('@CommandNetPlugin/frontend/personnel/qualification_form.html.twig', [
@@ -97,7 +100,7 @@ class RosterQualificationController extends AbstractController
         return $profile;
     }
 
-    private function submit(SoldierQualification $soldierQualification, SoldierProfile $profile): RedirectResponse
+    private function submit(SoldierQualification $soldierQualification, SoldierProfile $profile, ?Document $document): RedirectResponse
     {
         $this->soldierQualificationRepository->save($soldierQualification);
 
@@ -108,6 +111,7 @@ class RosterQualificationController extends AbstractController
         );
         $record->setDate($soldierQualification->getDateEarned());
         $record->setSource(ServiceRecord::SOURCE_QUALIFICATION, $soldierQualification->getId());
+        $record->setDocument($document);
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Qualification issued.');

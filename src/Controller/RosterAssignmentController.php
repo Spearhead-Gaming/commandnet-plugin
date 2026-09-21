@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Form\CreateAssignmentType;
 use MajesticDev\CommandNet\Repository\AssignmentRepository;
@@ -44,7 +45,9 @@ class RosterAssignmentController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var Assignment $assignment */
             $assignment = $form->getData();
-            return $this->submit($assignment, $profile);
+            /** @var Document|null $document */
+            $document = $form->get('document')->getData();
+            return $this->submit($assignment, $profile, $document);
         }
 
         return $this->render('@CommandNetPlugin/frontend/personnel/assignment_form.html.twig', [
@@ -102,7 +105,7 @@ class RosterAssignmentController extends AbstractController
         return $profile;
     }
 
-    private function submit(Assignment $assignment, SoldierProfile $profile): RedirectResponse
+    private function submit(Assignment $assignment, SoldierProfile $profile, ?Document $document): RedirectResponse
     {
         // Only one assignment can be primary+active at a time - making a new one primary
         // ends the old one, the same way a real transfer would.
@@ -127,6 +130,7 @@ class RosterAssignmentController extends AbstractController
         );
         $record->setDate($assignment->getStartDate());
         $record->setSource(ServiceRecord::SOURCE_ASSIGNMENT, $assignment->getId());
+        $record->setDocument($document);
         $this->serviceRecordRepository->save($record);
 
         $this->addFlash('success', 'Assignment created.');

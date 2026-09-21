@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Forumify\Core\Entity\User;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Service\DocumentRenderer;
 use Twig\Extension\RuntimeExtensionInterface;
 
 /**
@@ -18,8 +19,20 @@ use Twig\Extension\RuntimeExtensionInterface;
  */
 class CommandNetRuntime implements RuntimeExtensionInterface
 {
-    public function __construct(private readonly EntityManagerInterface $entityManager)
+    public function __construct(
+        private readonly EntityManagerInterface $entityManager,
+        private readonly DocumentRenderer $documentRenderer,
+    ) {
+    }
+
+    /**
+     * The record document filled in for its soldier, or an empty string if it has none.
+     */
+    public function renderDocument(ServiceRecord $record): string
     {
+        $document = $record->getDocument();
+
+        return $document !== null ? $this->documentRenderer->render($document, $record) : '';
     }
 
     public function getOnlineCount(): int

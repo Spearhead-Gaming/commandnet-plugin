@@ -63,6 +63,14 @@ class ServiceRecord
     #[ORM\Column(nullable: true)]
     private ?int $sourceId = null;
 
+    /**
+     * Optional document shown with this record on the personnel file, filled in with the
+     * soldier and record values (see DocumentRenderer).
+     */
+    #[ORM\ManyToOne(targetEntity: Document::class)]
+    #[ORM\JoinColumn(name: 'document_id', onDelete: 'SET NULL')]
+    private ?Document $document = null;
+
     public function __construct(SoldierProfile $soldier, ServiceRecordType $type, string $title)
     {
         $this->soldier = $soldier;
@@ -119,6 +127,16 @@ class ServiceRecord
     public function getSourceId(): ?int
     {
         return $this->sourceId;
+    }
+
+    public function getDocument(): ?Document
+    {
+        return $this->document;
+    }
+
+    public function setDocument(?Document $document): void
+    {
+        $this->document = $document;
     }
 
     public function setSource(string $sourceType, int $sourceId): void

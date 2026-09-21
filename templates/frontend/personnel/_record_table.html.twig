@@ -25,6 +25,14 @@
                 <td>
                     {{ record.title }}
                     {% if record.description %}<span class="text-small">&mdash; {{ record.description }}</span>{% endif %}
+                    {% if record.document %}
+                        <details class="mt-1">
+                            <summary class="text-small">{{ record.document.name }}</summary>
+                            <div class="card mt-1">
+                                <div class="card-body">{{ command_net_document(record)|rich }}</div>
+                            </div>
+                        </details>
+                    {% endif %}
                 </td>
                 <td class="cnf-row-actions">
                     {% if record.sourceType == 'soldier_award' and is_granted('command-net.admin.awards.manage') %}

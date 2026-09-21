@@ -15,6 +15,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Position;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\Unit;
 
 /**
@@ -43,6 +44,14 @@ class CreateAssignmentType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('document', EntityType::class, [
+                'class' => Document::class,
+                'mapped' => false,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'help' => 'Optional. Shown with this entry on the personnel file, filled in for the soldier.',
+            ])
             ->add('unit', EntityType::class, [
                 'class' => Unit::class,
                 'choice_label' => fn (Unit $u) => $u->getName(),

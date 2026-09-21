@@ -14,6 +14,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use MajesticDev\CommandNet\Entity\Award;
 use MajesticDev\CommandNet\Entity\SoldierAward;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Entity\Document;
 
 /**
  * @extends AbstractType<SoldierAward>
@@ -55,6 +56,14 @@ class AwardSoldierType extends AbstractType
                 'label' => 'Citation',
                 'required' => false,
                 'empty_data' => '',
+            ])
+            ->add('document', EntityType::class, [
+                'class' => Document::class,
+                'mapped' => false,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'help' => 'Optional. Shown with this entry on the personnel file, filled in for the soldier.',
             ])
         ;
     }
