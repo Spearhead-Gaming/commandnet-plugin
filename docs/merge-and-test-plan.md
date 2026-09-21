@@ -41,8 +41,14 @@ enlistment accepted and declined, promotion, form review, course results, the AW
 to Active, and the Report In warning. It checks that the notification exists with the expected
 title, not that it was delivered.
 
-What that run could not cover: real production data, the daily cron trigger of the Report In task
-(the command itself is tested), delivery of notifications, the Discord plugin, and a real Arma client
+A page content test checks what pages say and do: the specialty, Loadout card and record types on a
+personnel file, a member's name containing HTML inside a rendered document, the roster with and
+without rosters (tabs, which soldiers each lists, their order), the squad file validated against the
+DTD the plugin serves, the Rank form saving, what a discharged soldier is offered and refused, and
+that the Report In command is in the scheduler.
+
+What that run could not cover: real production data (including the AWOL backfill), the scheduler
+worker actually running, delivery of notifications, the Discord plugin, and a real Arma client
 reading `/squad.xml`.
 
 A member views test loads the personnel file, roster, promotions, an operation, a course class, the
@@ -58,6 +64,9 @@ forms, report details) and none of the others.
 - The RSVP buttons on an operation page were shown to anyone with a personnel file, although the RSVP
   action needs `command-net.operations.rsvp`, so a member without it saw buttons that refused. They
   now need the permission too. Fixed in #30.
+- A discharged soldier was still offered the RSVP buttons and the Report In button (they have a
+  profile and the permission), and was refused when they used them. Both now need the soldier to be
+  enlisted. Fixed in #31.
 - `doctrine:schema:validate` reports drift for calendar-plugin tables and for Forumify's own
   `UserNotificationSettings` mapping. Neither comes from this plugin.
 
@@ -83,16 +92,17 @@ forms, report details) and none of the others.
 - [ ] Return a soldier from LOA to Active: absences from before do not count toward AWOL. **Unit test**
 - [ ] AWOL flag and clear entries show as type "AWOL" on the personnel file. Missing an operation
       flags the soldier, writes the record, grants the AWOL role and sends the notification, and
-      attending clears all of it: **App test**. How the file displays the record is **not covered**.
+      attending clears all of it, and the file lists an AWOL record with the type "AWOL": **App test**
 - [ ] Turn on Report In under Report In Settings and run `bin/console command-net:report-in:run-checks`:
       baseline entries are written and **nobody is flagged** on the first run. **App test**: the
       command runs, 25 days later a soldier is warned, 40 days later flagged AWOL, and reporting in
       clears it, each with its notification. The Report In button is an **App test** too.
-- [ ] The scheduler is running in this environment (Report In is a scheduled task). **Not covered**:
-      the command is tested, the daily cron trigger is not.
+- [ ] The scheduler is running in this environment (Report In is a scheduled task). The task is
+      registered in the scheduler: **App test**. The scheduler worker running on your server is
+      **not covered**.
 - [ ] Promote an eligible soldier from `/promotions`: rank changes, a promotion record is written and
       the rank role moves, the soldier gets a notification. **App test**
-- [ ] The admin **Rank** form opens and saves. Opening it is an **App test**; saving is **not covered**.
+- [ ] The admin **Rank** form opens and saves. **App test**
 - [x] CI runs on a pull request and passes.
 
 ## Rank groups and query fixes (migration `20260920180000`)
@@ -113,8 +123,8 @@ forms, report details) and none of the others.
 - [ ] Decline a second application: no profile is created and the applicant is notified. **App test**
 - [ ] Discharge a soldier who has a unit role, a rank role and a specialty role: all roles are removed
       and a discharge record is written. **App test**
-- [ ] A discharged soldier can no longer RSVP or report in. **Not covered**: the profile is checked as
-      not enlisted after discharge, but the RSVP and report in refusals were not exercised.
+- [ ] A discharged soldier can no longer RSVP or report in: the buttons are not offered, posting anyway
+      is refused with the enlisted message, and nothing is saved. **App test**
 - [ ] Re-enlist that soldier: the same profile is restored, history is kept and they are active again.
       **App test**
 - [ ] **Assignment role sync:** transfer a soldier between two units that each have a role. The role
@@ -125,14 +135,13 @@ forms, report details) and none of the others.
 
 - [ ] Specialties: set one that carries a role, change it, then discharge: the role follows each time.
       **App test** (set, clear and discharge)
-- [ ] The specialty shows on the personnel file and on the roster row. **Not covered** (both pages load,
-      the text is not checked)
+- [ ] The specialty shows on the personnel file and on the roster row. **App test**
 - [ ] Equipment: create weapons and a vehicle, attach them to a position and a unit, assign a soldier:
-      the Loadout card shows them. **Not covered** (the pages load with this data, the card is not
-      checked)
+      the Loadout card shows them. **App test** (weapons from the position, vehicles from the unit, no
+      card when there is nothing to show)
 - [ ] Documents: create one using several placeholders, issue an award with it, check the rendering on
       the personnel file. **App test** (a record carrying a document renders on the file)
-- [ ] A name containing HTML is shown escaped in a rendered document. **Not covered**
+- [ ] A name containing HTML is shown escaped in a rendered document. **App test**
 
 ## Forms, courses and rosters (migrations `20260920230000` to `250000`)
 
@@ -145,19 +154,20 @@ forms, report details) and none of the others.
       (no enrol button is offered), **Unit test** for the exact reasons.
 - [ ] After the start time, record results for every student: passes get a course record and the
       qualification, the student is notified, and results cannot be recorded twice. **App test**
-- [ ] Rosters: with none defined `/roster` looks exactly as before. **Not covered** (the page loads
-      with a roster defined, not without)
-- [ ] Create two rosters over different units and reorder them: tabs, unit order and counts are right.
-      **Not covered** (the page loads with one roster)
+- [ ] Rosters: with none defined `/roster` has no tabs and lists everyone, as before. **App test**
+- [ ] Create two rosters over different units and reorder them: the tabs follow the order, each lists
+      only its own units, and changing the order changes the tabs. **App test** (the order is changed
+      by editing the position, not by the drag-and-drop in the admin table, which is **not covered**)
 
 ## After rollout
 
 - [ ] Grant the new permissions to the right roles. Enforcement is an **App test**: every endpoint
       is refused to a member with none, refused to one holding every permission except the required
       one, and open to one holding only that permission. Which role should get which permission is
-      still your call. What each of those members sees on the main pages is also an **App test**;
-      the pages not listed in the member views test (org chart, qualifications, courses list, forms)
-      are **not covered**.
+      still your call. What each of those members sees on the main pages is also an **App test**. The
+      org chart, qualifications board, courses list and forms list have no permission-dependent
+      buttons or details in their templates, so there is nothing further to check there beyond who may
+      open them.
   - `command-net.admin.personnel.discharge`
   - `command-net.admin.enlistment`, `.specialties`, `.equipment`, `.documents`, `.forms`,
     `.courses` and `.rosters`, each with `.view` and `.manage`
@@ -168,4 +178,5 @@ forms, report details) and none of the others.
       Decide whether to change each once to trigger it.
 - [ ] Make the CI jobs required checks in branch protection.
 - [x] Delete the merged branches.
-- [ ] Have someone with a real Arma client check that `/squad.xml` loads. **Not covered**
+- [ ] Have someone with a real Arma client check that `/squad.xml` loads. The file is valid against the
+      DTD the plugin serves: **App test**. A real client reading it is **not covered**.

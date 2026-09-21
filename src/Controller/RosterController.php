@@ -35,12 +35,18 @@ class RosterController extends AbstractController
         $rosters = $this->rosterRepository->findInOrder();
         $selected = $this->selectRoster($rosters, $request->query->getInt('roster'));
 
+        // Only an enlisted soldier can report in, so only they are offered the button.
+        $user = $this->getUser();
+        $myProfile = $user !== null ? $this->soldierProfileRepository->findOneBy(['user' => $user]) : null;
+        $canReportIn = $myProfile?->isEnlisted() === true;
+
         if ($selected === null) {
             return $this->render('@CommandNetPlugin/frontend/roster/list.html.twig', [
                 'roster' => $soldiers,
                 'rosters' => [],
                 'selectedRoster' => null,
                 'groups' => null,
+                'canReportIn' => $canReportIn,
             ]);
         }
 
@@ -51,6 +57,7 @@ class RosterController extends AbstractController
             'rosters' => $rosters,
             'selectedRoster' => $selected,
             'groups' => $groups,
+            'canReportIn' => $canReportIn,
         ]);
     }
 
