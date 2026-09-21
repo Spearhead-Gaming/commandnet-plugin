@@ -63,6 +63,30 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
+     * Enlisted soldiers with a Steam ID, senior first, for the Squad XML export. Discharged and
+     * retired soldiers are left out; assignments and units are joined up front.
+     *
+     * @return array<SoldierProfile>
+     */
+    public function findForSquadXml(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->addSelect('user', 'soldierRank', 'assignment', 'assignmentUnit')
+            ->join('s.user', 'user')
+            ->leftJoin('s.rank', 'soldierRank')
+            ->leftJoin('s.assignments', 'assignment')
+            ->leftJoin('assignment.unit', 'assignmentUnit')
+            ->where('s.steamId IS NOT NULL')
+            ->andWhere("s.steamId != ''")
+            ->andWhere('s.status NOT IN (:gone)')
+            ->setParameter('gone', [SoldierStatus::DISCHARGED->value, SoldierStatus::RETIRED->value])
+            ->orderBy('soldierRank.position', 'DESC')
+            ->addOrderBy('user.displayName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Matches on the linked forumify user's display name or username, e.g. for the
      * Discord "/command-net-soldier" command's free-text search.
      *

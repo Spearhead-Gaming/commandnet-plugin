@@ -87,6 +87,7 @@ bin/console doctrine:migrations:migrate
 | `command_net_enlist` | `/enlist` | Apply to join, and see the status of your last application. |
 | `command_net_forms` | `/forms` | Open forms, and your own submissions with their status. |
 | `command_net_form_fill` | `/forms/{id}` | Fill in a form. |
+| `command_net_squad_xml` / `_squad_dtd` / `_squad_logo` | `/squad.xml`, `/squad.dtd`, `/logo.paa` | The Arma squad export (404 until enabled). |
 | `command_net_courses` | `/courses` | Upcoming classes and all courses. |
 | `command_net_course_class` | `/courses/class/{id}` | A class: its students, enrol/withdraw, and (for managers) recording results. |
 | `command_net_course_class_enroll` / `_withdraw` / `_results` | `/courses/class/{id}/enroll`, `/withdraw`, `/results` (POST) | Enrol, withdraw, and record every student's result. |
@@ -96,7 +97,7 @@ bin/console doctrine:migrations:migrate
 Every catalog has a standard Forumify CRUD screen under **Admin → Command Net**: Personnel, Units,
 Ranks, Rank Groups, Rosters, Positions, Specialties, Equipment, Documents, Forms, Courses, Course
 Classes, Awards, Qualifications and Operations. Form Submissions and Enlistment are review queues:
-opening an entry is the review screen. Enlistment Settings, AWOL Settings and Report In Settings are
+opening an entry is the review screen. Enlistment Settings, AWOL Settings, Report In Settings and Squad XML are
 single settings pages, and Personnel rows have a Discharge action. There's no separate admin screen
 for awards issued, qualifications earned, assignments, or service records — those are managed from
 the frontend personnel file instead, since they only make sense in the context of one soldier.
@@ -134,6 +135,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.reportin.submit` | Use the Report In button. |
 | `command-net.admin.reportin.view` / `.manage` | See each soldier's last report in / remove report ins and edit Report In Settings. |
 | `command-net.admin.awol.manage` | Edit AWOL Settings. |
+| `command-net.admin.squadxml.manage` | Edit Squad XML settings. |
 
 `admin.attendance` is also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
@@ -318,7 +320,7 @@ staging copy before relying on it.
   the unit tests mock the repositories, so controllers, forms, templates, migrations, DQL
   queries and the scheduled Report In task are only verified by booting the plugin against a
   real install.
-- **Not in this plugin yet, although MILHQ has it:** the Squad XML export, the PERSCOM migration
+- **Not in this plugin yet, although MILHQ has it:** the PERSCOM migration
   tool, configurable statuses, a point-and-click form builder, several instructors per course class,
   calendar sync for classes, and the Discord `/award`, `/qualification` and `/rank` commands. The
   section for each feature above lists what its first version leaves out.
@@ -326,6 +328,17 @@ staging copy before relying on it.
   is stored but unused.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
   `MajesticDev\Discord` plugin.
+
+## Squad XML
+
+Arma reads a unit's squad page from three files at the site root. Turn them on under **Admin →
+Command Net → Squad XML** (`command-net.admin.squadxml.manage`): a squad tag, name, title, web address
+and email (each falls back to the community title, the site address or `N/A`), and an optional `.paa`
+logo. `/squad.xml` then lists every enlisted soldier who has a Steam ID: the Steam ID as the member
+id, their callsign (or display name) as the nick, their display name, and their unit as the remark,
+senior first. `/squad.dtd` and `/logo.paa` are served alongside it. Names with symbols such as `&` are
+escaped. The files are public and off until enabled, since they publish members' Steam IDs; the XML
+is cached for 15 minutes, and saving the settings clears the cache.
 
 ## Integrations
 
