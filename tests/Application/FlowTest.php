@@ -10,6 +10,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Forumify\Core\Entity\Notification;
 use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
+use Forumify\Core\Notification\GenericNotificationType;
+use Forumify\Core\Repository\NotificationRepository;
 use Forumify\Testing\Traits\UserTrait;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Course;
@@ -41,6 +43,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Throwable;
 
 /**
@@ -458,13 +461,38 @@ class FlowTest extends WebTestCase
 
     private function notified(int $userId, string $titleContains): bool
     {
-        foreach ($this->em->getRepository(Notification::class)->findBy(['recipient' => $userId]) as $notification) {
+        // The platform's repository fills in the deserialized context that the notification types read.
+        /** @var NotificationRepository $notifications */
+        $notifications = static::getContainer()->get(NotificationRepository::class);
+        foreach ($notifications->findBy(['recipient' => $userId]) as $notification) {
             if (str_contains((string)($notification->getContext()['title'] ?? ''), $titleContains)) {
+                $this->renders($notification);
+
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * What the member is shown for a notification comes from the platform's generic type reading the
+     * context we filled in, so a misspelt key would leave the title, text or link blank.
+     */
+    private function renders(Notification $notification): void
+    {
+        /** @var TranslatorInterface $translator */
+        $translator = static::getContainer()->get('translator');
+        $type = new GenericNotificationType($translator);
+        $shown = ['title' => $type->getTitle($notification), 'text' => $type->getDescription($notification), 'link' => $type->getUrl($notification)];
+        foreach ($shown as $what => $value) {
+            if (trim($value) === '') {
+                $this->check('notification "' . ($notification->getContext()['title'] ?? '') . '" shows a ' . $what, false);
+            }
+        }
+        if (!str_starts_with($shown['link'], '/')) {
+            $this->check('notification "' . ($notification->getContext()['title'] ?? '') . '" links to a page on the site (got "' . $shown['link'] . '")', false);
+        }
     }
 
     private function rank(string $name, int $position, ?RankGroup $group, ?Role $role): Rank

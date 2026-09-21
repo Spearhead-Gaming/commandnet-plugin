@@ -9,6 +9,10 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
+        <!-- Runs migrations against legacy-shaped rows in a scratch database; needs the MySQL server. -->
+        <testsuite name="Migration">
+            <directory>tests/Migration</directory>
+        </testsuite>
         <!-- Needs a MySQL server and a prepared test database, see the "Application tests" CI job. -->
         <testsuite name="Application">
             <directory>tests/Application</directory>
