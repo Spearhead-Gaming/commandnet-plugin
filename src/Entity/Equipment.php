@@ -24,6 +24,12 @@ class Equipment
     #[ORM\Column(length: 20, enumType: EquipmentType::class)]
     private EquipmentType $type = EquipmentType::PRIMARY_WEAPON;
 
+    /**
+     * The Arma 3 config class, e.g. "B_MBT_01_cannon_F". The ORBAT export needs it to list a vehicle.
+     */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $classname = null;
+
     public function getName(): string
     {
         return $this->name;
@@ -42,6 +48,16 @@ class Equipment
     public function setType(EquipmentType $type): void
     {
         $this->type = $type;
+    }
+
+    public function getClassname(): ?string
+    {
+        return $this->classname;
+    }
+
+    public function setClassname(?string $classname): void
+    {
+        $this->classname = $classname;
     }
 
     public function __toString(): string

@@ -9,6 +9,7 @@ use Forumify\Core\Entity\Role;
 use Forumify\Core\Form\UploadType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -21,6 +22,7 @@ use MajesticDev\CommandNet\Entity\Equipment;
 use MajesticDev\CommandNet\Entity\Enum\EquipmentType;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
+use MajesticDev\CommandNet\Service\OrbatGenerator;
 
 /**
  * @extends AbstractType<Unit>
@@ -82,6 +84,19 @@ class UnitType extends AbstractType
                     ->setParameter('type', EquipmentType::VEHICLE)
                     ->orderBy('e.name', 'ASC'),
                 'help' => 'Vehicles this unit has.',
+            ])
+            ->add('orbatSize', ChoiceType::class, [
+                'label' => 'ORBAT size',
+                'required' => false,
+                'placeholder' => 'Work out from the units below it',
+                'choices' => array_combine(OrbatGenerator::SIZES, OrbatGenerator::SIZES),
+            ])
+            ->add('orbatType', ChoiceType::class, [
+                'label' => 'ORBAT type',
+                'required' => false,
+                'placeholder' => 'Infantry',
+                'choices' => array_flip(OrbatGenerator::TYPES),
+                'help' => 'How the unit shows in the Arma 3 ORBAT export.',
             ])
             ->add('discordGuildId', TextType::class, [
                 'label' => 'Discord Server (Guild) ID',

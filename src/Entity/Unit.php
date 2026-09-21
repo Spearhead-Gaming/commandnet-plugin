@@ -77,6 +77,16 @@ class Unit implements SortableEntityInterface
     #[ORM\Column(length: 32, nullable: true)]
     private ?string $discordGuildId = null;
 
+    /**
+     * How the unit shows in the Arma 3 ORBAT (see OrbatGenerator). Blank sizes are worked out from
+     * how many echelons sit below the unit, and blank types export as Infantry.
+     */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $orbatSize = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $orbatType = null;
+
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'unit', targetEntity: Assignment::class)]
     private Collection $assignments;
@@ -111,6 +121,26 @@ class Unit implements SortableEntityInterface
     public function removeVehicle(Equipment $vehicle): void
     {
         $this->vehicles->removeElement($vehicle);
+    }
+
+    public function getOrbatSize(): ?string
+    {
+        return $this->orbatSize;
+    }
+
+    public function setOrbatSize(?string $orbatSize): void
+    {
+        $this->orbatSize = $orbatSize;
+    }
+
+    public function getOrbatType(): ?string
+    {
+        return $this->orbatType;
+    }
+
+    public function setOrbatType(?string $orbatType): void
+    {
+        $this->orbatType = $orbatType;
     }
 
     public function getName(): string
