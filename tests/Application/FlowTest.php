@@ -11,6 +11,7 @@ use Forumify\Core\Entity\Notification;
 use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
 use Forumify\Core\Notification\GenericNotificationType;
+use Forumify\Core\Repository\NotificationRepository;
 use Forumify\Testing\Traits\UserTrait;
 use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Course;
@@ -460,7 +461,10 @@ class FlowTest extends WebTestCase
 
     private function notified(int $userId, string $titleContains): bool
     {
-        foreach ($this->em->getRepository(Notification::class)->findBy(['recipient' => $userId]) as $notification) {
+        // The platform's repository fills in the deserialized context that the notification types read.
+        /** @var NotificationRepository $notifications */
+        $notifications = static::getContainer()->get(NotificationRepository::class);
+        foreach ($notifications->findBy(['recipient' => $userId]) as $notification) {
             if (str_contains((string)($notification->getContext()['title'] ?? ''), $titleContains)) {
                 $this->renders($notification);
 
