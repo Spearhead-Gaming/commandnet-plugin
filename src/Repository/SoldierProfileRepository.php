@@ -87,6 +87,29 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
+     * Loads the assignments (with their units) of these soldiers in one query, so reading
+     * getPrimaryAssignment() on each of them does not query per soldier. Fetch-joining the
+     * collection into the page query itself would break its LIMIT, hence a second query.
+     *
+     * @param array<SoldierProfile> $soldiers
+     */
+    public function loadAssignmentsFor(array $soldiers): void
+    {
+        if ($soldiers === []) {
+            return;
+        }
+
+        $this->createQueryBuilder('s')
+            ->select('s', 'assignment', 'assignmentUnit')
+            ->leftJoin('s.assignments', 'assignment')
+            ->leftJoin('assignment.unit', 'assignmentUnit')
+            ->where('s IN (:soldiers)')
+            ->setParameter('soldiers', $soldiers)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Matches on the linked forumify user's display name or username, e.g. for the
      * Discord "/command-net-soldier" command's free-text search.
      *

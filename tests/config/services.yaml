@@ -1,0 +1,9 @@
+services:
+    # Counts the SQL statements a request runs, see QueryCountTest.
+    MajesticDev\CommandNet\Tests\Support\QueryCounter: ~
+
+    command_net.test.query_logging:
+        class: Doctrine\DBAL\Logging\Middleware
+        arguments: ['@MajesticDev\CommandNet\Tests\Support\QueryCounter']
+        tags:
+            - { name: doctrine.middleware, connection: default }

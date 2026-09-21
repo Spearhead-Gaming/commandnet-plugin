@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Admin\Components\Table;
 
+use Doctrine\ORM\QueryBuilder;
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Forumify\Core\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -14,6 +15,7 @@ use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 
 #[AsLiveComponent('SoldierProfileTable', '@CommandNetPlugin/admin/personnel/table.html.twig')]
 #[IsGranted('command-net.admin.personnel.view')]
@@ -35,6 +37,38 @@ class SoldierProfileTable extends AbstractDoctrineTable
     protected function getEntityClass(): string
     {
         return SoldierProfile::class;
+    }
+
+    /**
+     * The name, rank and unit columns read the user, rank and assignments of every row, so they
+     * are loaded with the page instead of once per soldier.
+     *
+     * @param array<string> $search
+     */
+    protected function getQuery(array $search): QueryBuilder
+    {
+        return parent::getQuery($search)
+            ->addSelect('rowUser', 'rowRank')
+            ->leftJoin('e.user', 'rowUser')
+            ->leftJoin('e.rank', 'rowRank');
+    }
+
+    protected function getData(): array
+    {
+        $soldiers = parent::getData();
+
+        /** @var array<SoldierProfile> $soldiers */
+        $this->soldierProfileRepository()->loadAssignmentsFor($soldiers);
+
+        return $soldiers;
+    }
+
+    private function soldierProfileRepository(): SoldierProfileRepository
+    {
+        /** @var SoldierProfileRepository $repository */
+        $repository = $this->repository;
+
+        return $repository;
     }
 
     /**

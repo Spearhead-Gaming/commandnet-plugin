@@ -78,7 +78,9 @@ member sees on each page, the Discord plugin, and a real Arma client reading `/s
       no next rank on `/promotions`. **Unit test**. Promoting from the lower rank of a two-rank group
       is an **App test**.
 - [ ] Load `/promotions`, `/roster` and `/attendance` with query logging on. The query count stays flat
-      as the roster grows. **Not covered**
+      as the roster grows. **App test**: the same count at 3 and at 15 soldiers, for these and for
+      `/units`, `/operations/{id}`, `/qualifications` and the admin Personnel list. It found an N+1 in
+      the Personnel list (fixed). Real data can still surprise it, so glance at a query log on staging.
 
 ## Enlistment, discharge and assignment role sync (migration `20260920190000`)
 
