@@ -320,10 +320,11 @@ staging copy before relying on it.
   the unit tests mock the repositories, so controllers, forms, templates, migrations, DQL
   queries and the scheduled Report In task are only verified by booting the plugin against a
   real install.
-- **Not in this plugin yet, although MILHQ has it:** the PERSCOM migration
-  tool, configurable statuses, a point-and-click form builder, several instructors per course class,
-  calendar sync for classes, and the Discord `/award`, `/qualification` and `/rank` commands. The
-  section for each feature above lists what its first version leaves out.
+- **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
+  builder, several instructors per course class, calendar sync for classes, and the Discord
+  `/award`, `/qualification` and `/rank` commands. The section for each feature above lists what its
+  first version leaves out. MILHQ's PERSCOM migration tool is deliberately left out; this install
+  does not migrate from PERSCOM.
 - **Discord replies** do not show a soldier's specialty or loadout, and `Unit`'s Discord server id
   is stored but unused.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
