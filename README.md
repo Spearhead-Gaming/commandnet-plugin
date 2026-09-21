@@ -96,6 +96,23 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting them today has no effect.
 
+## Enlistment
+
+Turn it on under **Admin → Command Net → Enlistment Settings**. Signed-in members with a verified,
+non-banned account can then apply at `/enlist` (add it to the menu with the Command Net menu item):
+callsign, Steam ID, why they want to join, experience and availability. Staff review applications
+under **Admin → Command Net → Enlistment** (`command-net.admin.enlistment.view` / `.manage`) and
+accept or decline with an optional note.
+
+Accepting creates the personnel file (or restores a discharged or retired one), sets the enlistment
+date, gives the configured starting rank if they have none, posts them to the configured starting
+unit, writes the enlistment and assignment records, and notifies the applicant. Declining just
+notifies. A declined applicant can apply again; someone with a pending application, or who is
+already enlisted, can't.
+
+Unlike MILHQ, the application is a fixed form rather than one built in a form builder, and it
+doesn't open a forum topic for recruiters; both come with a forms feature, which doesn't exist yet.
+
 ## Promotions
 
 `/promotions` (permission `command-net.promotions.view`) lists active soldiers against the

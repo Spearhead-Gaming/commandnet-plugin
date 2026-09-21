@@ -45,6 +45,12 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Operations', $url('forumify_admin_command_net_operations_list'), [
                 'permission' => 'command-net.admin.operations.view',
             ]),
+            new MenuItem('Enlistment', $url('forumify_admin_command_net_enlistment_list'), [
+                'permission' => 'command-net.admin.enlistment.view',
+            ]),
+            new MenuItem('Enlistment Settings', $url('forumify_admin_command_net_enlistment_settings'), [
+                'permission' => 'command-net.admin.enlistment.manage',
+            ]),
             new MenuItem('AWOL Settings', $url('forumify_admin_command_net_awol_settings'), [
                 'permission' => 'command-net.admin.awol.manage',
             ]),

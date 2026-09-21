@@ -61,6 +61,7 @@ class CommandNetPlugin extends AbstractForumifyPlugin
                 'courses' => ['view', 'manage'],
                 'reportin' => ['view', 'manage'],
                 'awol' => ['manage'],
+                'enlistment' => ['view', 'manage'],
             ],
             'roster' => ['view'],
             'qualifications' => ['view'],

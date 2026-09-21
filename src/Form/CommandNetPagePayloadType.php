@@ -19,6 +19,7 @@ class CommandNetPagePayloadType extends AbstractType
         'Org Chart' => 'command_net_units',
         'Attendance' => 'command_net_attendance',
         'Qualifications' => 'command_net_qualifications',
+        'Enlist' => 'command_net_enlist',
     ];
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
