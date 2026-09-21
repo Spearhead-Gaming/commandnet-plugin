@@ -87,12 +87,6 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
-     * Matches on the linked forumify user's display name or username, e.g. for the
-     * Discord "/command-net-soldier" command's free-text search.
-     *
-     * @return array<SoldierProfile>
-     */
-    /**
      * Loads the assignments (with their units) of these soldiers in one query, so reading
      * getPrimaryAssignment() on each of them does not query per soldier. Fetch-joining the
      * collection into the page query itself would break its LIMIT, hence a second query.
@@ -115,6 +109,12 @@ class SoldierProfileRepository extends AbstractRepository
             ->getResult();
     }
 
+    /**
+     * Matches on the linked forumify user's display name or username, e.g. for the
+     * Discord "/command-net-soldier" command's free-text search.
+     *
+     * @return array<SoldierProfile>
+     */
     public function findByNameLike(string $name): array
     {
         return $this->createQueryBuilder('s')
