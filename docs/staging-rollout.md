@@ -1,7 +1,9 @@
 # Rolling the migrations out to staging
 
-This is what to run on a **staging** install that has a copy of production data. It covers the 13
-migrations from `20260920140000` to `20260920260000` and the code that goes with them. Do production
+This is what to run on a **staging** install that has a copy of production data. It covers the
+migrations from `20260917160000` to `20260920260000`: 15 on a database that does not have them yet,
+of which the 13 from `20260920140000` on are the audit work. It also covers the code that goes with
+them. Do production
 the same way once staging has passed. `docs/merge-and-test-plan.md` says what has been tested and what
 this run still has to settle.
 
@@ -12,13 +14,17 @@ the tests, so read their output before going on.
 
 - [ ] **Confirm the target is staging.** Look at the database the install points at (`DATABASE_URL`
       in its `.env.local`, or wherever your host sets it) and check the host and database name are
-      staging's, not production's. Every command below changes that database.
+      staging's, not production's. `.env.local` overrides `.env`, so if both define it, the one in
+      `.env.local` is the one in use. Every command below changes that database.
+- [ ] Run the commands from the install's own folder, in a shell where `php` and `composer` are on
+      the PATH. In a non-login shell (a script, `ssh host command`) `composer` is often missing
+      because it lives in `~/.local/bin`.
 - [ ] Staging runs the same PHP (8.4 or newer) and Forumify (1.3.x) versions as production, on a
       copy of production data.
 - [ ] **Back up the database**, and note which plugin version is installed now:
 
       ```bash
-      mysqldump --single-transaction --routines <staging-database> > staging-before-command-net.sql
+      mysqldump --single-transaction --routines --no-tablespaces <staging-database> > staging-before-command-net.sql
       composer show majesticdev/commandnet-plugin
       ```
 
@@ -34,7 +40,12 @@ the tests, so read their output before going on.
       ```
 
       Before the migrations, those entries are filed under the type `assignment`. After them they
-      should all be `awol`.
+      should all be `awol`. If the database has no such entries (a small dev database, say), the
+      checks in step 4 prove the schema but not the backfill, which needs real data.
+
+      Also check the tail of the dump says `-- Dump completed`; without `--no-tablespaces`,
+      `mysqldump` prints a privilege warning for users without the `PROCESS` privilege, though the
+      dump itself is fine.
 
 ## 1. Update the plugin
 
@@ -47,20 +58,41 @@ bin/console forumify:plugins:refresh
 
 Check in the admin panel's plugin list that Command Net is there and active.
 
+If the plugin is a path repository (a symlink to a working copy), check out `master` in that
+folder first, and still run `composer update` for the package: Composer builds its autoload map from
+the metadata it recorded at the last update, not from the folder, so a plain `composer
+dump-autoload` does not pick up changes.
+
+**If every page returns 500 and `cache:clear` fails** with `Attempted to load class ... Did you
+forget a "use" statement` from `PluginRouteLoader`, an installed plugin has renamed its class since
+this install last recorded it (this happened with the Discord fork on the WSL dev install). It is not
+caused by these migrations. Update just that plugin, then refresh:
+
+```bash
+composer update <vendor>/<plugin> --no-scripts
+bin/console forumify:plugins:refresh
+bin/console cache:clear
+```
+
 ## 2. See what will run
 
 ```bash
 bin/console doctrine:migrations:list
 ```
 
-Expect the pending ones to be some or all of the 13 from `Version20260920140000` on. If some already
-show as executed, someone ran them before; carry on with the pending ones.
+Expect the pending ones to be some or all of the 15 from `Version20260917160000` on. If some already
+show as executed, someone ran them before; carry on with the pending ones. A line for a Forumify
+migration marked "migrated, not available", and a warning about "1 previously executed migrations
+... not registered", are not from this plugin and are harmless.
 
-Read the SQL before it runs, especially the two that touch existing rows:
+Check they can all run, and how many statements that is:
 
 ```bash
 bin/console doctrine:migrations:migrate --dry-run
 ```
+
+It prints the number of migrations and statements, not the SQL. To read the SQL, open the files in
+`vendor/majesticdev/commandnet-plugin/migrations/`, especially the two that touch existing rows:
 
 `Version20260920140000` adds `soldier_profile.awol_auto_flagged`, marks soldiers who are AWOL and have a
 "Flagged AWOL" entry, and changes those entries from type `assignment` to `awol`.
@@ -118,8 +150,9 @@ Finally:
 bin/console doctrine:schema:validate
 ```
 
-It will report differences for tables belonging to the calendar plugin and to Forumify's own
-`UserNotificationSettings`; those are not from this plugin. Anything naming a `command_net` table or a
+It will report a mapping failure for Forumify's own `UserNotificationSettings` and possibly
+differences for the calendar plugin's tables; those are not from this plugin. The line to look for is
+`The database schema is in sync with the mapping files`. Anything naming a `command_net` table or a
 column of `soldier_profile` or `service_record` is a problem.
 
 ## 5. Try it
@@ -150,6 +183,9 @@ The full list is in `docs/merge-and-test-plan.md`. Do at least these on staging:
       soldier with no report in on file and check the next morning that they have a "Last Report In"
       date (the baseline the check records). The task is scheduled for 08:00 with a random delay of up
       to 30 minutes.
+- [ ] Check the site answers: the home page and `/login` should return 200 and `/roster` should
+      redirect to the login page when signed out. `/squad.xml` returns 404 until you enable it under
+      Admin, Command Net, Squad XML Settings.
 - [ ] Load `/squad.xml` with a real Arma client if you use it. The tests check it against its DTD
       but not against a real client.
 
