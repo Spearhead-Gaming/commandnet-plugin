@@ -85,10 +85,16 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.operations.view` | View the operations list and detail pages. |
 | `command-net.operations.rsvp` | RSVP to an operation. |
 | `command-net.operations.submit_aar` | Submit an after-action report. |
+| `command-net.qualifications.view` | View the public qualifications board. |
+| `command-net.attendance.view_own` / `.view_all` | View your own attendance record on `/attendance` / everyone's. |
+| `command-net.promotions.view` | View promotion eligibility on `/promotions`. |
+| `command-net.reportin.submit` | Use the Report In button. |
+| `command-net.admin.reportin.view` / `.manage` | See each soldier's last report in / remove report ins and edit Report In Settings. |
+| `command-net.admin.awol.manage` | Edit AWOL Settings. |
 
-`attendance.*`, `forms.*`, `courses.*`, and `reportin.*` are also declared in
-`CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet (see
-below) — granting them today has no effect.
+`admin.attendance`, `admin.forms`, `admin.courses`, `forms.submit`, and `courses.enroll` are also
+declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
+(see below) — granting them today has no effect.
 
 ## Promotions
 
@@ -98,6 +104,10 @@ qualifications, both set on the target rank. Anyone with `command-net.admin.pers
 also gets a **Promote** button on eligible rows; it re-checks the requirements, changes the
 rank, writes the promotion record and notifies the soldier. Skipping the requirements is a
 rank edit on the admin personnel form.
+
+Ranks can be put in a **rank group** (Admin → Command Net → Rank Groups), such as Enlisted or
+Officer. Promotion only moves up within a group, so the top of one track isn't offered the bottom
+of the next; ranks with no group share one ladder.
 
 A rank can be given a forumify **Role** in the admin. A soldier holds the role of their current
 rank and loses every other rank's role on any rank change, from either the Promote button or the
@@ -135,14 +145,16 @@ set by an admin or by missed operations is never cleared by reporting in.
 This plugin is running against a live install, but a few things are worth knowing before
 you rely on them:
 
-- **No test suite.** Everything here is verified by having booted the plugin against a
-  real install, not by an automated suite.
-- **Rank changes don't write a service record.** Editing a soldier's rank in the admin
-  form updates the field silently, in either direction.
-- **No cycle guard on the unit tree.** The parent-unit picker excludes the unit itself but
-  not its descendants.
-- **OperationRSVP has no "withdraw."** A soldier can change their RSVP any time but can't
-  clear it back to no response.
+- **Tests cover the services, not the whole plugin.** CI runs PHPUnit, phpcs and PHPStan, but
+  the unit tests mock the repositories, so controllers, forms, templates, migrations, DQL
+  queries and the scheduled Report In task are only verified by booting the plugin against a
+  real install.
+- **Features MILHQ has that this plugin doesn't yet:** an enlistment flow, forms and
+  submissions, courses, a discharge flow, specialties, equipment and documents.
+- **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
+  `MajesticDev\Discord` plugin.
+- **The roster and attendance pages** load some data per soldier and haven't been optimised
+  for large rosters the way `/promotions` has.
 
 ## Works well with
 
