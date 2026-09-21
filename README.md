@@ -313,8 +313,9 @@ set by an admin or by missed operations is never cleared by reporting in.
 
 The earliest features have run against a live install. Everything added since the audit (rank
 groups, enlistment, discharge, specialties, equipment, documents, forms, courses, rosters, and the
-fixes) has only been through CI so far; `docs/merge-and-test-plan.md` lists what to check on a
-staging copy before relying on it.
+fixes) has been through CI and the application tests below, but not a live install with real data;
+`docs/merge-and-test-plan.md` says what has been tested and what to check on a staging copy before
+relying on it.
 
 - **Tests are thinner than the plugin.** CI runs PHPUnit, phpcs and PHPStan. The unit tests mock
   the repositories. Two application tests boot the plugin in a real Forumify install on MySQL
