@@ -78,6 +78,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.roster.view` | View the roster and personnel files. |
 | `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
 | `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
+| `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -96,6 +97,18 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `admin.attendance`, `admin.forms`, `admin.courses`, `forms.submit`, and `courses.enroll` are also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
 (see below) — granting them today has no effect.
+
+## Specialties
+
+A **specialty** is a soldier's trade (Combat Medic, Radio Operator, ...): one per soldier, set on
+their profile in Admin → Command Net → Personnel, and shown on their personnel file and the roster.
+Unlike a position it follows them between units. Manage them under Admin → Command Net →
+Specialties (`command-net.admin.specialties.view` / `.manage`). A specialty can carry a forumify
+**Role**: a soldier holds the role of their specialty, and it is removed if it changes or they are
+discharged (map it to a Discord role in the Discord plugin to keep Discord in step).
+
+Changes to a soldier's specialty are not written to their service record, and it is not shown in the
+Discord `/command-net-soldier` reply yet.
 
 ## Enlistment
 

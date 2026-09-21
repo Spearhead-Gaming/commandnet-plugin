@@ -12,6 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Admin\Form\SoldierProfileType;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Service\RankChangeService;
+use MajesticDev\CommandNet\Service\SpecialtyRoleSyncer;
 
 /**
  * @extends AbstractCrudController<SoldierProfile>
@@ -30,6 +31,7 @@ class SoldierProfileController extends AbstractCrudController
 
     public function __construct(
         private readonly RankChangeService $rankChangeService,
+        private readonly SpecialtyRoleSyncer $specialtyRoleSyncer,
     ) {
     }
 
@@ -60,11 +62,15 @@ class SoldierProfileController extends AbstractCrudController
     {
         $profile = $this->repository->find($identifier);
         $previousRank = $profile?->getRank();
+        $previousSpecialty = $profile?->getSpecialty();
 
         $response = parent::edit($request, $identifier);
 
         if ($profile !== null && $response->isRedirect()) {
             $this->rankChangeService->afterRankChange($profile, $previousRank);
+            if ($profile->getSpecialty() !== $previousSpecialty) {
+                $this->specialtyRoleSyncer->sync($profile);
+            }
         }
 
         return $response;

@@ -22,6 +22,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Entity\Specialty;
 
 /**
  * @extends AbstractType<SoldierProfile>
@@ -63,6 +64,13 @@ class SoldierProfileType extends AbstractType
                 'placeholder' => 'Unranked',
                 'choice_label' => fn (Rank $r) => (string)$r,
                 'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
+            ])
+            ->add('specialty', EntityType::class, [
+                'class' => Specialty::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('sp')->orderBy('sp.name', 'ASC'),
             ])
             ->add('serviceNumber', TextType::class, [
                 'required' => false,

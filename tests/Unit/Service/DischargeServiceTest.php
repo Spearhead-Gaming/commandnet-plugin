@@ -20,6 +20,7 @@ use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\AwolService;
 use MajesticDev\CommandNet\Service\DischargeService;
 use MajesticDev\CommandNet\Service\RankRoleSyncer;
+use MajesticDev\CommandNet\Service\SpecialtyRoleSyncer;
 use MajesticDev\CommandNet\Service\UnitRoleSyncer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +31,7 @@ class DischargeServiceTest extends TestCase
     private SoldierProfileRepository&MockObject $soldierRepository;
     private UnitRoleSyncer&MockObject $unitRoleSyncer;
     private RankRoleSyncer&MockObject $rankRoleSyncer;
+    private SpecialtyRoleSyncer&MockObject $specialtyRoleSyncer;
     private AwolService&MockObject $awolService;
 
     /** @var ServiceRecord[] */
@@ -44,6 +46,7 @@ class DischargeServiceTest extends TestCase
         });
         $this->unitRoleSyncer = $this->createMock(UnitRoleSyncer::class);
         $this->rankRoleSyncer = $this->createMock(RankRoleSyncer::class);
+        $this->specialtyRoleSyncer = $this->createMock(SpecialtyRoleSyncer::class);
         $this->awolService = $this->createMock(AwolService::class);
 
         $this->service = new DischargeService(
@@ -52,6 +55,7 @@ class DischargeServiceTest extends TestCase
             $this->createMock(AssignmentRepository::class),
             $this->unitRoleSyncer,
             $this->rankRoleSyncer,
+            $this->specialtyRoleSyncer,
             $this->awolService,
         );
     }
@@ -67,6 +71,7 @@ class DischargeServiceTest extends TestCase
         $this->soldierRepository->expects($this->once())->method('save')->with($soldier);
         $this->unitRoleSyncer->expects($this->once())->method('sync')->with($soldier);
         $this->rankRoleSyncer->expects($this->once())->method('sync')->with($soldier, true);
+        $this->specialtyRoleSyncer->expects($this->once())->method('sync')->with($soldier, true);
         $this->awolService->expects($this->once())->method('revokeRole')->with($soldier);
 
         $this->service->discharge($soldier, DischargeKind::HONORABLE, 'Moved on.', $date);
