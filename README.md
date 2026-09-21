@@ -1,9 +1,12 @@
 # Command Net
 
-A [forumify](https://forumify.net) plugin for personnel and unit management: ranks,
-positions, assignments, awards, qualifications, and operations with RSVP, attendance, and
-after-action reports. Everything a soldier does feeds a single append-only service-record
-timeline on their personnel file, rather than each module keeping its own history.
+A [forumify](https://forumify.net) plugin for personnel and unit management, built to be compared
+against [forumify-milhq-plugin](https://github.com/forumify/forumify-milhq-plugin): ranks (in
+promotion tracks), positions, specialties, equipment, assignments, awards, qualifications and
+operations with RSVP, attendance and after-action reports, plus enlistment, discharge, forms,
+courses, documents, promotions, Report In and AWOL detection. Everything a soldier does feeds a
+single append-only service-record timeline on their personnel file, rather than each module keeping
+its own history.
 
 Built for a specific MILSIM community's Forumify install; not a general-purpose skeleton.
 
@@ -11,7 +14,14 @@ Built for a specific MILSIM community's Forumify install; not a general-purpose 
 
 - PHP 8.4 or newer
 - A Forumify 1.3.x install
-- MySQL (for the migration in `migrations/`)
+- MySQL (for the migrations in `migrations/`)
+- The Symfony scheduler running, for the daily Report In check (it does nothing until enabled)
+
+Optional, picked up automatically when installed:
+
+- The Forumify **calendar** plugin: operations are mirrored onto a community calendar.
+- The Discord plugin (`MajesticDev\Discord`): slash commands, and mapping the forumify roles this
+  plugin grants to Discord roles. See Integrations below.
 
 ## Install
 
@@ -30,25 +40,40 @@ bin/console doctrine:migrations:migrate
 
 | Entity | Notes |
 | --- | --- |
-| `SoldierProfile` | 1:1 with the Forumify `User`, kept separate so the plugin can be removed cleanly. Rank, service number, callsign, status, enlistment/discharge dates. |
-| `Unit` | Self-referencing tree (parent/children), sortable, optional commander. |
-| `Rank`, `Position`, `Award`, `Qualification` | Flat, sortable catalogs managed in the admin panel. |
+| `SoldierProfile` | 1:1 with the Forumify `User`, kept separate so the plugin can be removed cleanly. Rank, specialty, service number, callsign, status (active, LOA, AWOL, discharged, retired), enlistment/discharge dates. |
+| `Unit` | Self-referencing tree (parent/children), sortable, optional commander and forumify role, optional vehicles. |
+| `Roster` | A named, sortable set of units shown as a tab on the roster page. |
+| `Rank`, `RankGroup` | Ranks are a sortable ladder with promotion requirements and an optional forumify role; a group is a promotion track (Enlisted, Officer, ...). |
+| `Position`, `Specialty`, `Award`, `Qualification` | Sortable catalogs managed in the admin panel. A position lists the weapons its holder may use; a specialty can carry a forumify role. |
+| `Equipment` | A primary weapon, secondary weapon or vehicle. |
+| `Document` | A rich-text template with `{placeholders}` that a service record can carry. |
 | `Assignment` | A soldier's posting to a unit (and optionally a position) over a date range. One assignment can be flagged primary. |
 | `SoldierAward`, `SoldierQualification` | Join entities recording who issued what, and when. |
 | `Operation` | An OPORD with a start/end time, optional unit, and status. Owns its RSVPs and AARs. |
 | `OperationRSVP` | One per soldier per operation (`status`, and separately, `attended`, since intent and reality aren't the same field). |
 | `OperationAAR` | After-action report. Many per operation by design — larger ops often get separate reports from each element lead rather than one summary. |
-| `ServiceRecord` | The unified timeline entry. Assignments, awards, qualifications, and AARs each write one on success; deleting the entry that created one removes it too. |
+| `ReportIn` | One entry each time a soldier reports in. |
+| `EnlistmentApplication` | A request to join; accepting it creates or restores the personnel file. |
+| `FormDefinition`, `FormSubmission` | A staff-built form and a member's filled-in copy of it (answers stored as text next to the question). |
+| `Course`, `CourseClass`, `CourseClassStudent` | A course (with prerequisites and the qualifications a pass grants), a scheduled class of it, and a soldier enrolled in a class with their result. |
+| `ServiceRecord` | The unified timeline entry. Assignments, awards, qualifications, AARs, promotions, course passes, AWOL changes and discharges each write one; deleting the entry that created one removes it too where that applies. |
 
 ## Frontend routes
 
 | Route | Path | What it does |
 | --- | --- | --- |
-| `command_net_roster` | `/roster` | Active roster listing. |
-| `command_net_roster_profile` | `/roster/{username}` | A soldier's personnel file: awards, qualifications, assignment history, service record timeline. |
-| `command_net_roster_award` | `/roster/{username}/award` | Issue an award. |
+| `command_net_roster` | `/roster` | Active roster: one list, or a tab per roster when rosters are defined (`?roster=<id>`). |
+| `command_net_units` | `/units` | Org chart. |
+| `command_net_qualifications` | `/qualifications` | Public qualifications board. |
+| `command_net_attendance` | `/attendance` | Your attendance record, or everyone's with the right permission. |
+| `command_net_promotions` | `/promotions` | Promotion eligibility, with a Promote button for managers. |
+| `command_net_promotions_promote` | `/promotions/{id}/promote` (POST) | Promote an eligible soldier. |
+| `command_net_report_in` | `/roster/report-in` (POST) | Report in. |
+| `command_net_report_in_delete` | `/roster/report-in/{id}/delete` (POST) | Remove a report in entry. |
+| `command_net_roster_profile` | `/roster/{username}` | A soldier's personnel file: awards, qualifications, assignment history, loadout, service record timeline. |
+| `command_net_roster_award` | `/roster/{username}/award` | Issue an award (optionally with a document). |
 | `command_net_roster_award_delete` | `/roster/{username}/award/{id}/delete` | Remove an award and its service record entry. |
-| `command_net_roster_qualification` | `/roster/{username}/qualification` | Issue a qualification. |
+| `command_net_roster_qualification` | `/roster/{username}/qualification` | Issue a qualification (optionally with a document). |
 | `command_net_roster_qualification_delete` | `/roster/{username}/qualification/{id}/delete` | Remove a qualification and its service record entry. |
 | `command_net_roster_assignment` | `/roster/{username}/assignment` | Create an assignment (closes the soldier's current primary posting if the new one is primary). |
 | `command_net_roster_assignment_delete` | `/roster/{username}/assignment/{id}/delete` | Remove an assignment and its service record entry. |
@@ -59,14 +84,22 @@ bin/console doctrine:migrations:migrate
 | `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent; creates the RSVP row if they never responded. |
 | `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; combat service records are kept at one per soldier marked attended, however many AARs exist. |
 | `command_net_operation_aar_delete` | `/operations/{id}/aar/{aarId}/delete` (POST) | Remove a report (its submitter or an operations manager only) and every service record it wrote. |
+| `command_net_enlist` | `/enlist` | Apply to join, and see the status of your last application. |
+| `command_net_forms` | `/forms` | Open forms, and your own submissions with their status. |
+| `command_net_form_fill` | `/forms/{id}` | Fill in a form. |
+| `command_net_courses` | `/courses` | Upcoming classes and all courses. |
+| `command_net_course_class` | `/courses/class/{id}` | A class: its students, enrol/withdraw, and (for managers) recording results. |
+| `command_net_course_class_enroll` / `_withdraw` / `_results` | `/courses/class/{id}/enroll`, `/withdraw`, `/results` (POST) | Enrol, withdraw, and record every student's result. |
 
 ## Admin
 
-Personnel, Units, Ranks, Positions, Awards, Qualifications, and Operations each get a
-standard Forumify CRUD screen under **Admin → Command Net**. There's no separate admin
-screen for awards issued, qualifications earned, assignments, or service records — those
-are managed from the frontend personnel file instead, since they only make sense in the
-context of one soldier.
+Every catalog has a standard Forumify CRUD screen under **Admin → Command Net**: Personnel, Units,
+Ranks, Rank Groups, Rosters, Positions, Specialties, Equipment, Documents, Forms, Courses, Course
+Classes, Awards, Qualifications and Operations. Form Submissions and Enlistment are review queues:
+opening an entry is the review screen. Enlistment Settings, AWOL Settings and Report In Settings are
+single settings pages, and Personnel rows have a Discharge action. There's no separate admin screen
+for awards issued, qualifications earned, assignments, or service records — those are managed from
+the frontend personnel file instead, since they only make sense in the context of one soldier.
 
 ## Permissions
 
@@ -79,6 +112,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.rosters.view` / `.manage` | View / edit the roster tabs. |
 | `command-net.admin.personnel.view` / `.manage` | View / edit personnel profiles, assignments, service records. |
 | `command-net.admin.personnel.discharge` | Discharge or retire a soldier. |
+| `command-net.admin.enlistment.view` / `.manage` | View / review enlistment applications, and edit Enlistment Settings. |
 | `command-net.admin.specialties.view` / `.manage` | View / edit the specialty catalog. |
 | `command-net.admin.equipment.view` / `.manage` | View / edit the equipment catalog. |
 | `command-net.admin.documents.view` / `.manage` | View / edit the document templates. |
@@ -236,6 +270,16 @@ A rank can be given a forumify **Role** in the admin. A soldier holds the role o
 rank and loses every other rank's role on any rank change, from either the Promote button or the
 admin form; map those roles to Discord roles in the Discord plugin to keep Discord in step.
 
+## AWOL detection
+
+Turn it on under **Admin → Command Net → AWOL Settings** (`command-net.admin.awol.manage`), with a
+number of consecutive missed operations and an optional forumify **AWOL role**. An active soldier who
+misses that many in a row is flagged AWOL, and the flag clears when they next attend one. Only
+operations where attendance was taken count, only those of the soldier's current unit (or with no
+unit), and only ones since they last became Active, so leave and transfers do not count against them.
+An AWOL set by an admin is never cleared automatically. Every change writes an AWOL service record
+and notifies the soldier. Failing to report in flags AWOL too, and is cleared by reporting in.
+
 ## Report In
 
 Soldiers with `command-net.reportin.submit` get a **Report In** button on the roster. Turn on
@@ -256,8 +300,8 @@ set by an admin or by missed operations is never cleared by reporting in.
 - **Service records are linked back to what created them.** `ServiceRecord` carries a
   nullable `sourceType`/`sourceId` pair set when an award, qualification, assignment, or
   AAR writes one, so deleting the source also removes the timeline entry it generated
-  instead of leaving an orphan behind. Manually-added entries (once that exists — see
-  below) leave both null.
+  instead of leaving an orphan behind. Entries with no single source (a promotion, a
+  discharge, a course pass) leave both null.
 - **Attendance is separate from RSVP.** A soldier's RSVP status is their stated intent;
   `attended` is a separate field an operations manager sets afterward, so a no-show who
   RSVP'd "attending" doesn't get a combat record, and someone who shows up unannounced can
@@ -265,17 +309,32 @@ set by an admin or by missed operations is never cleared by reporting in.
 
 ## Known gaps
 
-This plugin is running against a live install, but a few things are worth knowing before
-you rely on them:
+The earliest features have run against a live install. Everything added since the audit (rank
+groups, enlistment, discharge, specialties, equipment, documents, forms, courses, rosters, and the
+fixes) has only been through CI so far; `docs/merge-and-test-plan.md` lists what to check on a
+staging copy before relying on it.
 
 - **Tests cover the services, not the whole plugin.** CI runs PHPUnit, phpcs and PHPStan, but
   the unit tests mock the repositories, so controllers, forms, templates, migrations, DQL
   queries and the scheduled Report In task are only verified by booting the plugin against a
   real install.
-- **Features MILHQ has that this plugin doesn't yet:** an enlistment flow, forms and
-  submissions, courses, a discharge flow, specialties, equipment and documents.
+- **Not in this plugin yet, although MILHQ has it:** the Squad XML export, the PERSCOM migration
+  tool, configurable statuses, a point-and-click form builder, several instructors per course class,
+  calendar sync for classes, and the Discord `/award`, `/qualification` and `/rank` commands. The
+  section for each feature above lists what its first version leaves out.
+- **Discord replies** do not show a soldier's specialty or loadout, and `Unit`'s Discord server id
+  is stored but unused.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
   `MajesticDev\Discord` plugin.
+
+## Integrations
+
+- **Calendar plugin:** when installed, an operation can be linked to a calendar and is mirrored as a
+  calendar event (removed if the operation is cancelled).
+- **Discord plugin:** the forumify roles this plugin grants (unit, rank, specialty, AWOL) can be mapped
+  to Discord roles in that plugin's own settings, which keeps Discord in step without any Discord code
+  here. It also adds three slash commands: `/command-net-soldier`, `/command-net-unit` and
+  `/command-net-promotion`. `Unit` has a Discord server id field, but nothing reads it yet.
 
 ## Works well with
 
