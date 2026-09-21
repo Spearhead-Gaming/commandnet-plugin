@@ -17,10 +17,19 @@
             {% if operation.unit %}
                 <p class="text-small mb-0"><i class="ph ph-flag"></i> {{ operation.unit.name }}</p>
             {% endif %}
-            {% if briefingUrl %}
-                <a class="btn-outlined btn-small mt-2" href="{{ briefingUrl }}">
-                    <i class="ph ph-file-text"></i> View briefing
-                </a>
+            {% if infoUrl or briefingUrl %}
+                <div class="flex gap-2 mt-2">
+                    {% if infoUrl %}
+                        <a class="btn-outlined btn-small" href="{{ infoUrl }}">
+                            <i class="ph ph-info"></i> Operation info
+                        </a>
+                    {% endif %}
+                    {% if briefingUrl %}
+                        <a class="btn-outlined btn-small" href="{{ briefingUrl }}">
+                            <i class="ph ph-file-text"></i> View briefing
+                        </a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
