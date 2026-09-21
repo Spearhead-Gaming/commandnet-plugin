@@ -1,0 +1,54 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Courses{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Courses</h1>
+
+    <div class="card mb-4">
+        <div class="card-title">Upcoming classes</div>
+        <div class="card-body">
+            {% if upcoming is empty %}
+                <p class="text-small mb-0">No classes are scheduled.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Starts</th>
+                            <th>Places</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class in upcoming %}
+                            <tr>
+                                <td><a href="{{ path('command_net_course_class', { id: class.id }) }}">{{ class.course.name }}</a></td>
+                                <td>{{ class.startsAt|date('Y-m-d H:i') }}</td>
+                                <td>{{ class.students|length }}{% if class.studentSlots %} / {{ class.studentSlots }}{% endif %}</td>
+                                <td>{% if profile and class.studentFor(profile) %}<span class="tag tag-success">Enrolled</span>{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">All courses</div>
+        <div class="card-body">
+            {% for course in courses %}
+                <div class="mb-3">
+                    <p class="text-bold mb-0">{{ course.name }}</p>
+                    <p class="text-small mb-0">{{ course.description|nl2br }}</p>
+                    {% if course.minimumRank %}<p class="text-small mb-0">Minimum rank: {{ course.minimumRank.name }}</p>{% endif %}
+                    {% if course.prerequisites|length %}<p class="text-small mb-0">Needs: {{ course.prerequisites|join(', ') }}</p>{% endif %}
+                    {% if course.qualifications|length %}<p class="text-small mb-0">Grants: {{ course.qualifications|map(q => q.name)|join(', ') }}</p>{% endif %}
+                </div>
+            {% else %}
+                <p class="text-small mb-0">There are no courses yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

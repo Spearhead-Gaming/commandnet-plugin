@@ -51,6 +51,12 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Form Submissions', $url('forumify_admin_command_net_form_submissions_list'), [
                 'permission' => 'command-net.admin.forms.view',
             ]),
+            new MenuItem('Courses', $url('forumify_admin_command_net_courses_list'), [
+                'permission' => 'command-net.admin.courses.view',
+            ]),
+            new MenuItem('Course Classes', $url('forumify_admin_command_net_course_classes_list'), [
+                'permission' => 'command-net.admin.courses.view',
+            ]),
             new MenuItem('Awards', $url('forumify_admin_command_net_awards_list'), [
                 'permission' => 'command-net.admin.awards.view',
             ]),

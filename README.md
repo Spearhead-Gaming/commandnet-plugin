@@ -83,6 +83,8 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.documents.view` / `.manage` | View / edit the document templates. |
 | `command-net.admin.forms.view` / `.manage` | View forms and submissions / edit forms and review submissions. |
 | `command-net.forms.submit` | See and fill in open forms at `/forms`. |
+| `command-net.admin.courses.view` / `.manage` | View / edit courses and classes, and record class results. |
+| `command-net.courses.enroll` | See courses and enrol in classes at `/courses`. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -98,9 +100,27 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.reportin.view` / `.manage` | See each soldier's last report in / remove report ins and edit Report In Settings. |
 | `command-net.admin.awol.manage` | Edit AWOL Settings. |
 
-`admin.attendance`, `admin.courses` and `courses.enroll` are also
+`admin.attendance` is also
 declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
-(see below) — granting them today has no effect.
+(see below) — granting it today has no effect.
+
+## Courses
+
+Staff define **courses** under Admin → Command Net → Courses (`command-net.admin.courses.view` /
+`.manage`): a description, an optional minimum rank, prerequisite courses, and the qualifications a
+pass grants. They schedule **classes** of a course under Course Classes: start and end, an optional
+number of places and an instructor.
+
+Members with `command-net.courses.enroll` see `/courses`, open a class and enrol or withdraw until
+it starts. Enrolling checks that they are enlisted, the class has a free place, they meet the minimum
+rank and have passed every prerequisite. Once a class has started, someone with
+`command-net.admin.courses.manage` records a result for every student on the class page (passed,
+failed, no-show or excused) in one go. That is final: each pass writes a course record and grants the
+course qualifications the student does not already hold, and everyone is notified. To correct a
+mistake, remove the entries it wrote from the personnel file.
+
+Not included yet (MILHQ has): several instructors per class with roles, a signup window, awards as a
+course reward, a course image, calendar sync, and per-student service record text.
 
 ## Forms
 
