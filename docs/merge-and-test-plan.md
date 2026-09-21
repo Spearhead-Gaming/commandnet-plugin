@@ -27,6 +27,10 @@ On a throwaway install (fresh MySQL 8.4, Forumify 1.3.2), and now in CI on every
   checked afterwards (47 checks).
 - The 118 unit tests, phpcs and PHPStan pass.
 
+A query-count test loads each page that lists soldiers (roster and roster tabs, units, promotions,
+attendance, an operation, qualifications, the admin Personnel list) with 3 and then 15 soldiers and
+fails if the number of queries grows.
+
 A separate permissions test checks every frontend and admin endpoint as a member with no
 permissions, as one holding everything except the required permission, and as one holding only it.
 The admin panel is behind Forumify's administrator role, so staff need that role plus the specific
@@ -38,6 +42,8 @@ member sees on each page, the Discord plugin, and a real Arma client reading `/s
 ## Found while testing
 
 - The assignment form returned a 500 on a blank start date and did not prefill it. Fixed in #23.
+- The admin Personnel list ran a query per soldier for the user, rank and assignments: 17 queries with
+  3 soldiers, 40 with 15. Fixed in #27. The frontend pages were already flat.
 - `doctrine:schema:validate` reports drift for calendar-plugin tables and for Forumify's own
   `UserNotificationSettings` mapping. Neither comes from this plugin.
 
