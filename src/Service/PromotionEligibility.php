@@ -105,15 +105,23 @@ class PromotionEligibility
     }
 
     /**
-     * @return array<int, Rank> rank id => the rank one step above it
+     * @return array<int, Rank> rank id => the rank one step above it within the same rank group
      */
     private function buildNextRankMap(): array
     {
-        $ranks = $this->rankRepository->findBy([], ['position' => 'ASC']);
+        // One ladder per rank group (ranks without a group share a ladder), so the top of one
+        // track is never "promoted" into the bottom of the next.
+        $ladders = [];
+        foreach ($this->rankRepository->findBy([], ['position' => 'ASC']) as $rank) {
+            $ladders[$rank->getGroup()?->getId() ?? 0][] = $rank;
+        }
+
         $map = [];
-        foreach ($ranks as $i => $rank) {
-            if (isset($ranks[$i + 1])) {
-                $map[$rank->getId()] = $ranks[$i + 1];
+        foreach ($ladders as $ladder) {
+            foreach ($ladder as $i => $rank) {
+                if (isset($ladder[$i + 1])) {
+                    $map[$rank->getId()] = $ladder[$i + 1];
+                }
             }
         }
 

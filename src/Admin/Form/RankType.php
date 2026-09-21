@@ -15,6 +15,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 use MajesticDev\CommandNet\Entity\Qualification;
 use MajesticDev\CommandNet\Entity\Rank;
+use MajesticDev\CommandNet\Entity\RankGroup;
 
 /**
  * @extends AbstractType<Rank>
@@ -38,6 +39,14 @@ class RankType extends AbstractType
             ->add('payGrade', TextType::class, [
                 'required' => false,
                 'help' => 'Optional, e.g. "E-5".',
+            ])
+            ->add('group', EntityType::class, [
+                'class' => RankGroup::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'label' => 'Rank group',
+                'help' => 'The promotion track this rank belongs to, e.g. Enlisted or Officer. Promotion only moves up within a group; ranks with no group share one ladder.',
             ])
             ->add('minTimeInGradeDays', IntegerType::class, [
                 'required' => false,
