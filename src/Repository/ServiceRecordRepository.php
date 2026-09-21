@@ -23,7 +23,7 @@ class ServiceRecordRepository extends AbstractRepository
     }
 
     /**
-     * @return ServiceRecord[]
+     * @return array<ServiceRecord>
      */
     public function findBySource(string $sourceType, int $sourceId): array
     {

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Forumify\Core\Entity\IdentifiableEntityTrait;
+use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\SortableEntityInterface;
 use Forumify\Core\Entity\SortableEntityTrait;
 use Forumify\Core\Entity\TimestampableEntityTrait;
@@ -46,6 +47,14 @@ class Rank implements SortableEntityInterface
     private ?string $insignia = null;
 
     /**
+     * Forumify Role granted while this is a soldier's rank (see RankRoleSyncer). Mapping it to a
+     * Discord role is the Discord plugin's own job.
+     */
+    #[ORM\ManyToOne(targetEntity: Role::class)]
+    #[ORM\JoinColumn(name: 'role_id', onDelete: 'SET NULL')]
+    private ?Role $role = null;
+
+    /**
      * Requirements to be promoted INTO this rank, checked by PromotionEligibility.
      * Null means no minimum time in grade.
      */
@@ -75,6 +84,16 @@ class Rank implements SortableEntityInterface
     public function setMinTimeInGradeDays(?int $minTimeInGradeDays): void
     {
         $this->minTimeInGradeDays = $minTimeInGradeDays;
+    }
+
+    public function getRole(): ?Role
+    {
+        return $this->role;
+    }
+
+    public function setRole(?Role $role): void
+    {
+        $this->role = $role;
     }
 
     /**

@@ -24,7 +24,7 @@ class OperationRSVPRepository extends AbstractRepository
      * first - the raw material the attendance dashboard summarizes. RSVPs nobody has
      * marked attended/absent yet are excluded rather than counted as no-shows.
      *
-     * @return OperationRSVP[]
+     * @return array<OperationRSVP>
      */
     public function findAttendanceHistory(SoldierProfile $soldier): array
     {
@@ -46,7 +46,7 @@ class OperationRSVPRepository extends AbstractRepository
      * absences racked up in a different unit. Falls back to the unscoped history when the
      * soldier currently has no unit at all.
      *
-     * @return OperationRSVP[]
+     * @return array<OperationRSVP>
      */
     public function findAttendanceHistoryForUnit(SoldierProfile $soldier, ?Unit $unit): array
     {

@@ -7,15 +7,14 @@ namespace MajesticDev\CommandNet\Service;
 use Forumify\Core\Repository\SettingRepository;
 
 /**
- * Same shape as forumify-id-card-plugin's CardSettings: a single JSON-blob setting key,
- * wrapped so callers never touch the raw array.
+ * Same single-JSON-key shape as AwolSettings.
  */
-class AwolSettings
+class ReportInSettings
 {
     public const array DEFAULTS = [
         'enabled' => false,
-        'missThreshold' => 4,
-        'role' => null,
+        'periodDays' => 30,
+        'warningDays' => 7,
     ];
 
     public function __construct(private readonly SettingRepository $settings)
@@ -23,11 +22,12 @@ class AwolSettings
     }
 
     /**
-     * @return array{enabled: bool, missThreshold: int, role: int|null}
+     * @return array{enabled: bool, periodDays: int, warningDays: int}
      */
     public function all(): array
     {
-        return array_replace(self::DEFAULTS, (array)$this->settings->get('command_net.awol'));
+        /** @var array{enabled: bool, periodDays: int, warningDays: int} */
+        return array_replace(self::DEFAULTS, (array)$this->settings->get('command_net.report_in'));
     }
 
     /**
@@ -35,6 +35,6 @@ class AwolSettings
      */
     public function save(array $data): void
     {
-        $this->settings->set('command_net.awol', array_intersect_key($data, self::DEFAULTS));
+        $this->settings->set('command_net.report_in', array_intersect_key($data, self::DEFAULTS));
     }
 }

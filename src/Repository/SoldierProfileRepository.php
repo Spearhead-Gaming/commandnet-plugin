@@ -19,10 +19,28 @@ class SoldierProfileRepository extends AbstractRepository
     }
 
     /**
+     * Soldiers who could be expected at an operation: active ones, plus AWOL ones - an AWOL
+     * soldier who turns up has to be markable as attended, or nothing could ever clear the flag.
+     *
+     * @return array<SoldierProfile>
+     */
+    public function findAttendanceCandidates(): array
+    {
+        return $this->createQueryBuilder('s')
+            ->addSelect('user')
+            ->join('s.user', 'user')
+            ->where('s.status IN (:statuses)')
+            ->setParameter('statuses', [SoldierStatus::ACTIVE, SoldierStatus::AWOL])
+            ->orderBy('user.displayName', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Active roster, senior-to-junior then alphabetically. Joins rank/user up front so
      * the roster template isn't triggering N+1 lazy loads per row.
      *
-     * @return SoldierProfile[]
+     * @return array<SoldierProfile>
      */
     public function findRoster(): array
     {
@@ -42,7 +60,7 @@ class SoldierProfileRepository extends AbstractRepository
      * Matches on the linked forumify user's display name or username, e.g. for the
      * Discord "/command-net-soldier" command's free-text search.
      *
-     * @return SoldierProfile[]
+     * @return array<SoldierProfile>
      */
     public function findByNameLike(string $name): array
     {

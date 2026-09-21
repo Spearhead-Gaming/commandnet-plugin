@@ -7,7 +7,6 @@ namespace MajesticDev\CommandNet\Entity;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 use Forumify\Core\Entity\IdentifiableEntityTrait;
 use Forumify\Core\Entity\TimestampableEntityTrait;
@@ -73,6 +72,20 @@ class SoldierProfile
      */
     #[ORM\Column(type: 'datetime', nullable: true)]
     private ?DateTime $lastReportIn = null;
+
+    /**
+     * True only while the current AWOL status was set by attendance detection, so an
+     * admin-set AWOL is never auto-cleared. Any status change resets it - see setStatus().
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $awolAutoFlagged = false;
+
+    /**
+     * True while the current AWOL status came from failing to report in, so the next report
+     * in restores Active. Reset on any status change, same as awolAutoFlagged.
+     */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $reportInFlagged = false;
 
     /** @var Collection<int, Assignment> */
     #[ORM\OneToMany(mappedBy: 'soldier', targetEntity: Assignment::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -152,6 +165,10 @@ class SoldierProfile
 
     public function setStatus(SoldierStatus $status): void
     {
+        if ($status !== $this->status) {
+            $this->awolAutoFlagged = false;
+            $this->reportInFlagged = false;
+        }
         $this->status = $status;
     }
 
@@ -195,6 +212,26 @@ class SoldierProfile
         $this->uniformImage = $uniformImage;
     }
 
+    public function isAwolAutoFlagged(): bool
+    {
+        return $this->awolAutoFlagged;
+    }
+
+    public function setAwolAutoFlagged(bool $awolAutoFlagged): void
+    {
+        $this->awolAutoFlagged = $awolAutoFlagged;
+    }
+
+    public function isReportInFlagged(): bool
+    {
+        return $this->reportInFlagged;
+    }
+
+    public function setReportInFlagged(bool $reportInFlagged): void
+    {
+        $this->reportInFlagged = $reportInFlagged;
+    }
+
     public function getLastReportIn(): ?DateTime
     {
         return $this->lastReportIn;
@@ -226,11 +263,9 @@ class SoldierProfile
      */
     public function getPrimaryAssignment(): ?Assignment
     {
-        $criteria = Criteria::create()
-            ->where(Criteria::expr()->eq('isPrimary', true))
-            ->andWhere(Criteria::expr()->eq('endDate', null));
-
-        $match = $this->assignments->matching($criteria)->first();
+        $match = $this->assignments
+            ->filter(static fn (Assignment $a) => $a->isPrimary() && $a->getEndDate() === null)
+            ->first();
         return $match !== false ? $match : null;
     }
 

@@ -10,19 +10,20 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\OperationAAR;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Form\OperationAarType;
 use MajesticDev\CommandNet\Repository\OperationAARRepository;
 use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
+use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
 class OperationAarController extends AbstractController
 {
     public function __construct(
         private readonly OperationAARRepository $aarRepository,
         private readonly ServiceRecordRepository $serviceRecordRepository,
+        private readonly OperationAttendanceService $attendanceService,
     ) {
     }
 
@@ -79,6 +80,8 @@ class OperationAarController extends AbstractController
             $this->serviceRecordRepository->remove($record, false);
         }
         $this->aarRepository->remove($aar);
+        $operation->getAars()->removeElement($aar);
+        $this->attendanceService->syncCombatRecords($operation);
 
         $this->addFlash('success', 'After-action report removed.');
         return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
@@ -88,26 +91,10 @@ class OperationAarController extends AbstractController
     {
         $this->aarRepository->save($aar);
 
-        // Writing a combat record for everyone actually marked as attended - not just
-        // everyone who RSVP'd - keeps this in sync with reality rather than intent.
-        // This is the concrete example of the "everything feeds the timeline" design:
-        // the Operations module doesn't render its own history anywhere, it just writes
-        // into ServiceRecord and lets the personnel file show it.
-        foreach ($operation->getRsvps() as $rsvp) {
-            if ($rsvp->getAttended() !== true) {
-                continue;
-            }
-
-            $record = new ServiceRecord(
-                $rsvp->getSoldier(),
-                ServiceRecordType::COMBAT,
-                $operation->getTitle(),
-            );
-            $record->setDate($operation->getStartDateTime());
-            $record->setSource(ServiceRecord::SOURCE_OPERATION_AAR, $aar->getId());
-            $this->serviceRecordRepository->save($record, false);
-        }
-        $this->serviceRecordRepository->flush();
+        // Combat records are derived from attendance once at least one AAR exists, one per
+        // attendee regardless of how many reports are filed - see OperationAttendanceService.
+        $operation->getAars()->add($aar);
+        $this->attendanceService->syncCombatRecords($operation);
 
         $this->addFlash('success', 'After-action report submitted.');
         return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);

@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Controller;
 
+use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
+use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\PromotionEligibility;
+use MajesticDev\CommandNet\Service\RankChangeService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use MajesticDev\CommandNet\Service\PromotionEligibility;
 
 class PromotionsController extends AbstractController
 {
-    public function __construct(private readonly PromotionEligibility $promotionEligibility)
-    {
+    public function __construct(
+        private readonly PromotionEligibility $promotionEligibility,
+        private readonly SoldierProfileRepository $soldierProfileRepository,
+        private readonly RankChangeService $rankChangeService,
+    ) {
     }
 
     #[Route('/promotions', name: 'promotions')]
@@ -25,5 +33,38 @@ class PromotionsController extends AbstractController
         return $this->render('@CommandNetPlugin/frontend/promotions/index.html.twig', [
             'rows' => $this->promotionEligibility->evaluateRoster(),
         ]);
+    }
+
+    /**
+     * Promotes into the next rank only while every requirement is still met, re-checked here
+     * rather than trusted from the page. A promotion that skips the requirements is a rank edit
+     * on the admin personnel form instead.
+     */
+    #[Route('/promotions/{id}/promote', name: 'promotions_promote', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function promote(int $id, Request $request): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('command-net.admin.personnel.manage');
+
+        if (!$this->isCsrfTokenValid('promote_' . $id, $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Your session expired, please try again.');
+            return $this->redirectToRoute('command_net_promotions');
+        }
+
+        $soldier = $this->soldierProfileRepository->find($id);
+        if ($soldier === null || $soldier->getStatus() !== SoldierStatus::ACTIVE) {
+            $this->addFlash('error', 'Only active personnel can be promoted.');
+            return $this->redirectToRoute('command_net_promotions');
+        }
+
+        $evaluation = $this->promotionEligibility->evaluateSoldier($soldier);
+        if ($evaluation === null || !$evaluation['eligible']) {
+            $this->addFlash('error', 'This soldier does not meet the requirements for the next rank.');
+            return $this->redirectToRoute('command_net_promotions');
+        }
+
+        $this->rankChangeService->changeRank($soldier, $evaluation['nextRank']);
+
+        $this->addFlash('success', sprintf('%s promoted to %s.', $soldier->getUser()->getDisplayName(), $evaluation['nextRank']->getName()));
+        return $this->redirectToRoute('command_net_promotions');
     }
 }

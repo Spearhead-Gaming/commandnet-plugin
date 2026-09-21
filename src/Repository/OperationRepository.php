@@ -20,7 +20,7 @@ class OperationRepository extends AbstractRepository
     }
 
     /**
-     * @return Operation[]
+     * @return array<Operation>
      */
     public function findUpcoming(int $limit = 10): array
     {
@@ -36,7 +36,7 @@ class OperationRepository extends AbstractRepository
     }
 
     /**
-     * @return Operation[]
+     * @return array<Operation>
      */
     public function findPast(int $limit = 20): array
     {

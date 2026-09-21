@@ -10,11 +10,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Admin\Form\SoldierProfileType;
-use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
-use MajesticDev\CommandNet\Entity\Rank;
-use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
-use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
+use MajesticDev\CommandNet\Service\RankChangeService;
 
 /**
  * @extends AbstractCrudController<SoldierProfile>
@@ -32,7 +29,7 @@ class SoldierProfileController extends AbstractCrudController
     protected ?string $permissionDelete = 'command-net.admin.personnel.manage';
 
     public function __construct(
-        private readonly ServiceRecordRepository $serviceRecordRepository,
+        private readonly RankChangeService $rankChangeService,
     ) {
     }
 
@@ -67,27 +64,9 @@ class SoldierProfileController extends AbstractCrudController
         $response = parent::edit($request, $identifier);
 
         if ($profile !== null && $response->isRedirect()) {
-            $this->recordRankChange($profile, $previousRank);
+            $this->rankChangeService->afterRankChange($profile, $previousRank);
         }
 
         return $response;
-    }
-
-    private function recordRankChange(SoldierProfile $profile, ?Rank $previousRank): void
-    {
-        $newRank = $profile->getRank();
-        if ($newRank === null || $newRank === $previousRank) {
-            // Clearing a rank entirely doesn't fit "promotion" or "demotion" - nothing to
-            // record - and an unrelated field edit shouldn't write a record at all.
-            return;
-        }
-
-        $isPromotion = $previousRank === null || $newRank->getPosition() > $previousRank->getPosition();
-        $record = new ServiceRecord(
-            $profile,
-            $isPromotion ? ServiceRecordType::PROMOTION : ServiceRecordType::DEMOTION,
-            (string) $newRank,
-        );
-        $this->serviceRecordRepository->save($record);
     }
 }

@@ -51,7 +51,7 @@ class AttendanceCalculator
      * exposed separately from calculate() so AWOL detection can scope the history to a
      * soldier's current unit rather than their entire attendance record.
      *
-     * @param \MajesticDev\CommandNet\Entity\OperationRSVP[] $history
+     * @param array<\MajesticDev\CommandNet\Entity\OperationRSVP> $history
      */
     public function missStreakFrom(array $history): int
     {

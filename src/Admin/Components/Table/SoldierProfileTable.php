@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Admin\Components\Table;
 
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
+use Forumify\Core\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -23,7 +24,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
      * `value` attribute - LiveComponent's checkbox handling appends/removes that value
      * on check/uncheck, the same way a native multi-select checkbox group works.
      *
-     * @var string[]
+     * @var array<string>
      */
     #[LiveProp(writable: true)]
     public array $selected = [];
@@ -37,7 +38,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
     }
 
     /**
-     * @return SoldierStatus[]
+     * @return array<SoldierStatus>
      */
     public function getSoldierStatuses(): array
     {
@@ -62,6 +63,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
             return;
         }
 
+        /** @var array<SoldierProfile> $soldiers */
         $soldiers = $this->repository->findBy(['id' => $ids]);
         foreach ($soldiers as $soldier) {
             $soldier->setStatus($status);
@@ -89,7 +91,7 @@ class SoldierProfileTable extends AbstractDoctrineTable
             ->addColumn('user', [
                 'label' => 'Name',
                 'field' => 'user',
-                'renderer' => fn (object $user) => $user->getDisplayName(),
+                'renderer' => fn (User $user) => $user->getDisplayName(),
             ])
             ->addColumn('rank', [
                 'field' => 'rank',

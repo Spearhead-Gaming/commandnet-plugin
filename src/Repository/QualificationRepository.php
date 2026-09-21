@@ -21,7 +21,7 @@ class QualificationRepository extends AbstractRepository
      * Qualifications for the public board, grouped by tier. Qualifications with no tier
      * are excluded - the entity's own docblock treats a null tier as "don't show this here".
      *
-     * @return array<string, Qualification[]> keyed by QualificationTier::value, in tier order
+     * @return array<string, array<Qualification>> keyed by QualificationTier::value, in tier order
      */
     public function findAllForBoard(): array
     {

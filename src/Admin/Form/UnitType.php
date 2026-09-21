@@ -84,7 +84,7 @@ class UnitType extends AbstractType
         $builder->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
             $unit = $event->getData();
             $excludeIds = [];
-            if ($unit instanceof Unit && $unit->getId() !== null) {
+            if ($unit instanceof Unit) {
                 $excludeIds[] = $unit->getId();
                 array_push($excludeIds, ...$this->unitRepository->getDescendantIds($unit));
             }

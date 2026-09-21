@@ -38,6 +38,8 @@ class ServiceRecord
     public const SOURCE_QUALIFICATION = 'soldier_qualification';
     public const SOURCE_ASSIGNMENT = 'assignment';
     public const SOURCE_OPERATION_AAR = 'operation_aar';
+    /** Combat records for an operation, one per attendee no matter how many AARs exist; sourceId is the operation. */
+    public const SOURCE_OPERATION = 'operation';
 
     #[ORM\ManyToOne(targetEntity: SoldierProfile::class, inversedBy: 'serviceRecords')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]

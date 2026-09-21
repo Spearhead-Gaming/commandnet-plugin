@@ -56,8 +56,8 @@ bin/console doctrine:migrations:migrate
 | `command_net_operations` | `/operations` | Upcoming/past operations. |
 | `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
 | `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
-| `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent. |
-| `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; writes a combat service record for every soldier marked attended. |
+| `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent; creates the RSVP row if they never responded. |
+| `command_net_operation_aar` | `/operations/{id}/aar` | Submit an after-action report; combat service records are kept at one per soldier marked attended, however many AARs exist. |
 | `command_net_operation_aar_delete` | `/operations/{id}/aar/{aarId}/delete` (POST) | Remove a report (its submitter or an operations manager only) and every service record it wrote. |
 
 ## Admin
@@ -90,6 +90,30 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet (see
 below) — granting them today has no effect.
 
+## Promotions
+
+`/promotions` (permission `command-net.promotions.view`) lists active soldiers against the
+requirements of the next rank up — minimum time in the previous rank and required
+qualifications, both set on the target rank. Anyone with `command-net.admin.personnel.manage`
+also gets a **Promote** button on eligible rows; it re-checks the requirements, changes the
+rank, writes the promotion record and notifies the soldier. Skipping the requirements is a
+rank edit on the admin personnel form.
+
+A rank can be given a forumify **Role** in the admin. A soldier holds the role of their current
+rank and loses every other rank's role on any rank change, from either the Promote button or the
+admin form; map those roles to Discord roles in the Discord plugin to keep Discord in step.
+
+## Report In
+
+Soldiers with `command-net.reportin.submit` get a **Report In** button on the roster. Turn on
+enforcement under **Admin → Command Net → Report In Settings**: a daily scheduled task
+(`command-net:report-in:run-checks`, 08:00) flags an active soldier AWOL once they go past
+the configured number of days without reporting in, and optionally warns them as the deadline
+approaches. Reporting in again restores Active. It reuses the AWOL role from AWOL Settings and
+writes the same audit record and notification. A soldier with no report in on file gets a
+baseline entry rather than being failed, so enabling this doesn't flag everyone at once. An AWOL
+set by an admin or by missed operations is never cleared by reporting in.
+
 ## Design notes
 
 - **Corrections happen by deletion, not editing.** Awards, qualifications, assignments,
@@ -115,9 +139,6 @@ you rely on them:
   real install, not by an automated suite.
 - **Rank changes don't write a service record.** Editing a soldier's rank in the admin
   form updates the field silently, in either direction.
-- **`SoldierProfile::$lastReportIn`** is wired up (getter/setter) but nothing ever sets
-  it — scaffolding for a "Report In" / muster feature (see `reportin.*` permissions above)
-  that hasn't been built yet.
 - **No cycle guard on the unit tree.** The parent-unit picker excludes the unit itself but
   not its descendants.
 - **OperationRSVP has no "withdraw."** A soldier can change their RSVP any time but can't

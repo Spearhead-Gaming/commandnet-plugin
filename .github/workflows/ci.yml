@@ -1,0 +1,72 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests${{ matrix.plugin && format(' (with {0})', matrix.plugin) || '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The Operation entity changes shape when the calendar plugin is installed, so run both.
+        plugin: ['', 'forumify/forumify-calendar-plugin']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          extensions: mbstring, xml, ctype, iconv, intl
+
+      # composer.lock is not committed and dependencies are deliberately not cached, so this is
+      # always a genuinely fresh resolution - what a new install of the plugin would get.
+      - name: Install dependencies
+        run: composer install --no-progress
+
+      - name: Install optional plugin
+        if: ${{ matrix.plugin }}
+        run: composer require --no-progress "${{ matrix.plugin }}:^1.1"
+
+      # The unit tests never load forms, controllers or Twig-facing code, so a syntax error there
+      # would otherwise pass CI.
+      - name: Lint PHP
+        run: find src tests migrations -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  quality:
+    name: Code quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          extensions: mbstring, xml, ctype, iconv, intl
+
+      # PHPStan needs the optional calendar plugin to resolve the classes Operation and its
+      # listener reference. The Discord plugin is private, so src/Discord is excluded instead
+      # (see phpstan.neon).
+      - name: Install dependencies
+        run: |
+          composer require --no-update --no-progress "forumify/forumify-calendar-plugin:^1.1"
+          composer install --no-progress
+
+      - name: PHP_CodeSniffer
+        run: vendor/bin/phpcs -s --standard=phpcs.xml
+
+      - name: PHPStan
+        if: ${{ !cancelled() }}
+        run: vendor/bin/phpstan analyze -v

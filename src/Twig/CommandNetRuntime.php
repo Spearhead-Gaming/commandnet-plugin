@@ -40,8 +40,8 @@ class CommandNetRuntime implements RuntimeExtensionInterface
      * the same underlying timeline, just filtered by type - there's no need for separate
      * queries or entities per tab.
      *
-     * @param string[] $types ServiceRecordType values to include
-     * @return ServiceRecord[] newest first
+     * @param array<string> $types ServiceRecordType values to include
+     * @return array<ServiceRecord> newest first
      */
     public function getRecordsByType(SoldierProfile $profile, array $types): array
     {

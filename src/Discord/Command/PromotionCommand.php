@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Discord\Command;
 
-use Forumify\Discord\Api\DTO\DiscordCommandResult;
-use Forumify\Discord\Api\DTO\DiscordEmbed;
-use Forumify\Discord\Api\Resource\DiscordCommandRun;
-use Forumify\Discord\Discord\DiscordCommandInterface;
+use MajesticDev\Discord\Api\DTO\DiscordCommandResult;
+use MajesticDev\Discord\Api\DTO\DiscordEmbed;
+use MajesticDev\Discord\Api\Resource\DiscordCommandRun;
+use MajesticDev\Discord\Discord\DiscordCommandInterface;
 use Forumify\OAuth\Idp\DiscordIdp;
 use Forumify\OAuth\Repository\IdentityProviderUserRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;

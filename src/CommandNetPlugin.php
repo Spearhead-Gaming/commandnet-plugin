@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet;
 
 use Forumify\Calendar\ForumifyCalendarPlugin;
-use Forumify\Discord\ForumifyDiscordPlugin;
+use MajesticDev\Discord\CommandNetDiscordPlugin;
 use Forumify\Plugin\AbstractForumifyPlugin;
 use Forumify\Plugin\PluginMetadata;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -31,7 +31,8 @@ class CommandNetPlugin extends AbstractForumifyPlugin
             'Command Net',
             'MDEV ',
             'Personnel & unit management system built for our community.',
-            'https://example.com', // TODO: replace with real domain once purchased
+            // TODO: replace with real domain once purchased
+            'https://example.com',
         );
     }
 
@@ -80,7 +81,7 @@ class CommandNetPlugin extends AbstractForumifyPlugin
             $container->import($this->getPath() . '/config/calendar.php');
         }
 
-        if ($this->isPluginLoaded($builder, ForumifyDiscordPlugin::class)) {
+        if ($this->isPluginLoaded($builder, CommandNetDiscordPlugin::class)) {
             $container->import($this->getPath() . '/config/discord.php');
         }
     }
