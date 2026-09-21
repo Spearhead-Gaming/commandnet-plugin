@@ -210,8 +210,8 @@ vehicles they have. A soldier's personnel file shows a **Loadout** card worked o
 and unit of their primary assignment; nothing is stored per soldier, so changing a position or unit
 changes it for everyone who holds it.
 
-Not included yet: the Discord soldier and unit replies do not show equipment, and there is no
-Squad XML export like MILHQ's.
+Each item can carry an **Arma classname** (e.g. `B_MRAP_01_F`), which the ORBAT export needs. Not
+included yet: the Discord soldier and unit replies do not show equipment.
 
 ## Specialties
 
@@ -352,6 +352,18 @@ id, their callsign (or display name) as the nick, their display name, and their 
 senior first. `/squad.dtd` and `/logo.paa` are served alongside it. Names with symbols such as `&` are
 escaped. The files are public and off until enabled, since they publish members' Steam IDs; the XML
 is cached for 15 minutes, and saving the settings clears the cache.
+
+## ORBAT export
+
+**Admin → Command Net → ORBAT Export** (`command-net.admin.units.view`) turns the unit tree into an
+Arma 3 `CfgORBAT` block to copy or download as `orbat.hpp`. Each unit becomes a nested group with its
+name, abbreviation, description, commander (callsign or display name) and their rank. A unit's vehicles
+become its `assets`, counted by classname; vehicles without an Arma classname are left out. Size and
+type come from the unit's **ORBAT size** and **ORBAT type** fields; a blank size is worked out from
+how many echelons sit below the unit (squad, platoon, company, ... army) and a blank type exports as
+Infantry. The side (BLUFOR, OPFOR, Independent, Civilian) is picked on the export page. Nothing is
+published: the file is fetched here when a mission or mod needs updating. The exact `CfgORBAT` keys
+have not been checked against a running Arma 3 client yet.
 
 ## Integrations
 

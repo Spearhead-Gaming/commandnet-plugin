@@ -9,6 +9,7 @@ use Forumify\Core\Entity\Role;
 use Forumify\Core\Form\UploadType;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -21,6 +22,7 @@ use MajesticDev\CommandNet\Entity\Equipment;
 use MajesticDev\CommandNet\Entity\Enum\EquipmentType;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
+use MajesticDev\CommandNet\Service\OrbatGenerator;
 
 /**
  * @extends AbstractType<Unit>

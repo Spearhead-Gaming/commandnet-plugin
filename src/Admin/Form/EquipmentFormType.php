@@ -30,6 +30,11 @@ class EquipmentFormType extends AbstractType
             ->add('name', TextType::class, [
                 'help' => 'e.g. "M4A1 Carbine", "M9 Pistol", "HMMWV".',
             ])
+            ->add('classname', TextType::class, [
+                'required' => false,
+                'label' => 'Arma classname',
+                'help' => 'The Arma 3 config class, e.g. "B_MRAP_01_F". Needed for a vehicle to appear in the ORBAT export.',
+            ])
             ->add('type', EnumType::class, [
                 'class' => EquipmentType::class,
                 'choice_label' => fn (EquipmentType $type) => $type->label(),

@@ -1,0 +1,19 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}ORBAT export{% endblock %}
+{% block body %}
+    <h1 class="mb-4">ORBAT export</h1>
+    <p>
+        The unit tree as an Arma 3 <code>CfgORBAT</code> block. Save it as <code>orbat.hpp</code> next to a
+        mission's <code>description.ext</code> and add <code>#include "orbat.hpp"</code> there. Vehicles only
+        appear if their equipment entry has an Arma classname.
+    </p>
+    <form method="get" class="d-flex gap-2 align-items-center mb-3">
+        <select name="side" class="form-control" style="max-width: 14rem" onchange="this.form.submit()">
+            {% for value, label in sides %}
+                <option value="{{ value }}" {{ value == side ? 'selected' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <a class="btn-primary" href="{{ path('forumify_admin_command_net_orbat', { side: side, download: 1 }) }}">Download orbat.hpp</a>
+    </form>
+    <textarea class="form-control" rows="24" readonly style="font-family: monospace">{{ config }}</textarea>
+{% endblock %}

@@ -78,6 +78,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Squad XML', $url('forumify_admin_command_net_squad_xml_settings'), [
                 'permission' => 'command-net.admin.squadxml.manage',
             ]),
+            new MenuItem('ORBAT Export', $url('forumify_admin_command_net_orbat'), [
+                'permission' => 'command-net.admin.units.view',
+            ]),
             new MenuItem('AWOL Settings', $url('forumify_admin_command_net_awol_settings'), [
                 'permission' => 'command-net.admin.awol.manage',
             ]),
