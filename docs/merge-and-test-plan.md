@@ -1,97 +1,131 @@
-# Merge and test plan for the audit stack (#4 to #18)
+# Rollout and test plan for the audit work
 
-Fifteen pull requests are stacked: each targets the branch of the one below it, and #4 targets
-`master`. All were CI-green when this was written (unit tests, phpcs, PHPStan), but none has run on
-a real install. This is the order to merge them in and what to check between merges.
+Everything in the audit stack (#4 to #22) is merged into `master`, along with a follow-up fix (#23)
+and the application tests (#24). This file now tracks what has been tested and what still needs a
+run on a real install before it is relied on in production.
 
-Tick the boxes as you go. The 12 migrations are numbered in stack order, so merging bottom-up runs
-them in a safe order.
+Each item says how far it has been checked:
 
-## Ground rules
+- **App test**: exercised end to end by `tests/Application` (real controllers, forms, CSRF buttons
+  and a MySQL database), which runs in CI.
+- **Unit test**: the logic is covered by a unit test with mocked repositories, but nothing drives it
+  through the real application.
+- **Not covered**: nobody has checked it yet.
+
+The boxes stay unticked until someone has checked the item on staging with a copy of real data.
+
+## What has been verified
+
+On a throwaway install (fresh MySQL 8.4, Forumify 1.3.2), and now in CI on every pull request:
+
+- All 12 migrations, `20260920140000` to `20260920250000`, run cleanly and the plugin activates.
+- The container and Twig lint pass, and all 106 `command_net` routes register.
+- About 80 pages load as an administrator without an error: every frontend page, every admin list,
+  create and edit screen, the discharge page, the settings pages and `/squad.xml`.
+- Enlistment, promotion, RSVP, attendance, report in, transfers, specialty changes, discharge and
+  re-enlist, forms and courses were driven through the real forms and buttons, and the database was
+  checked afterwards (47 checks).
+- The 118 unit tests, phpcs and PHPStan pass.
+
+What that run could not cover: real production data, the scheduler, notifications, a member without
+admin rights, the Discord plugin, and a real Arma client reading `/squad.xml`.
+
+## Found while testing
+
+- The assignment form returned a 500 on a blank start date and did not prefill it. Fixed in #23.
+- `doctrine:schema:validate` reports drift for calendar-plugin tables and for Forumify's own
+  `UserNotificationSettings` mapping. Neither comes from this plugin.
+
+## Before rolling out
 
 - [ ] Use a **staging install with a copy of production data**, on the same PHP and Forumify versions.
-- [ ] **Back up the database** before every tier, and note the current commit.
-- [ ] Merge **bottom-up, one tier at a time**, and test between tiers.
-- [ ] Before merging each PR: retarget its base to `master`, mark it ready, confirm CI is green.
-- [ ] Use **merge commits, not squash**. Squashing a parent rewrites the commits its children
-      contain and makes the next PR conflict.
-- [ ] After each tier run `bin/console doctrine:migrations:migrate`, then `bin/console cache:clear`.
-- [ ] Ignore the **Kilo Code Review** check. It failed on a rate limit, not on the code.
-- [ ] If a tier fails: restore the backup, revert that merge commit, and fix on the PR. Every
-      migration has a `down()`, but the new tables lose their data if it is used.
+- [ ] **Back up the database** first, and note the current commit.
+- [ ] Run `bin/console doctrine:migrations:migrate`, then `bin/console cache:clear`.
+- [ ] If it goes wrong: restore the backup and revert to the previous commit. Every migration has a
+      `down()`, but the new tables lose their data if it is used.
 
-## Tier 1: #4 and #5 (fixes, Report In, promotion action, rank roles, CI)
+## Fixes, Report In, promotions and rank roles (migrations `20260920140000` to `170000`)
 
-Migrations `20260920140000`, `150000`, `160000`, `170000`.
-
-- [ ] Read the `20260920140000` backfill SQL against real data first (it retypes old AWOL records and
-      flags soldiers who are currently AWOL from detection).
-- [ ] Migrations run without errors and `doctrine:schema:validate` reports no drift.
-- [ ] Attendance: mark a soldier who never RSVP'd as absent and another as attended.
+- [ ] Read the `20260920140000` backfill SQL against real data first: it retypes old AWOL records and
+      flags soldiers who are currently AWOL from detection. **Not covered** (the test database was empty).
+- [ ] Migrations run without errors. **App test** (CI runs them on every pull request).
+- [ ] `doctrine:schema:validate` reports no drift from this plugin. Checked once on the throwaway
+      install, not in CI.
+- [ ] Mark a soldier who never RSVP'd as absent and another as attended. **App test**
 - [ ] File two after-action reports for one operation: each attendee has **one** combat record.
-- [ ] Set a soldier to AWOL by hand, then mark them attended: they **stay** AWOL.
-- [ ] Return a soldier from LOA to Active: absences from before do not count toward AWOL.
-- [ ] AWOL flag and clear entries show as type "AWOL" on the personnel file.
+      **Unit test**
+- [ ] Set a soldier to AWOL by hand, then mark them attended: they **stay** AWOL. **Unit test**
+- [ ] Return a soldier from LOA to Active: absences from before do not count toward AWOL. **Unit test**
+- [ ] AWOL flag and clear entries show as type "AWOL" on the personnel file. **Not covered**
 - [ ] Turn on Report In under Report In Settings and run `bin/console command-net:report-in:run-checks`:
-      baseline entries are written and **nobody is flagged** on the first run.
-- [ ] The scheduler is running in this environment (Report In is a scheduled task).
-- [ ] Promote an eligible soldier from `/promotions`: rank changes, a promotion record is written,
-      the rank role is granted, the soldier is notified.
-- [ ] The admin **Rank** form opens and saves (a parse error in it was caught by CI).
-- [ ] CI runs on a pull request and passes.
+      baseline entries are written and **nobody is flagged** on the first run. **Unit test**. The
+      Report In button itself is an **App test**.
+- [ ] The scheduler is running in this environment (Report In is a scheduled task). **Not covered**
+- [ ] Promote an eligible soldier from `/promotions`: rank changes, a promotion record is written and
+      the rank role moves. **App test**. The notification is **not covered**.
+- [ ] The admin **Rank** form opens and saves. Opening it is an **App test**; saving is **not covered**.
+- [x] CI runs on a pull request and passes.
 
-## Tier 2: #6 to #9 (rank groups, query fixes, README)
+## Rank groups and query fixes (migration `20260920180000`)
 
-Migration `20260920180000`.
-
-- [ ] With no rank groups, the promotion ladder behaves exactly as before.
+- [ ] With no rank groups, the promotion ladder behaves exactly as before. **Unit test**
 - [ ] Create groups (for example Enlisted and Officer) and assign ranks: the top rank of a group has
-      no next rank on `/promotions`.
+      no next rank on `/promotions`. **Unit test**. Promoting from the lower rank of a two-rank group
+      is an **App test**.
 - [ ] Load `/promotions`, `/roster` and `/attendance` with query logging on. The query count stays flat
-      as the roster grows.
+      as the roster grows. **Not covered**
 
-## Tier 3: #10 to #12 (enlistment, discharge, assignment role sync)
-
-Migration `20260920190000`.
+## Enlistment, discharge and assignment role sync (migration `20260920190000`)
 
 - [ ] Enlistment: turn it on, set a starting rank and unit, apply as a test user, accept. The profile,
-      rank, unit posting, records and notification are all there.
-- [ ] Decline a second application: the applicant is notified and no profile is created.
-- [ ] Discharge a soldier who has a unit role and a rank role: they leave the roster, both roles are
-      removed, a discharge record is written, and they can no longer RSVP or report in.
-- [ ] Re-enlist that soldier: their history is kept and they are active again.
+      rank, unit posting, unit role and record are all there. **App test**. The notification is
+      **not covered**.
+- [ ] Decline a second application: no profile is created. **App test**. The applicant notification is
+      **not covered**.
+- [ ] Discharge a soldier who has a unit role, a rank role and a specialty role: all roles are removed
+      and a discharge record is written. **App test**
+- [ ] A discharged soldier can no longer RSVP or report in. **Not covered**: the profile is checked as
+      not enlisted after discharge, but the RSVP and report in refusals were not exercised.
+- [ ] Re-enlist that soldier: the same profile is restored, history is kept and they are active again.
+      **App test**
 - [ ] **Assignment role sync:** transfer a soldier between two units that each have a role. The role
-      moves. (This fix was found by reading code and has not been observed failing.)
-- [ ] Delete an assignment: the unit role follows.
+      moves. **App test**
+- [ ] Delete an assignment: the unit role follows. **App test**
 
-## Tier 4: #13 to #15 (specialties, equipment, documents)
-
-Migrations `20260920200000`, `210000`, `220000`.
+## Specialties, equipment and documents (migrations `20260920200000` to `220000`)
 
 - [ ] Specialties: set one that carries a role, change it, then discharge: the role follows each time.
-- [ ] The specialty shows on the personnel file and on the roster row.
+      **App test** (set, clear and discharge)
+- [ ] The specialty shows on the personnel file and on the roster row. **Not covered** (both pages load,
+      the text is not checked)
 - [ ] Equipment: create weapons and a vehicle, attach them to a position and a unit, assign a soldier:
-      the Loadout card shows them.
+      the Loadout card shows them. **Not covered** (the pages load with this data, the card is not
+      checked)
 - [ ] Documents: create one using several placeholders, issue an award with it, check the rendering on
-      the personnel file. A name containing HTML is shown escaped.
+      the personnel file. **App test** (a record carrying a document renders on the file)
+- [ ] A name containing HTML is shown escaped in a rendered document. **Not covered**
 
-## Tier 5: #16 to #18 (forms, courses, rosters)
+## Forms, courses and rosters (migrations `20260920230000` to `250000`)
 
-Migrations `20260920230000`, `240000`, `250000`.
-
-- [ ] Forms: build one with a field of each type, submit it, review it, check the notification.
-- [ ] Edit the form afterwards: the earlier submission still shows its original questions.
+- [ ] Forms: build one with a field of each type, submit it, review it. **App test**. The notification
+      is **not covered**.
+- [ ] Edit the form afterwards: the earlier submission still shows its original questions. **App test**
 - [ ] Courses: create two courses (one a prerequisite of the other, with a qualification attached) and
-      schedule a class.
-- [ ] Enrolment is refused for a rank below the minimum and for a missing prerequisite.
+      schedule a class. **App test** (seeded)
+- [ ] Enrolment is refused for a rank below the minimum and for a missing prerequisite. **App test**
+      (no enrol button is offered), **Unit test** for the exact reasons.
 - [ ] After the start time, record results for every student: passes get a course record and the
-      qualification, everyone is notified, and results cannot be recorded twice.
-- [ ] Rosters: with none defined `/roster` looks exactly as before.
+      qualification, and results cannot be recorded twice. **App test**. The notifications are
+      **not covered**.
+- [ ] Rosters: with none defined `/roster` looks exactly as before. **Not covered** (the page loads
+      with a roster defined, not without)
 - [ ] Create two rosters over different units and reorder them: tabs, unit order and counts are right.
+      **Not covered** (the page loads with one roster)
 
-## After the last merge
+## After rollout
 
-- [ ] Grant the new permissions to the right roles:
+- [ ] Grant the new permissions to the right roles. **Not covered**: every test ran as an
+      administrator, so what an ordinary member can and cannot do has not been checked.
   - `command-net.admin.personnel.discharge`
   - `command-net.admin.enlistment`, `.specialties`, `.equipment`, `.documents`, `.forms`,
     `.courses` and `.rosters`, each with `.view` and `.manage`
@@ -101,10 +135,5 @@ Migrations `20260920230000`, `240000`, `250000`.
 - [ ] Existing soldiers do not get rank or specialty roles until their rank or specialty next changes.
       Decide whether to change each once to trigger it.
 - [ ] Make the CI jobs required checks in branch protection.
-- [ ] Delete the merged branches.
-
-## Open questions
-
-- #4 is large: it bundles the attendance, AWOL, Report In and promotion work, the CI workflow and the
-  Discord commit `88492f1`. Merge it whole after a careful read, or split it first?
-- Test every tier separately, or merge #4 to #9 and test, then #10 to #18 in a second pass?
+- [x] Delete the merged branches.
+- [ ] Have someone with a real Arma client check that `/squad.xml` loads. **Not covered**
