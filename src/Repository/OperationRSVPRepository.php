@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Repository;
 
+use DateTimeInterface;
 use Forumify\Core\Repository\AbstractRepository;
 use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
@@ -44,11 +45,12 @@ class OperationRSVPRepository extends AbstractRepository
      * given unit count toward the streak (an operation open to everyone, with no unit set,
      * still counts) - so transferring units resets the miss streak instead of carrying over
      * absences racked up in a different unit. Falls back to the unscoped history when the
-     * soldier currently has no unit at all.
+     * soldier currently has no unit at all. When $since is given, operations that started
+     * before it are ignored - the soldier wasn't Active for them.
      *
      * @return array<OperationRSVP>
      */
-    public function findAttendanceHistoryForUnit(SoldierProfile $soldier, ?Unit $unit): array
+    public function findAttendanceHistoryForUnit(SoldierProfile $soldier, ?Unit $unit, ?DateTimeInterface $since = null): array
     {
         $qb = $this->createQueryBuilder('r')
             ->addSelect('operation')
@@ -61,6 +63,11 @@ class OperationRSVPRepository extends AbstractRepository
         if ($unit !== null) {
             $qb->andWhere('operation.unit IS NULL OR operation.unit = :unit')
                 ->setParameter('unit', $unit);
+        }
+
+        if ($since !== null) {
+            $qb->andWhere('operation.startDateTime >= :since')
+                ->setParameter('since', $since);
         }
 
         return $qb->getQuery()->getResult();

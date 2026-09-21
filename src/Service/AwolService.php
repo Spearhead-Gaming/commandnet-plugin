@@ -52,7 +52,7 @@ class AwolService
         }
 
         $unit = $profile->getPrimaryAssignment()?->getUnit();
-        $history = $this->rsvpRepository->findAttendanceHistoryForUnit($profile, $unit);
+        $history = $this->rsvpRepository->findAttendanceHistoryForUnit($profile, $unit, $profile->getActiveSince());
         $missStreak = $this->attendanceCalculator->missStreakFrom($history);
 
         if ($missStreak >= (int)$settings['missThreshold'] && $profile->getStatus() === SoldierStatus::ACTIVE) {
