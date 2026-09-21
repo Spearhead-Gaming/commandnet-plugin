@@ -74,6 +74,7 @@ class MemberViewsTest extends WebTestCase
             'attendance link' => [[[$p . 'attendance.view_own'], [$p . 'attendance.view_all']], 'a[href$="/attendance"]'],
             'promotions link' => [[[$p . 'promotions.view']], 'a[href$="/promotions"]'],
             'report in button' => [[[$p . 'reportin.submit']], 'form[action$="/roster/report-in"]'],
+            // "eported in" is deliberate: it is inside both "Reported in <date>" and "Never reported in".
             'last report in on the cards' => [[[$a . 'reportin.view']], 'text:eported in'],
         ]);
 
@@ -102,7 +103,15 @@ class MemberViewsTest extends WebTestCase
         ], staff: true);
 
         // The author of a report can remove it without the manage permission.
-        $this->client->loginUser($this->em()->find(User::class, $ids['subject']));
+        $em = $this->em();
+        $role = new Role();
+        $role->setTitle('Author role ' . $this->sfx);
+        $role->setPermissions([$p . 'operations.view']);
+        $em->persist($role);
+        $author = $em->find(User::class, $ids['subject']);
+        $author->addRoleEntity($role);
+        $em->flush();
+        $this->client->loginUser($author);
         $crawler = $this->client->request('GET', '/operations/' . $ids['operation']);
         if ($crawler->filter('form[action*="/aar/"]')->count() === 0) {
             $this->failures[] = 'operation: the author of a report cannot remove it';
