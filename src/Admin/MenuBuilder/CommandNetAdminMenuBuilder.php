@@ -33,6 +33,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Rank Groups', $url('forumify_admin_command_net_rank_groups_list'), [
                 'permission' => 'command-net.admin.ranks.view',
             ]),
+            new MenuItem('Rosters', $url('forumify_admin_command_net_rosters_list'), [
+                'permission' => 'command-net.admin.rosters.view',
+            ]),
             new MenuItem('Positions', $url('forumify_admin_command_net_positions_list'), [
                 'permission' => 'command-net.admin.units.view',
             ]),
