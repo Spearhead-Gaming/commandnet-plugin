@@ -81,6 +81,8 @@ forms, report details) and none of the others.
 
 ## Before rolling out
 
+- [ ] Follow `docs/staging-rollout.md`: the commands, the before and after AWOL checks, and how to
+      roll back.
 - [ ] Use a **staging install with a copy of production data**, on the same PHP and Forumify versions.
 - [ ] **Back up the database** first, and note the current commit.
 - [ ] Run `bin/console doctrine:migrations:migrate`, then `bin/console cache:clear`.
