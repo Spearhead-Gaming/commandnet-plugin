@@ -75,6 +75,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             new MenuItem('Enlistment Settings', $url('forumify_admin_command_net_enlistment_settings'), [
                 'permission' => 'command-net.admin.enlistment.manage',
             ]),
+            new MenuItem('Squad XML', $url('forumify_admin_command_net_squad_xml_settings'), [
+                'permission' => 'command-net.admin.squadxml.manage',
+            ]),
             new MenuItem('AWOL Settings', $url('forumify_admin_command_net_awol_settings'), [
                 'permission' => 'command-net.admin.awol.manage',
             ]),
