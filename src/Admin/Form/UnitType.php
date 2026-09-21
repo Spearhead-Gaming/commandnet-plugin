@@ -85,6 +85,19 @@ class UnitType extends AbstractType
                     ->orderBy('e.name', 'ASC'),
                 'help' => 'Vehicles this unit has.',
             ])
+            ->add('orbatSize', ChoiceType::class, [
+                'label' => 'ORBAT size',
+                'required' => false,
+                'placeholder' => 'Work out from the units below it',
+                'choices' => array_combine(OrbatGenerator::SIZES, OrbatGenerator::SIZES),
+            ])
+            ->add('orbatType', ChoiceType::class, [
+                'label' => 'ORBAT type',
+                'required' => false,
+                'placeholder' => 'Infantry',
+                'choices' => array_flip(OrbatGenerator::TYPES),
+                'help' => 'How the unit shows in the Arma 3 ORBAT export.',
+            ])
             ->add('discordGuildId', TextType::class, [
                 'label' => 'Discord Server (Guild) ID',
                 'required' => false,
