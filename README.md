@@ -325,7 +325,9 @@ relying on it.
   permission it needs, as a member with none, with everything but that one, and with only that one,
   and a fourth checks that the pages listing every soldier run the same number of queries at 3
   and at 15 soldiers.
-  Notifications, the scheduled Report In task and the Discord integration are not covered.
+  The flow test also checks that the notifications those actions should send are created, and
+  drives AWOL detection and the Report In command. Delivery of notifications, the cron trigger of
+  the Report In task and the Discord integration are not covered.
 - **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
   builder, several instructors per course class, calendar sync for classes, and the Discord
   `/award`, `/qualification` and `/rank` commands. The section for each feature above lists what its
