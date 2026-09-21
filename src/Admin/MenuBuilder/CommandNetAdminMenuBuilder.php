@@ -67,8 +67,15 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             ]),
         ]);
 
-        if ($groups !== []) {
-            $menu->addItem(new Menu('Command Net', ['icon' => 'ph ph-shield-star'], array_values($groups)));
+        if ($groups === []) {
+            return;
         }
+
+        // Added one by one: the Menu constructor is documented as MenuItem-only, addItem() takes groups.
+        $root = new Menu('Command Net', ['icon' => 'ph ph-shield-star']);
+        foreach ($groups as $entry) {
+            $root->addItem($entry);
+        }
+        $menu->addItem($root);
     }
 }
