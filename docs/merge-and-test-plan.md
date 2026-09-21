@@ -27,8 +27,13 @@ On a throwaway install (fresh MySQL 8.4, Forumify 1.3.2), and now in CI on every
   checked afterwards (47 checks).
 - The 118 unit tests, phpcs and PHPStan pass.
 
-What that run could not cover: real production data, the scheduler, notifications, a member without
-admin rights, the Discord plugin, and a real Arma client reading `/squad.xml`.
+A separate permissions test checks every frontend and admin endpoint as a member with no
+permissions, as one holding everything except the required permission, and as one holding only it.
+The admin panel is behind Forumify's administrator role, so staff need that role plus the specific
+command-net permission; the CRUD edit screens refuse by redirecting to the list, not with a 403.
+
+What that run could not cover: real production data, the scheduler, notifications, what an ordinary
+member sees on each page, the Discord plugin, and a real Arma client reading `/squad.xml`.
 
 ## Found while testing
 
@@ -124,8 +129,10 @@ admin rights, the Discord plugin, and a real Arma client reading `/squad.xml`.
 
 ## After rollout
 
-- [ ] Grant the new permissions to the right roles. **Not covered**: every test ran as an
-      administrator, so what an ordinary member can and cannot do has not been checked.
+- [ ] Grant the new permissions to the right roles. Enforcement is an **App test**: every endpoint
+      is refused to a member with none, refused to one holding every permission except the required
+      one, and open to one holding only that permission. Which role should get which permission is
+      still your call, and a real member's view of each page is **not covered**.
   - `command-net.admin.personnel.discharge`
   - `command-net.admin.enlistment`, `.specialties`, `.equipment`, `.documents`, `.forms`,
     `.courses` and `.rosters`, each with `.view` and `.manage`

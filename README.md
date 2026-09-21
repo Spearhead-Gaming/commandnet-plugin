@@ -321,8 +321,9 @@ relying on it.
   the repositories. Two application tests boot the plugin in a real Forumify install on MySQL
   (`tests/Application`): one loads every page as an administrator, the other drives the main
   submit-and-review flows (enlistment, promotion, RSVP and attendance, transfers, discharge,
-  forms, courses) and checks the database. Permissions for ordinary members, notifications, the
-  scheduled Report In task and the Discord integration are not covered.
+  forms, courses) and checks the database. A third checks every endpoint against the
+  permission it needs, as a member with none, with everything but that one, and with only that one.
+  Notifications, the scheduled Report In task and the Discord integration are not covered.
 - **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
   builder, several instructors per course class, calendar sync for classes, and the Discord
   `/award`, `/qualification` and `/rank` commands. The section for each feature above lists what its
