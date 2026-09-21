@@ -42,14 +42,22 @@ to Active, and the Report In warning. It checks that the notification exists wit
 title, not that it was delivered.
 
 What that run could not cover: real production data, the daily cron trigger of the Report In task
-(the command itself is tested), delivery of notifications, what an ordinary member sees on each page,
-the Discord plugin, and a real Arma client reading `/squad.xml`.
+(the command itself is tested), delivery of notifications, the Discord plugin, and a real Arma client
+reading `/squad.xml`.
+
+A member views test loads the personnel file, roster, promotions, an operation, a course class, the
+attendance page and the admin personnel record as members holding the permission to open the page
+plus exactly one more, and checks that member sees the control that permission unlocks (buttons,
+forms, report details) and none of the others.
 
 ## Found while testing
 
 - The assignment form returned a 500 on a blank start date and did not prefill it. Fixed in #23.
 - The admin Personnel list ran a query per soldier for the user, rank and assignments: 17 queries with
   3 soldiers, 40 with 15. Fixed in #27. The frontend pages were already flat.
+- The RSVP buttons on an operation page were shown to anyone with a personnel file, although the RSVP
+  action needs `command-net.operations.rsvp`, so a member without it saw buttons that refused. They
+  now need the permission too. Fixed in #30.
 - `doctrine:schema:validate` reports drift for calendar-plugin tables and for Forumify's own
   `UserNotificationSettings` mapping. Neither comes from this plugin.
 
@@ -147,7 +155,9 @@ the Discord plugin, and a real Arma client reading `/squad.xml`.
 - [ ] Grant the new permissions to the right roles. Enforcement is an **App test**: every endpoint
       is refused to a member with none, refused to one holding every permission except the required
       one, and open to one holding only that permission. Which role should get which permission is
-      still your call, and a real member's view of each page is **not covered**.
+      still your call. What each of those members sees on the main pages is also an **App test**;
+      the pages not listed in the member views test (org chart, qualifications, courses list, forms)
+      are **not covered**.
   - `command-net.admin.personnel.discharge`
   - `command-net.admin.enlistment`, `.specialties`, `.equipment`, `.documents`, `.forms`,
     `.courses` and `.rosters`, each with `.view` and `.manage`

@@ -75,7 +75,7 @@
         </div>
 
         <div class="col-xs-12 col-md-4 flex flex-col gap-4">
-            {% if myProfile %}
+            {% if myProfile and is_granted('command-net.operations.rsvp') %}
                 <div class="card">
                     <div class="card-title">{{ 'command_net.operations.your_rsvp'|trans }}</div>
                     <div class="card-body flex flex-col gap-2">

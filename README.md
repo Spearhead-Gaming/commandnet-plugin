@@ -324,7 +324,8 @@ relying on it.
   forms, courses) and checks the database. A third checks every endpoint against the
   permission it needs, as a member with none, with everything but that one, and with only that one,
   and a fourth checks that the pages listing every soldier run the same number of queries at 3
-  and at 15 soldiers.
+  and at 15 soldiers. A fifth checks what the main pages show a member holding each single
+  permission (buttons, forms, report details).
   The flow test also checks that the notifications those actions should send are created, and
   drives AWOL detection and the Report In command. Delivery of notifications, the cron trigger of
   the Report In task and the Discord integration are not covered.
