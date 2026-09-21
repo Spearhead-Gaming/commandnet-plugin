@@ -19,7 +19,7 @@
                     <i class="ph ph-medal"></i> Promotions
                 </a>
             {% endif %}
-            {% if is_granted('command-net.reportin.submit') %}
+            {% if canReportIn and is_granted('command-net.reportin.submit') %}
                 <form method="post" action="{{ path('command_net_report_in') }}">
                     <input type="hidden" name="_token" value="{{ csrf_token('report_in') }}">
                     <button type="submit" class="btn-primary btn-small">

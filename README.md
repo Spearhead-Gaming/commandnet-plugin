@@ -325,7 +325,9 @@ relying on it.
   permission it needs, as a member with none, with everything but that one, and with only that one,
   and a fourth checks that the pages listing every soldier run the same number of queries at 3
   and at 15 soldiers. A fifth checks what the main pages show a member holding each single
-  permission (buttons, forms, report details).
+  permission (buttons, forms, report details), and a sixth checks what pages say and do: the
+  specialty, Loadout card and record types, HTML escaping in documents, the roster tabs, the squad
+  file against its DTD, the Rank form, and what a discharged soldier is offered and refused.
   The flow test also checks that the notifications those actions should send are created, and
   drives AWOL detection and the Report In command. Delivery of notifications, the cron trigger of
   the Report In task and the Discord integration are not covered.

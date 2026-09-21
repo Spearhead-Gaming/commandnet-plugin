@@ -189,9 +189,10 @@ class PageContentTest extends WebTestCase
 
         $this->as((int)$ids['discharged']);
         $this->client->request('POST', $rsvp, ['status' => 'attending']);
-        $this->expect(str_contains($this->followed(), 'Only enlisted personnel can RSVP'), 'a discharged soldier is refused when they RSVP');
+        // The page lower-cases "RSVP" when it shows the message, so the match ignores case.
+        $this->expect(stripos($this->followed(), 'Only enlisted personnel can RSVP') !== false, 'a discharged soldier is refused when they RSVP');
         $this->client->request('POST', '/roster/report-in');
-        $this->expect(str_contains($this->followed(), 'Only enlisted personnel can report in'), 'a discharged soldier is refused when they report in');
+        $this->expect(stripos($this->followed(), 'Only enlisted personnel can report in') !== false, 'a discharged soldier is refused when they report in');
 
         $em = $this->em();
         $this->expect($em->getRepository(OperationRSVP::class)->count(['soldier' => $ids['dischargedProfile']]) === 0, 'no RSVP was saved for the discharged soldier');
@@ -406,10 +407,14 @@ class PageContentTest extends WebTestCase
         $squad->save(['enabled' => true, 'nick' => 'TST', 'name' => 'Test Squad']);
 
         $dischargedProfile = $em->getRepository(SoldierProfile::class)->findOneBy(['user' => $discharged->getId()]);
+        $dischargedProfileId = $dischargedProfile->getId();
+        // The first request reuses this entity manager, whose soldiers were built in memory without
+        // their assignments; clearing it makes that request read them back from the database.
+        $em->clear();
 
         return [
             'admin' => $admin->getId(), 'active' => $active->getId(), 'discharged' => $discharged->getId(),
-            'dischargedProfile' => $dischargedProfile->getId(),
+            'dischargedProfile' => $dischargedProfileId,
             'username' => 'sub' . $s, 'otherUsername' => 'oth' . $s, 'otherName' => 'Other Soldier ' . $s,
             'rank' => $rank->getId(), 'unitA' => $unitA->getId(), 'unitB' => $unitB->getId(), 'operation' => $operation->getId(),
             'abbreviation' => $abbreviation, 'specialtyName' => 'Medic' . $s,
