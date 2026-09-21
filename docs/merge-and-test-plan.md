@@ -46,8 +46,10 @@ command-net permission; the CRUD edit screens refuse by redirecting to the list,
 The flow test also checks that each action creates the notification it should, for the right person:
 enlistment accepted and declined, promotion, form review, course results, the AWOL flag and return
 to Active, and the Report In warning. It checks that the notification exists with the expected
-title and that the platform's notification type shows a title, text and link on the site from it,
-not that it was delivered.
+title and that the platform's notification type shows a title, text and link on the site from it.
+A live components test also checks that a notification created by the real AWOL and Report In code
+appears in its recipient's bell in the site, and in nobody else's. That is delivery inside the site;
+email or Discord delivery is not tested.
 
 A page content test checks what pages say and do: the specialty, Loadout card and record types on a
 personnel file, a member's name containing HTML inside a rendered document, the roster with and
@@ -57,8 +59,13 @@ that the Report In command is in the scheduler.
 
 What that run could not cover: your real production data (the backfill is tested only on rows shaped
 like the old data), the scheduler
-worker actually running, delivery of notifications, the Discord plugin, and a real Arma client
-reading `/squad.xml`.
+worker actually running, notification emails and Discord messages arriving, the Discord plugin, and a
+real Arma client reading `/squad.xml`.
+
+The live components test also reorders rows in the five sortable admin tables (awards, qualifications,
+ranks, rosters, units): a member who can only view a table cannot, a manager can move a row up and
+down, and the top row cannot move up. It builds the tables and the bell directly and signs a user in,
+so it checks what they do, not the live-component HTTP route around them.
 
 A member views test loads the personnel file, roster, promotions, an operation, a course class, the
 attendance page and the admin personnel record as members holding the permission to open the page
@@ -171,8 +178,9 @@ forms, report details) and none of the others.
       qualification, the student is notified, and results cannot be recorded twice. **App test**
 - [ ] Rosters: with none defined `/roster` has no tabs and lists everyone, as before. **App test**
 - [ ] Create two rosters over different units and reorder them: the tabs follow the order, each lists
-      only its own units, and changing the order changes the tabs. **App test** (the order is changed
-      by editing the position, not by the drag-and-drop in the admin table, which is **not covered**)
+      only its own units, and changing the order changes the tabs. **App test**, and the admin table's
+      move up and down (the action behind the drag-and-drop controls) is an **App test** too. Only the
+      browser controls themselves are **not covered**.
 
 ## After rollout
 

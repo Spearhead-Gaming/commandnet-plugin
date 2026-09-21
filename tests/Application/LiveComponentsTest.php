@@ -6,9 +6,19 @@ namespace MajesticDev\CommandNet\Tests\Application;
 
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
+use Forumify\Core\Notification\GenericNotificationType;
+use Forumify\Core\Notification\NotificationTypeCollection;
+use Forumify\Core\Repository\NotificationRepository;
+use Forumify\Forum\Component\Notifications;
 use Forumify\Testing\Traits\UserTrait;
+use MajesticDev\CommandNet\Admin\Components\Table\AwardTable;
+use MajesticDev\CommandNet\Admin\Components\Table\QualificationTable;
+use MajesticDev\CommandNet\Admin\Components\Table\RankTable;
+use MajesticDev\CommandNet\Admin\Components\Table\RosterDefinitionTable;
+use MajesticDev\CommandNet\Admin\Components\Table\UnitTable;
 use MajesticDev\CommandNet\Entity\Award;
 use MajesticDev\CommandNet\Entity\Qualification;
 use MajesticDev\CommandNet\Entity\Rank;
@@ -16,21 +26,24 @@ use MajesticDev\CommandNet\Entity\Roster;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Service\AwolService;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Throwable;
 
 /**
  * Two things that happen through live components rather than pages: reordering rows in the admin
- * tables, and a member seeing a notification in the site. Each section reports its own failures.
+ * tables, and a member seeing a notification in the site. The components are built and called
+ * directly, acting as a signed-in user, so the checks are on what they do rather than on the
+ * live-component request plumbing. Each section reports its own failures.
+ *
+ * Every user gets a kernel of their own: the permission voter remembers the first user it is
+ * asked about for the life of a kernel.
  */
-class LiveComponentsTest extends WebTestCase
+class LiveComponentsTest extends KernelTestCase
 {
     use UserTrait;
-    use InteractsWithLiveComponents;
 
-    private KernelBrowser $client;
     private string $sfx;
     /** @var array<string> */
     private array $failures = [];
@@ -38,19 +51,19 @@ class LiveComponentsTest extends WebTestCase
 
     public function testReorderingAndNotificationsThroughLiveComponents(): void
     {
-        $this->client = static::createClient();
+        static::bootKernel();
         $this->sfx = substr(uniqid(), -6);
         $n = random_int(1000, 900000);
 
         $tables = [
-            'AwardTable' => ['awards', fn (string $name, int $position) => $this->award($name, $position)],
-            'QualificationTable' => ['qualifications', fn (string $name, int $position) => $this->qualification($name, $position)],
-            'RankTable' => ['ranks', fn (string $name, int $position) => $this->rank($name, $position)],
-            'RosterDefinitionTable' => ['rosters', fn (string $name, int $position) => $this->roster($name, $position)],
-            'UnitTable' => ['units', fn (string $name, int $position) => $this->unit($name, $position)],
+            AwardTable::class => ['awards', fn (string $name, int $position) => $this->award($name, $position)],
+            QualificationTable::class => ['qualifications', fn (string $name, int $position) => $this->qualification($name, $position)],
+            RankTable::class => ['ranks', fn (string $name, int $position) => $this->rank($name, $position)],
+            RosterDefinitionTable::class => ['rosters', fn (string $name, int $position) => $this->roster($name, $position)],
+            UnitTable::class => ['units', fn (string $name, int $position) => $this->unit($name, $position)],
         ];
-        foreach ($tables as $component => [$area, $make]) {
-            $this->section($component . ' reorders', fn () => $this->reorder($component, $area, $make, $n));
+        foreach ($tables as $table => [$area, $make]) {
+            $this->section(substr($table, (int)strrpos($table, '\\') + 1) . ' reorders', fn () => $this->reorder($table, $area, $make, $n));
         }
         $this->section('a notification reaches the member in the site', fn () => $this->notification());
 
@@ -58,10 +71,13 @@ class LiveComponentsTest extends WebTestCase
     }
 
     /**
+     * @param class-string<AbstractDoctrineTable> $table
      * @param callable(string, int): object $make
      */
-    private function reorder(string $component, string $area, callable $make, int $n): void
+    private function reorder(string $table, string $area, callable $make, int $n): void
     {
+        $name = substr($table, (int)strrpos($table, '\\') + 1);
+        $this->signedOut();
         $em = $this->em();
         $first = $make('First' . $this->sfx, $n);
         $second = $make('Second' . $this->sfx, $n + 10);
@@ -72,26 +88,27 @@ class LiveComponentsTest extends WebTestCase
         $em->flush();
         [$firstId, $secondId, $thirdId] = [$first->getId(), $second->getId(), $third->getId()];
         $class = $first::class;
-        $em->clear();
 
         $viewer = $this->member(['command-net.admin.' . $area . '.view']);
         $manager = $this->member(['command-net.admin.' . $area . '.view', 'command-net.admin.' . $area . '.manage']);
+        $original = [$firstId, $secondId, $thirdId];
 
-        $this->move($component, $viewer, $secondId, 'up');
-        $this->expect($this->order($class, [$firstId, $secondId, $thirdId]) === [$firstId, $secondId, $thirdId], $component . ': a member who can only view the table cannot reorder it');
+        $this->move($table, $viewer, $secondId, 'up');
+        $this->expect($this->order($class, $original) === $original, $name . ': a member who can only view the table cannot reorder it');
 
-        $this->move($component, $manager, $secondId, 'up');
-        $this->expect($this->order($class, [$firstId, $secondId, $thirdId]) === [$secondId, $firstId, $thirdId], $component . ': moving a row up swaps it with the one above');
+        $this->move($table, $manager, $secondId, 'up');
+        $this->expect($this->order($class, $original) === [$secondId, $firstId, $thirdId], $name . ': moving a row up swaps it with the one above');
 
-        $this->move($component, $manager, $secondId, 'down');
-        $this->expect($this->order($class, [$firstId, $secondId, $thirdId]) === [$firstId, $secondId, $thirdId], $component . ': moving it down again restores the order');
+        $this->move($table, $manager, $secondId, 'down');
+        $this->expect($this->order($class, $original) === $original, $name . ': moving it down again restores the order');
 
-        $this->move($component, $manager, $firstId, 'up');
-        $this->expect($this->order($class, [$firstId, $secondId, $thirdId]) === [$firstId, $secondId, $thirdId], $component . ': moving the top row up changes nothing');
+        $this->move($table, $manager, $firstId, 'up');
+        $this->expect($this->order($class, $original) === $original, $name . ': moving the top row up changes nothing');
     }
 
     private function notification(): void
     {
+        $this->signedOut();
         $em = $this->em();
         $recipient = $this->createUser('rec' . $this->sfx, 'rec' . $this->sfx . '@example.org');
         $other = $this->createUser('oth' . $this->sfx, 'oth' . $this->sfx . '@example.org');
@@ -107,22 +124,68 @@ class LiveComponentsTest extends WebTestCase
         /** @var AwolService $awol */
         $awol = static::getContainer()->get(AwolService::class);
         $awol->notify($em->find(SoldierProfile::class, $profile->getId()), 'Report in soon', 'You have 3 day(s) left to report in.');
-        $em->clear();
 
-        $html = $this->createLiveComponent('Notifications')->actingAs($this->em()->find(User::class, $recipientId))->render()->toString();
-        $this->expect(str_contains($html, 'Report in soon'), 'the recipient sees the notification title in the bell');
-        $this->expect(str_contains($html, 'You have 3 day(s) left'), 'the recipient sees the notification text');
-
-        $html = $this->createLiveComponent('Notifications')->actingAs($this->em()->find(User::class, $otherId))->render()->toString();
-        $this->expect(!str_contains($html, 'Report in soon'), 'another member does not see it');
+        $shown = $this->bell($recipientId);
+        $this->expect(in_array('Report in soon', array_column($shown, 'title'), true), 'the recipient sees the notification title in the bell');
+        $this->expect(in_array('You have 3 day(s) left to report in.', array_column($shown, 'text'), true), 'the recipient sees the notification text');
+        $this->expect(!in_array('Report in soon', array_column($this->bell($otherId), 'title'), true), 'another member does not see it');
     }
 
-    private function move(string $component, User $user, int $id, string $direction): void
+    /**
+     * What the platform's bell lists for this user: the title and text shown for each notification.
+     *
+     * @return array<int, array{title: string, text: string}>
+     */
+    private function bell(int $userId): array
     {
-        $this->createLiveComponent($component)
-            ->actingAs($this->em()->find(User::class, $user->getId()))
-            ->call('changePosition', ['id' => $id, 'direction' => $direction]);
-        $this->em()->clear();
+        $this->actAs($userId);
+        $container = static::getContainer();
+        /** @var NotificationRepository $repository */
+        $repository = $container->get(NotificationRepository::class);
+        /** @var NotificationTypeCollection $types */
+        $types = $container->get(NotificationTypeCollection::class);
+        $component = new Notifications($repository, $types);
+        $component->setContainer($container);
+
+        $generic = new GenericNotificationType($container->get('translator'));
+        $shown = [];
+        foreach ($component->getNotifications() as $notification) {
+            $shown[] = ['title' => $generic->getTitle($notification), 'text' => $generic->getDescription($notification)];
+        }
+
+        return $shown;
+    }
+
+    /**
+     * @param class-string<AbstractDoctrineTable> $table
+     */
+    private function move(string $table, User $user, int $id, string $direction): void
+    {
+        $this->actAs($user->getId());
+        $component = new $table();
+        $component->setServices($this->em(), static::getContainer()->get(Security::class));
+        $component->changePosition($id, $direction);
+    }
+
+    /**
+     * A fresh kernel with nobody signed in. Creating roles while a user is signed in runs the audit
+     * log listener for that user, which loops, so seeding always happens signed out.
+     */
+    private function signedOut(): void
+    {
+        static::ensureKernelShutdown();
+        static::bootKernel();
+    }
+
+    /**
+     * Signs the user in on a fresh kernel, so the permission voter starts with no memory of anyone.
+     */
+    private function actAs(int $userId): void
+    {
+        static::ensureKernelShutdown();
+        static::bootKernel();
+        $user = $this->em()->find(User::class, $userId);
+        static::getContainer()->get('security.token_storage')->setToken(new UsernamePasswordToken($user, 'main', $user->getRoles()));
     }
 
     /**

@@ -329,7 +329,8 @@ relying on it.
   specialty, Loadout card and record types, HTML escaping in documents, the roster tabs, the squad
   file against its DTD, the Rank form, and what a discharged soldier is offered and refused.
   The flow test also checks that the notifications those actions should send are created, and
-  drives AWOL detection and the Report In command. Delivery of notifications, the cron trigger of
+  drives AWOL detection and the Report In command. A seventh reorders rows in the sortable admin
+  tables and checks a notification appears in its recipient's bell. Email and Discord delivery of notifications, the cron trigger of
   the Report In task and the Discord integration are not covered.
 - **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
   builder, several instructors per course class, calendar sync for classes, and the Discord
