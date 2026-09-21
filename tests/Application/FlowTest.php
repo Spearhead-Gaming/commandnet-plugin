@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Tests\Application;
 
 use DateTime;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use Forumify\Core\Entity\Notification;
 use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
 use Forumify\Testing\Traits\UserTrait;
@@ -31,9 +33,14 @@ use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\SoldierQualification;
 use MajesticDev\CommandNet\Entity\Specialty;
 use MajesticDev\CommandNet\Entity\Unit;
+use MajesticDev\CommandNet\Service\AwolSettings;
 use MajesticDev\CommandNet\Service\EnlistmentSettings;
+use MajesticDev\CommandNet\Service\ReportInService;
+use MajesticDev\CommandNet\Service\ReportInSettings;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 use Throwable;
 
 /**
@@ -80,6 +87,7 @@ class FlowTest extends WebTestCase
         $unitRole1 = $role('U1');
         $unitRole2 = $role('U2');
         $specRole = $role('SP');
+        $awolRole = $role('AWOL');
 
         $group = new RankGroup();
         $group->setName('G' . $s);
@@ -145,7 +153,12 @@ class FlowTest extends WebTestCase
         $settings = static::getContainer()->get(EnlistmentSettings::class);
         $settings->save(['enabled' => true, 'defaultRank' => $rank0->getId(), 'defaultUnit' => $u2->getId(), 'instructions' => 'Read the rules']);
 
+        /** @var AwolSettings $awolSettings */
+        $awolSettings = static::getContainer()->get(AwolSettings::class);
+        $awolSettings->save(['enabled' => true, 'missThreshold' => 1, 'role' => $awolRole->getId()]);
+
         $ids = [
+            'awolrole' => $awolRole->getId(),
             'admin' => $adminUser->getId(), 'applicant' => $applicant->getId(), 'decliner' => $decliner->getId(),
             'promotee' => $promotee->getId(), 'mover' => $mover->getId(), 'leaver' => $leaver->getId(),
             'r0' => $rank0->getId(), 'r1' => $rank1->getId(), 'r2' => $rank2->getId(),
@@ -167,6 +180,7 @@ class FlowTest extends WebTestCase
         $this->flow('Discharge and re-enlist', fn () => $this->discharge($ids));
         $this->flow('Form: submit, review, edit definition', fn () => $this->forms($ids));
         $this->flow('Courses: enrol, refusal, results, no double processing', fn () => $this->courses($ids));
+        $this->flow('Report In: command, warning, AWOL flag, report in', fn () => $this->reportInEnforcement($ids));
 
         $this->assertFalse($this->failed, "Some flows failed:\n" . implode("\n", $this->lines));
     }
@@ -197,6 +211,7 @@ class FlowTest extends WebTestCase
         $profile = $this->em->getRepository(SoldierProfile::class)->findOneBy(['user' => $ids[$who]]);
         if (!$accept) {
             $this->check('no profile created on decline', $profile === null);
+            $this->check('applicant notified of the decline', $this->notified($ids[$who], 'Application declined'));
             return;
         }
         $this->check('profile created and active', $profile?->getStatus() === SoldierStatus::ACTIVE);
@@ -204,6 +219,7 @@ class FlowTest extends WebTestCase
         $this->check('starting unit posting created', $profile?->getPrimaryAssignment()?->getUnit()->getId() === $ids['u2']);
         $this->check('unit role granted', $this->hasRole($ids[$who], $ids['urole2']));
         $this->check('enlistment record written', $this->recordCount($profile, ServiceRecordType::ENLISTMENT) > 0);
+        $this->check('applicant notified of the acceptance', $this->notified($ids[$who], 'Application accepted'));
     }
 
     /**
@@ -221,6 +237,7 @@ class FlowTest extends WebTestCase
         $this->check('promotion record written', $this->recordCount($profile, ServiceRecordType::PROMOTION) === $before + 1);
         $this->check('new rank role granted', $this->hasRole($ids['promotee'], $ids['role2']));
         $this->check('old rank role revoked', !$this->hasRole($ids['promotee'], $ids['role1']));
+        $this->check('soldier notified of the promotion', $this->notified($ids['promotee'], 'Promoted'));
     }
 
     /**
@@ -241,6 +258,20 @@ class FlowTest extends WebTestCase
         $repo = $this->em->getRepository(OperationRSVP::class);
         $this->check('marked attended', $repo->findOneBy(['operation' => $ids['op'], 'soldier' => $ids['pAdmin']])?->getAttended() === true);
         $this->check('never-RSVP\'d soldier marked absent (row created)', $repo->findOneBy(['operation' => $ids['op'], 'soldier' => $ids['pMove']])?->getAttended() === false);
+
+        // AWOL detection is on with a threshold of one missed operation, so the absence above flags them.
+        $mover = $this->em->find(SoldierProfile::class, $ids['pMove']);
+        $this->check('missing the operation flagged the soldier AWOL', $mover?->getStatus() === SoldierStatus::AWOL);
+        $this->check('AWOL record written', $this->recordCount($mover, ServiceRecordType::AWOL) === 1);
+        $this->check('AWOL role granted', $this->hasRole($ids['mover'], $ids['awolrole']));
+        $this->check('soldier notified of the AWOL flag', $this->notified($ids['mover'], 'Flagged AWOL'));
+
+        $this->post($url, '/operations/' . $ids['op'] . '/attendance', ['soldier_id' => (string)$ids['pMove'], 'attended' => '1']);
+        $this->em->clear();
+        $mover = $this->em->find(SoldierProfile::class, $ids['pMove']);
+        $this->check('attending clears the AWOL flag', $mover?->getStatus() === SoldierStatus::ACTIVE);
+        $this->check('AWOL role revoked again', !$this->hasRole($ids['mover'], $ids['awolrole']));
+        $this->check('soldier notified of the return to Active', $this->notified($ids['mover'], 'Returned to Active'));
 
         $this->post('/roster', '/roster/report-in');
         $this->em->clear();
@@ -340,6 +371,7 @@ class FlowTest extends WebTestCase
         $this->submit('/admin/command-net/form-submissions/' . $submission->getId() . '/edit', '[decision]', ['decision' => 'accept', 'note' => 'Approved']);
         $this->em->clear();
         $this->check('submission accepted', $this->em->find(FormSubmission::class, $submission->getId())?->getStatus() === ApplicationStatus::ACCEPTED);
+        $this->check('submitter notified of the decision', $this->notified($ids['admin'], ': accepted'));
 
         $definition = $this->em->find(FormDefinition::class, $ids['form']);
         $definition?->setFieldList('text | Something else entirely | required');
@@ -374,6 +406,7 @@ class FlowTest extends WebTestCase
         $this->em->clear();
         $student = $this->em->getRepository(CourseClassStudent::class)->findOneBy(['courseClass' => $ids['class1']]);
         $this->check('result recorded as passed', $student?->getResult() === CourseResult::PASSED);
+        $this->check('student notified of the result', $this->notified($ids['admin'], ': Passed'));
         $profile = $this->em->find(SoldierProfile::class, $ids['pAdmin']);
         $this->check('course record written', $this->recordCount($profile, ServiceRecordType::COURSE) === 1);
         $this->check('qualification granted', $this->em->getRepository(SoldierQualification::class)->count(['soldier' => $ids['pAdmin'], 'qualification' => $ids['qual']]) === 1);
@@ -383,6 +416,55 @@ class FlowTest extends WebTestCase
         $this->client->request('GET', $page);
         $this->check('results form no longer offered once processed', $this->client->getCrawler()->filter('form[action$="/results"]')->count() === 0);
         $this->check('service records unchanged', $this->em->getRepository(ServiceRecord::class)->count(['soldier' => $ids['pAdmin']]) === $records);
+    }
+
+    /**
+     * Report In enforcement, driven through the scheduled command and then by moving the clock
+     * forward. It flags every active soldier, so it runs after the flows that need active people.
+     *
+     * @param array<string, int> $ids
+     */
+    private function reportInEnforcement(array $ids): void
+    {
+        /** @var ReportInSettings $settings */
+        $settings = static::getContainer()->get(ReportInSettings::class);
+        $settings->save(['enabled' => true, 'periodDays' => 30, 'warningDays' => 7]);
+        /** @var ReportInService $service */
+        $service = static::getContainer()->get(ReportInService::class);
+
+        $tester = new CommandTester((new Application(static::$kernel))->find('command-net:report-in:run-checks'));
+        $exit = $tester->execute([]);
+        $this->em->clear();
+        $this->check('the run-checks command succeeds (exit ' . $exit . ')', $exit === 0);
+        $this->check('nobody is flagged on the first run', $this->em->find(SoldierProfile::class, $ids['pAdmin'])?->getStatus() === SoldierStatus::ACTIVE);
+
+        $service->runChecks(new DateTimeImmutable('+25 days'));
+        $this->em->clear();
+        $this->check('a soldier close to the deadline is warned', $this->notified($ids['admin'], 'Report in soon'));
+        $this->check('and is not flagged yet', $this->em->find(SoldierProfile::class, $ids['pAdmin'])?->getStatus() === SoldierStatus::ACTIVE);
+
+        $service->runChecks(new DateTimeImmutable('+40 days'));
+        $this->em->clear();
+        $profile = $this->em->find(SoldierProfile::class, $ids['pAdmin']);
+        $this->check('past the deadline the soldier is flagged AWOL', $profile?->getStatus() === SoldierStatus::AWOL && $profile->isReportInFlagged());
+        $this->check('soldier notified of the AWOL flag', $this->notified($ids['admin'], 'Flagged AWOL'));
+
+        $this->as($ids['admin']);
+        $this->post('/roster', '/roster/report-in');
+        $this->em->clear();
+        $this->check('reporting in clears it', $this->em->find(SoldierProfile::class, $ids['pAdmin'])?->getStatus() === SoldierStatus::ACTIVE);
+        $this->check('soldier notified of the return to Active', $this->notified($ids['admin'], 'Returned to Active'));
+    }
+
+    private function notified(int $userId, string $titleContains): bool
+    {
+        foreach ($this->em->getRepository(Notification::class)->findBy(['recipient' => $userId]) as $notification) {
+            if (str_contains((string)($notification->getContext()['title'] ?? ''), $titleContains)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function rank(string $name, int $position, ?RankGroup $group, ?Role $role): Rank

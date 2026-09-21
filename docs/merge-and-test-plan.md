@@ -22,9 +22,9 @@ On a throwaway install (fresh MySQL 8.4, Forumify 1.3.2), and now in CI on every
 - The container and Twig lint pass, and all 106 `command_net` routes register.
 - About 80 pages load as an administrator without an error: every frontend page, every admin list,
   create and edit screen, the discharge page, the settings pages and `/squad.xml`.
-- Enlistment, promotion, RSVP, attendance, report in, transfers, specialty changes, discharge and
-  re-enlist, forms and courses were driven through the real forms and buttons, and the database was
-  checked afterwards (47 checks).
+- Enlistment, promotion, RSVP, attendance, AWOL detection, report in (button, command and
+  enforcement), transfers, specialty changes, discharge and re-enlist, forms and courses were driven
+  through the real forms and buttons, and the database was checked afterwards.
 - The 118 unit tests, phpcs and PHPStan pass.
 
 A query-count test loads each page that lists soldiers (roster and roster tabs, units, promotions,
@@ -36,8 +36,14 @@ permissions, as one holding everything except the required permission, and as on
 The admin panel is behind Forumify's administrator role, so staff need that role plus the specific
 command-net permission; the CRUD edit screens refuse by redirecting to the list, not with a 403.
 
-What that run could not cover: real production data, the scheduler, notifications, what an ordinary
-member sees on each page, the Discord plugin, and a real Arma client reading `/squad.xml`.
+The flow test also checks that each action creates the notification it should, for the right person:
+enlistment accepted and declined, promotion, form review, course results, the AWOL flag and return
+to Active, and the Report In warning. It checks that the notification exists with the expected
+title, not that it was delivered.
+
+What that run could not cover: real production data, the daily cron trigger of the Report In task
+(the command itself is tested), delivery of notifications, what an ordinary member sees on each page,
+the Discord plugin, and a real Arma client reading `/squad.xml`.
 
 ## Found while testing
 
@@ -67,13 +73,17 @@ member sees on each page, the Discord plugin, and a real Arma client reading `/s
       **Unit test**
 - [ ] Set a soldier to AWOL by hand, then mark them attended: they **stay** AWOL. **Unit test**
 - [ ] Return a soldier from LOA to Active: absences from before do not count toward AWOL. **Unit test**
-- [ ] AWOL flag and clear entries show as type "AWOL" on the personnel file. **Not covered**
+- [ ] AWOL flag and clear entries show as type "AWOL" on the personnel file. Missing an operation
+      flags the soldier, writes the record, grants the AWOL role and sends the notification, and
+      attending clears all of it: **App test**. How the file displays the record is **not covered**.
 - [ ] Turn on Report In under Report In Settings and run `bin/console command-net:report-in:run-checks`:
-      baseline entries are written and **nobody is flagged** on the first run. **Unit test**. The
-      Report In button itself is an **App test**.
-- [ ] The scheduler is running in this environment (Report In is a scheduled task). **Not covered**
+      baseline entries are written and **nobody is flagged** on the first run. **App test**: the
+      command runs, 25 days later a soldier is warned, 40 days later flagged AWOL, and reporting in
+      clears it, each with its notification. The Report In button is an **App test** too.
+- [ ] The scheduler is running in this environment (Report In is a scheduled task). **Not covered**:
+      the command is tested, the daily cron trigger is not.
 - [ ] Promote an eligible soldier from `/promotions`: rank changes, a promotion record is written and
-      the rank role moves. **App test**. The notification is **not covered**.
+      the rank role moves, the soldier gets a notification. **App test**
 - [ ] The admin **Rank** form opens and saves. Opening it is an **App test**; saving is **not covered**.
 - [x] CI runs on a pull request and passes.
 
@@ -91,10 +101,8 @@ member sees on each page, the Discord plugin, and a real Arma client reading `/s
 ## Enlistment, discharge and assignment role sync (migration `20260920190000`)
 
 - [ ] Enlistment: turn it on, set a starting rank and unit, apply as a test user, accept. The profile,
-      rank, unit posting, unit role and record are all there. **App test**. The notification is
-      **not covered**.
-- [ ] Decline a second application: no profile is created. **App test**. The applicant notification is
-      **not covered**.
+      rank, unit posting, unit role, record and the applicant's notification are all there. **App test**
+- [ ] Decline a second application: no profile is created and the applicant is notified. **App test**
 - [ ] Discharge a soldier who has a unit role, a rank role and a specialty role: all roles are removed
       and a discharge record is written. **App test**
 - [ ] A discharged soldier can no longer RSVP or report in. **Not covered**: the profile is checked as
@@ -120,16 +128,15 @@ member sees on each page, the Discord plugin, and a real Arma client reading `/s
 
 ## Forms, courses and rosters (migrations `20260920230000` to `250000`)
 
-- [ ] Forms: build one with a field of each type, submit it, review it. **App test**. The notification
-      is **not covered**.
+- [ ] Forms: build one with a field of each type, submit it, review it, and the submitter is notified.
+      **App test**
 - [ ] Edit the form afterwards: the earlier submission still shows its original questions. **App test**
 - [ ] Courses: create two courses (one a prerequisite of the other, with a qualification attached) and
       schedule a class. **App test** (seeded)
 - [ ] Enrolment is refused for a rank below the minimum and for a missing prerequisite. **App test**
       (no enrol button is offered), **Unit test** for the exact reasons.
 - [ ] After the start time, record results for every student: passes get a course record and the
-      qualification, and results cannot be recorded twice. **App test**. The notifications are
-      **not covered**.
+      qualification, the student is notified, and results cannot be recorded twice. **App test**
 - [ ] Rosters: with none defined `/roster` looks exactly as before. **Not covered** (the page loads
       with a roster defined, not without)
 - [ ] Create two rosters over different units and reorder them: tabs, unit order and counts are right.
