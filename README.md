@@ -318,6 +318,18 @@ scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the lead
 notification when the AAR falls due and again when it is overdue. It keeps no state, so a run the
 scheduler misses skips that reminder.
 
+**Discord commands** (only registered when the Discord plugin is installed): `/command-net-patrol-create`
+posts a patrol (same `patrols.create` permission as the web form, checked by hand since a
+Discord-triggered request has no security token to check against - see `RawPermissionChecker`);
+`/command-net-patrol-list` shows upcoming patrols; `/command-net-patrol-join` / `-leave` RSVP
+(same `operations.rsvp` permission, joiner-cap and "enlisted only" rules as the web); and
+`/command-net-patrol-aar` files the AAR for a patrol the caller led, or replies with the web
+form's link if `summary` is left blank or the caller isn't its leader. All five need the caller's
+Discord account linked to a forum account. New patrols (web or Discord-posted) are announced to
+Discord and the AAR due/overdue reminder is echoed to a channel, mentioning the leader, by the
+Discord plugin's own listeners - this plugin only exposes the `PatrolReminderNotifier` interface
+(a no-op without Discord) for that second half.
+
 ## AWOL detection
 
 Turn it on under **Admin → Command Net → AWOL Settings** (`command-net.admin.awol.manage`), with a
@@ -418,8 +430,9 @@ have not been checked against a running Arma 3 client yet.
   calendar event (removed if the operation is cancelled).
 - **Discord plugin:** the forumify roles this plugin grants (unit, rank, specialty, AWOL) can be mapped
   to Discord roles in that plugin's own settings, which keeps Discord in step without any Discord code
-  here. It also adds three slash commands: `/command-net-soldier`, `/command-net-unit` and
-  `/command-net-promotion`. `Unit` has a Discord server id field, but nothing reads it yet.
+  here. It also adds slash commands: `/command-net-soldier`, `/command-net-unit`,
+  `/command-net-promotion`, and the patrol commands in [Events and patrols](#events-and-patrols).
+  `Unit` has a Discord server id field, but nothing reads it yet.
 
 ## Works well with
 

@@ -31,6 +31,7 @@ class PatrolAarReminders
         private readonly EventRules $eventRules,
         private readonly NotificationService $notificationService,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly PatrolReminderNotifier $reminderNotifier,
     ) {
     }
 
@@ -54,6 +55,7 @@ class PatrolAarReminders
                 $leader,
                 $this->payload($patrol, $status),
             ));
+            $this->reminderNotifier->notify($patrol, $status);
             ++$sent;
         }
 

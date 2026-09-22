@@ -13,3 +13,7 @@ services:
             - '../src/**/Entity/'
             - '../src/Calendar/'
             - '../src/Discord/'
+
+    # The default (no Discord installed) binding for the AAR reminder's optional second
+    # channel - see PatrolReminderNotifier. The Discord plugin decorates this service id.
+    MajesticDev\CommandNet\Service\PatrolReminderNotifier: '@MajesticDev\CommandNet\Service\NullPatrolReminderNotifier'
