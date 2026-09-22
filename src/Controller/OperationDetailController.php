@@ -60,22 +60,23 @@ class OperationDetailController extends AbstractController
                     $operation->getRsvps()->toArray(),
                 ),
             'rsvpStatuses' => RsvpStatus::cases(),
-            'briefingUrl' => $this->briefingUrl($operation),
+            'briefingUrl' => $this->s3Url('command_net_s3_briefing', 'command-net-s3.briefing.view', $operation),
+            'infoUrl' => $this->s3Url('command_net_s3_operation_info', 'command-net-s3.operation_info.view', $operation),
         ]);
     }
 
     /**
-     * Link to the Command Net S3 plugin's briefing page. That plugin is optional, so the link
-     * only exists when its route is registered and the user may view briefings.
+     * Link to a page of the Command Net S3 plugin. That plugin is optional, so the link only
+     * exists when its route is registered and the user has the permission to view the page.
      */
-    private function briefingUrl(Operation $operation): ?string
+    private function s3Url(string $route, string $permission, Operation $operation): ?string
     {
         try {
-            $url = $this->urlGenerator->generate('command_net_s3_briefing', ['id' => $operation->getId()]);
+            $url = $this->urlGenerator->generate($route, ['id' => $operation->getId()]);
         } catch (RouteNotFoundException) {
             return null;
         }
 
-        return $this->isGranted('command-net-s3.briefing.view') ? $url : null;
+        return $this->isGranted($permission) ? $url : null;
     }
 }
