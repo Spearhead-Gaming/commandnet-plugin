@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Forumify\Core\Entity\BlameableEntityTrait;
 use Forumify\Core\Entity\IdentifiableEntityTrait;
 use Forumify\Core\Entity\TimestampableEntityTrait;
+use Forumify\Core\Entity\User;
 use MajesticDev\CommandNet\Entity\Enum\OperationStatus;
 use MajesticDev\CommandNet\Entity\Enum\OperationType;
 
@@ -49,6 +50,19 @@ trait OperationFields
 
     #[ORM\Column(length: 20, enumType: OperationStatus::class)]
     private OperationStatus $status = OperationStatus::SCHEDULED;
+
+    /** The member who posted and runs a patrol. Null for staff-run events. */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'leader_id', onDelete: 'SET NULL')]
+    private ?User $leader = null;
+
+    #[ORM\ManyToOne(targetEntity: Deployment::class)]
+    #[ORM\JoinColumn(name: 'deployment_id', onDelete: 'SET NULL')]
+    private ?Deployment $deployment = null;
+
+    /** Optional cap on how many soldiers may RSVP as attending. Null means no cap. */
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $maxParticipants = null;
 
     /** @var Collection<int, OperationRSVP> */
     #[ORM\OneToMany(mappedBy: 'operation', targetEntity: OperationRSVP::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
@@ -144,6 +158,36 @@ trait OperationFields
     public function setStatus(OperationStatus $status): void
     {
         $this->status = $status;
+    }
+
+    public function getLeader(): ?User
+    {
+        return $this->leader;
+    }
+
+    public function setLeader(?User $leader): void
+    {
+        $this->leader = $leader;
+    }
+
+    public function getDeployment(): ?Deployment
+    {
+        return $this->deployment;
+    }
+
+    public function setDeployment(?Deployment $deployment): void
+    {
+        $this->deployment = $deployment;
+    }
+
+    public function getMaxParticipants(): ?int
+    {
+        return $this->maxParticipants;
+    }
+
+    public function setMaxParticipants(?int $maxParticipants): void
+    {
+        $this->maxParticipants = $maxParticipants;
     }
 
     /**

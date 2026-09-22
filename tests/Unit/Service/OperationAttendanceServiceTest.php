@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Tests\Unit\Service;
 use DateTime;
 use Forumify\Core\Entity\User;
 use MajesticDev\CommandNet\Entity\Assignment;
+use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\OperationAAR;
@@ -18,6 +19,7 @@ use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
 use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\AwolService;
+use MajesticDev\CommandNet\Service\EventRules;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -60,6 +62,7 @@ class OperationAttendanceServiceTest extends TestCase
             $this->soldierRepository,
             $recordRepository,
             $this->awolService,
+            new EventRules(),
         );
     }
 
@@ -79,11 +82,68 @@ class OperationAttendanceServiceTest extends TestCase
         $this->assertNotNull($operation->getRsvpFor($soldier));
     }
 
-    public function testNoCombatRecordsUntilAnAarExists(): void
+    public function testOperationsEarnCombatCreditOnAttendanceAloneWithoutAnAar(): void
     {
-        $this->service->mark($this->operation(1), $this->soldier(10), true);
+        $soldier = $this->soldier(10);
+
+        $this->service->mark($this->operation(1), $soldier, true);
+
+        $records = $this->combatRecords();
+        $this->assertCount(1, $records);
+        $this->assertSame($soldier, $records[0]->getSoldier());
+    }
+
+    public function testPatrolCreditWaitsForTheAar(): void
+    {
+        $patrol = $this->operation(1, OperationType::PATROL);
+        $soldier = $this->soldier(10);
+
+        $this->service->mark($patrol, $soldier, true);
+        $this->assertSame([], $this->combatRecords(), 'Attending a patrol is not enough without an AAR.');
+
+        $patrol->getAars()->add($this->aar($patrol, 100));
+        $this->saved = [];
+        $this->service->syncCombatRecords($patrol);
+
+        $this->assertSame([$soldier], array_map(static fn (ServiceRecord $r) => $r->getSoldier(), $this->combatRecords()));
+    }
+
+    public function testNoShowsAtAnOperationEarnNothing(): void
+    {
+        $this->service->mark($this->operation(1), $this->soldier(10), false);
 
         $this->assertSame([], $this->combatRecords());
+    }
+
+    public function testFunDayNeverEarnsCombatCredit(): void
+    {
+        $funDay = $this->operation(1, OperationType::FUN_DAY);
+        $funDay->getAars()->add($this->aar($funDay, 100));
+
+        $this->service->mark($funDay, $this->soldier(10), true);
+
+        $this->assertSame([], $this->combatRecords());
+    }
+
+    public function testTrainingKeepsTheOldRuleOfAttendancePlusAnAar(): void
+    {
+        $training = $this->operation(1, OperationType::TRAINING);
+        $this->service->mark($training, $this->soldier(10), true);
+        $this->assertSame([], $this->combatRecords());
+
+        $training->getAars()->add($this->aar($training, 100));
+        $this->service->syncCombatRecords($training);
+        $this->assertCount(1, $this->combatRecords());
+    }
+
+    public function testPatrolRosterIsOnlyThoseWhoJoinedNotEveryActiveSoldier(): void
+    {
+        $patrol = $this->operation(1, OperationType::PATROL);
+        $joiner = $this->soldier(10);
+        $patrol->getRsvps()->add(new OperationRSVP($patrol, $joiner));
+        $this->soldierRepository->method('findAttendanceCandidates')->willReturn([$joiner, $this->soldier(11), $this->soldier(12)]);
+
+        $this->assertSame([$joiner], array_column($this->service->rows($patrol), 'soldier'));
     }
 
     public function testManyAarsStillYieldOneCombatRecordPerAttendee(): void
@@ -159,9 +219,10 @@ class OperationAttendanceServiceTest extends TestCase
         ));
     }
 
-    private function operation(int $id): Operation
+    private function operation(int $id, OperationType $type = OperationType::OPERATION): Operation
     {
         $operation = new Operation();
+        $operation->setType($type);
         $operation->setTitle('Op');
         $operation->setStartDateTime(new DateTime('2026-01-01'));
         $this->setId($operation, $id);

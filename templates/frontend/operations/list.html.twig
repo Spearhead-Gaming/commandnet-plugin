@@ -23,7 +23,15 @@
 {% endmacro %}
 
 {% block body %}
-    <h1>{{ 'command_net.operations.title'|trans }}</h1>
+    <div class="flex items-center justify-between gap-2 mb-4">
+        <h1 class="mb-0">{{ 'command_net.operations.title'|trans }}</h1>
+        <div class="flex items-center gap-2">
+            <a class="btn-outlined btn-small" href="{{ path('command_net_patrols_mine') }}">My patrols</a>
+            {% if is_granted('command-net.patrols.create') %}
+                <a class="btn-primary btn-small" href="{{ path('command_net_patrol_new') }}">Post a patrol</a>
+            {% endif %}
+        </div>
+    </div>
 
     <div class="mb-6">
         <h2 class="mb-2">{{ 'command_net.operations.upcoming'|trans }}</h2>

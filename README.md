@@ -49,7 +49,8 @@ bin/console doctrine:migrations:migrate
 | `Document` | A rich-text template with `{placeholders}` that a service record can carry. |
 | `Assignment` | A soldier's posting to a unit (and optionally a position) over a date range. One assignment can be flagged primary. |
 | `SoldierAward`, `SoldierQualification` | Join entities recording who issued what, and when. |
-| `Operation` | An OPORD with a start/end time, optional unit, and status. Owns its RSVPs and AARs. |
+| `Operation` | An event: an OPORD with a start/end time, a type (Operation, Patrol, Fun-Day, Training, Meeting, Other), optional unit, status, and optionally a leader, a Deployment and a joiner cap. Owns its RSVPs and AARs. What the type means is in [Events and patrols](#events-and-patrols). |
+| `Deployment` | A named period (name, description, start, end), normally a month, that events optionally belong to. |
 | `OperationRSVP` | One per soldier per operation (`status`, and separately, `attended`, since intent and reality aren't the same field). |
 | `OperationAAR` | After-action report. Many per operation by design — larger ops often get separate reports from each element lead rather than one summary. |
 | `ReportIn` | One entry each time a soldier reports in. |
@@ -79,6 +80,10 @@ bin/console doctrine:migrations:migrate
 | `command_net_roster_assignment_delete` | `/roster/{username}/assignment/{id}/delete` | Remove an assignment and its service record entry. |
 | `command_net_roster_service_record_delete` | `/roster/{username}/service-record/{id}/delete` | Remove a manual or otherwise-orphaned timeline entry directly. |
 | `command_net_operations` | `/operations` | Upcoming/past operations. |
+| `command_net_patrol_new` | `/patrols/new` | Post a patrol (`command-net.patrols.create`). You become its leader. |
+| `command_net_patrol_edit` | `/patrols/{id}/edit` | Edit a patrol (its leader, or an operations manager). |
+| `command_net_patrol_cancel` | `/patrols/{id}/cancel` (POST) | Cancel a patrol (its leader, or an operations manager). |
+| `command_net_patrols_mine` | `/patrols/mine` | The patrols you have led, with each one's AAR state and a File AAR button. |
 | `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
 | `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
 | `command_net_operation_attendance` | `/operations/{id}/attendance` (POST) | Mark a soldier attended/absent; creates the RSVP row if they never responded. |
@@ -96,7 +101,7 @@ bin/console doctrine:migrations:migrate
 
 Every catalog has a standard Forumify CRUD screen under **Admin → Command Net**: Personnel, Units,
 Ranks, Rank Groups, Rosters, Positions, Specialties, Equipment, Documents, Forms, Courses, Course
-Classes, Awards, Qualifications and Operations. Form Submissions and Enlistment are review queues:
+Classes, Awards, Qualifications, Deployments and Operations. Form Submissions and Enlistment are review queues:
 opening an entry is the review screen. Enlistment Settings, AWOL Settings, Report In Settings and Squad XML are
 single settings pages, and Personnel rows have a Discharge action. There's no separate admin screen
 for awards issued, qualifications earned, assignments, or service records — those are managed from
@@ -126,9 +131,11 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
 | `command-net.admin.qualifications.view` / `.manage` | View / edit the qualification catalog and issue/remove qualifications. |
 | `command-net.admin.operations.view` / `.manage` | View / edit operations, mark attendance, remove any AAR. |
+| `command-net.admin.deployments.view` / `.manage` | View / edit deployments, and run Generate Operations. |
 | `command-net.operations.view` | View the operations list and detail pages. |
 | `command-net.operations.rsvp` | RSVP to an operation. |
-| `command-net.operations.submit_aar` | Submit an after-action report. |
+| `command-net.operations.submit_aar` | Submit an after-action report on any event except a patrol (a patrol's AAR is filed by its leader, an attendee or staff, see below). |
+| `command-net.patrols.create` | Post a patrol. A migration grants it to Forumify's built-in `user` role, so every member has it; remove it there and give it to a narrower role to restrict posting. |
 | `command-net.qualifications.view` | View the public qualifications board. |
 | `command-net.attendance.view_own` / `.view_all` | View your own attendance record on `/attendance` / everyone's. |
 | `command-net.promotions.view` | View promotion eligibility on `/promotions`. |
@@ -272,13 +279,53 @@ A rank can be given a forumify **Role** in the admin. A soldier holds the role o
 rank and loses every other rank's role on any rank change, from either the Promote button or the
 admin form; map those roles to Discord roles in the Discord plugin to keep Discord in step.
 
+## Events and patrols
+
+The community runs several kinds of event, and an event's **type** decides how it behaves. The rules
+live in one class, `Service/EventRules`, which the AWOL, attendance and AAR code all ask.
+
+| Type | Expected roster | Counts toward AWOL | Combat credit | AAR |
+| --- | --- | --- | --- | --- |
+| Operation | The unit's members, or every active soldier | Yes | On attendance alone | Optional |
+| Patrol | Only those who join | No | On attendance **and** a filed AAR | Required |
+| Fun-Day | Only those who join | No | None | Optional |
+| Training, Meeting, Other | As before | No | On attendance and a filed AAR, as before | Optional |
+
+Only Operations count toward AWOL. Operations earn combat credit as soon as attendance is marked;
+nothing was backfilled, so an Operation only gains records when its attendance is next changed.
+Training, Meeting and Other keep the rule they had before types had rules (change
+`EventRules::creditsCombat()` if trainings should stop earning combat records).
+
+**Deployments** (Admin → Command Net → Deployments) are monthly containers: a name, description,
+start and end date. An event optionally belongs to one, set on the Operation form. The **Generate
+Operations** action on a deployment previews and then creates an Operation every Wednesday and
+Saturday at 2000 US Eastern (daylight saving followed) across its dates, skipping any slot that
+already has one, so it is safe to run twice.
+
+**Patrols** are led by members. Anyone with `command-net.patrols.create` can post one from
+`/patrols/new` (title, start, optional end, area, plan, optional unit, optional joiner cap) and
+becomes its leader and first attendee. Members join with the normal RSVP buttons, and a cap
+stops "attending" RSVPs once it is full. The leader, or an operations manager, can edit or cancel it;
+patrols are never put on a calendar, so a synced calendar does not announce them twice. The leader can
+mark attendance and file the AAR for their own patrol and no one else's; an attendee or staff can also
+file it. Other events keep the `submit_aar` and `operations.manage` rules.
+
+**AAR due date.** A patrol's AAR is due 24 hours after it ends (its start, if it has no end time).
+"Due" and "overdue" are worked out from the end time, that deadline and whether an AAR exists, so
+nothing is stored: a cancelled patrol owes none, and filing the AAR clears the flag. There is no
+penalty, only the flag, which shows on the patrol page and on **My patrols** (`/patrols/mine`). A
+scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the leader a forum
+notification when the AAR falls due and again when it is overdue. It keeps no state, so a run the
+scheduler misses skips that reminder.
+
 ## AWOL detection
 
 Turn it on under **Admin → Command Net → AWOL Settings** (`command-net.admin.awol.manage`), with a
 number of consecutive missed operations and an optional forumify **AWOL role**. An active soldier who
 misses that many in a row is flagged AWOL, and the flag clears when they next attend one. Only
-operations where attendance was taken count, only those of the soldier's current unit (or with no
-unit), and only ones since they last became Active, so leave and transfers do not count against them.
+events of type Operation where attendance was taken count (a no-show at a patrol, fun day, training
+or meeting does not), only those of the soldier's current unit (or with no unit), and only ones since
+they last became Active, so leave and transfers do not count against them.
 An AWOL set by an admin is never cleared automatically. Every change writes an AWOL service record
 and notifies the soldier. Failing to report in flags AWOL too, and is cleared by reporting in.
 

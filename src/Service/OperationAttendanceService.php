@@ -16,8 +16,9 @@ use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 /**
  * Attendance is recorded per soldier, not per RSVP: a soldier who never RSVP'd still gets a
  * row the first time a leader marks them, so no-shows count toward AWOL and unannounced
- * attendees can be credited. Combat records are derived from that attendance plus "an AAR
- * exists" and rebuilt idempotently, so any number of AARs yields one record per attendee.
+ * attendees can be credited. Combat records are derived from that attendance (plus "an AAR
+ * exists" for the event types EventRules says need one) and rebuilt idempotently, so any
+ * number of AARs yields one record per attendee.
  */
 class OperationAttendanceService
 {
@@ -26,6 +27,7 @@ class OperationAttendanceService
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly ServiceRecordRepository $serviceRecordRepository,
         private readonly AwolService $awolService,
+        private readonly EventRules $eventRules,
     ) {
     }
 
@@ -41,6 +43,11 @@ class OperationAttendanceService
         $rows = [];
         foreach ($operation->getRsvps() as $rsvp) {
             $rows[$rsvp->getSoldier()->getId()] = ['soldier' => $rsvp->getSoldier(), 'rsvp' => $rsvp];
+        }
+
+        // Patrols and Fun-Days are voluntary: only those who joined (or were marked) are expected.
+        if (!$this->eventRules->expectsFullRoster($operation->getType())) {
+            return array_values($rows);
         }
 
         $unit = $operation->getUnit();
@@ -86,7 +93,7 @@ class OperationAttendanceService
             }
         }
 
-        if (!$operation->getAars()->isEmpty()) {
+        if ($this->eventRules->creditsCombat($operation)) {
             foreach ($operation->getRsvps() as $rsvp) {
                 if ($rsvp->getAttended() !== true) {
                     continue;

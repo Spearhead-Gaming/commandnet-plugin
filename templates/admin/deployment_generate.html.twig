@@ -1,0 +1,33 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}Generate operations - {{ deployment.name }}{% endblock %}
+{% block body %}
+    <h1 class="mb-2">Generate operations</h1>
+    <p class="mb-4">
+        {{ deployment.name }}, {{ deployment.startDate|date('Y-m-d') }} to {{ deployment.endDate|date('Y-m-d') }}.
+        Creates an Operation every Wednesday and Saturday at 2000 US Eastern. Slots that already have an operation in this deployment are skipped.
+    </p>
+
+    <div class="card">
+        {% if operations is empty %}
+            <div class="card-body"><p class="text-small">Nothing to create: every Wednesday and Saturday in these dates already has an operation.</p></div>
+        {% else %}
+            <div class="card-title">{{ operations|length }} operation(s) will be created</div>
+            <ul class="card-body p-0">
+                {% for operation in operations %}
+                    <li class="p-2 pr-4 pl-4{% if not loop.last %} border-b{% endif %}">
+                        {{ operation.title }}
+                        <span class="text-small">{{ operation.startDateTime|date('Y-m-d H:i') }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+
+    <form method="post" class="flex justify-end gap-2 mt-4">
+        <input type="hidden" name="_token" value="{{ csrf_token('deployment_generate_' ~ deployment.id) }}">
+        <a class="btn-outlined" href="{{ path('forumify_admin_command_net_deployments_list') }}">Back</a>
+        {% if operations is not empty %}
+            <button class="btn-primary" type="submit">Create {{ operations|length }} operation(s)</button>
+        {% endif %}
+    </form>
+{% endblock %}

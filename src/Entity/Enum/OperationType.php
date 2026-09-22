@@ -10,6 +10,8 @@ enum OperationType: string
     case TRAINING = 'training';
     case MEETING = 'meeting';
     case OTHER = 'other';
+    case PATROL = 'patrol';
+    case FUN_DAY = 'fun_day';
 
     public function label(): string
     {
@@ -18,6 +20,8 @@ enum OperationType: string
             self::TRAINING => 'Training',
             self::MEETING => 'Meeting',
             self::OTHER => 'Other',
+            self::PATROL => 'Patrol',
+            self::FUN_DAY => 'Fun-Day',
         };
     }
 }

@@ -11,6 +11,7 @@ use Forumify\Core\Repository\RoleRepository;
 use Forumify\Core\Repository\UserRepository;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
+use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
@@ -41,6 +42,7 @@ class AwolService
         private readonly UserRepository $userRepository,
         private readonly NotificationService $notificationService,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly EventRules $eventRules,
     ) {
     }
 
@@ -52,7 +54,11 @@ class AwolService
         }
 
         $unit = $profile->getPrimaryAssignment()?->getUnit();
-        $history = $this->rsvpRepository->findAttendanceHistoryForUnit($profile, $unit, $profile->getActiveSince());
+        // Only Operations count toward the streak; a no-show at a patrol or training is ignored.
+        $history = array_values(array_filter(
+            $this->rsvpRepository->findAttendanceHistoryForUnit($profile, $unit, $profile->getActiveSince()),
+            fn (OperationRSVP $rsvp): bool => $this->eventRules->countsTowardAwol($rsvp->getOperation()->getType()),
+        ));
         $missStreak = $this->attendanceCalculator->missStreakFrom($history);
 
         if ($missStreak >= (int)$settings['missThreshold'] && $profile->getStatus() === SoldierStatus::ACTIVE) {

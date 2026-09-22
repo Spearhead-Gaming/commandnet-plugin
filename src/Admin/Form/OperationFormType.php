@@ -13,6 +13,7 @@ use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use MajesticDev\CommandNet\Entity\Deployment;
 use MajesticDev\CommandNet\Entity\Enum\OperationStatus;
 use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Operation;
@@ -62,6 +63,13 @@ class OperationFormType extends AbstractType
                 'required' => false,
                 'placeholder' => 'Whole community',
                 'choice_label' => 'name',
+            ])
+            ->add('deployment', EntityType::class, [
+                'class' => Deployment::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'help' => 'The monthly deployment this event belongs to. Trainings between deployments belong to none.',
             ])
             ->add('status', EnumType::class, [
                 'class' => OperationStatus::class,

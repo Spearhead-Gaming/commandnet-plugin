@@ -66,3 +66,7 @@ admin:
         crud:
             single: 'Operation'
             plural: 'Operations'
+    deployment:
+        crud:
+            single: 'Deployment'
+            plural: 'Deployments'

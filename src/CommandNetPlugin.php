@@ -56,6 +56,7 @@ class CommandNetPlugin extends AbstractForumifyPlugin
                 'awards' => ['view', 'manage'],
                 'qualifications' => ['view', 'manage'],
                 'operations' => ['view', 'manage'],
+                'deployments' => ['view', 'manage'],
                 'attendance' => ['view', 'manage'],
                 'forms' => ['view', 'manage'],
                 'courses' => ['view', 'manage'],
@@ -71,6 +72,9 @@ class CommandNetPlugin extends AbstractForumifyPlugin
             'roster' => ['view'],
             'qualifications' => ['view'],
             'operations' => ['view', 'rsvp', 'submit_aar'],
+            // Granted to every member by default (migration Version20260921130000); a role can
+            // still be given or denied it like any other permission.
+            'patrols' => ['create'],
             'attendance' => ['view_own', 'view_all'],
             'promotions' => ['view'],
             'forms' => ['submit'],
