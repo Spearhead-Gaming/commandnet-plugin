@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace MajesticDev\CommandNet\Controller;
 
+use Forumify\Core\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\EventRules;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
 /**
@@ -23,13 +25,19 @@ class OperationAttendanceController extends AbstractController
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly OperationAttendanceService $attendanceService,
+        private readonly EventRules $eventRules,
     ) {
     }
 
     #[Route('/operations/{id}/attendance', name: 'operation_attendance', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function __invoke(Operation $operation, Request $request): RedirectResponse
     {
-        $this->denyAccessUnlessGranted('command-net.admin.operations.manage');
+        /** @var User|null $user */
+        $user = $this->getUser();
+        // Staff can mark any event; a patrol's own leader can mark that patrol and no one else's.
+        if (!$this->eventRules->canMarkAttendance($operation, $user, $this->isGranted('command-net.admin.operations.manage'))) {
+            throw $this->createAccessDeniedException();
+        }
 
         $token = $request->request->getString('_token');
         if (!$this->isCsrfTokenValid('operation_attendance_' . $operation->getId(), $token)) {

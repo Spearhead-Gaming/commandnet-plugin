@@ -10,6 +10,7 @@ use Forumify\Core\Entity\User;
 use Forumify\Core\Notification\NotificationService;
 use Forumify\Core\Repository\RoleRepository;
 use Forumify\Core\Repository\UserRepository;
+use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Operation;
@@ -22,6 +23,7 @@ use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\AttendanceCalculator;
 use MajesticDev\CommandNet\Service\AwolService;
 use MajesticDev\CommandNet\Service\AwolSettings;
+use MajesticDev\CommandNet\Service\EventRules;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -67,6 +69,7 @@ class AwolServiceTest extends TestCase
             $this->createMock(UserRepository::class),
             $this->createMock(NotificationService::class),
             $urlGenerator,
+            new EventRules(),
         );
     }
 
@@ -157,6 +160,33 @@ class AwolServiceTest extends TestCase
         $this->assertNotNull($soldier->getActiveSince());
     }
 
+    public function testNoShowsAtNonOperationEventsDoNotCountTowardAwol(): void
+    {
+        foreach ([OperationType::PATROL, OperationType::FUN_DAY, OperationType::TRAINING, OperationType::MEETING, OperationType::OTHER] as $type) {
+            $soldier = $this->soldier(SoldierStatus::ACTIVE);
+            $this->setHistory($soldier, [false, false, false], $type);
+
+            $this->service->checkAfterAttendanceChange($soldier);
+
+            $this->assertSame(SoldierStatus::ACTIVE, $soldier->getStatus(), $type->label() . ' no-shows must not flag AWOL.');
+        }
+        $this->assertSame([], $this->saved);
+    }
+
+    public function testOperationNoShowsStillCountAndPatrolsBetweenThemAreIgnored(): void
+    {
+        $soldier = $this->soldier(SoldierStatus::ACTIVE);
+        $this->history = [
+            $this->rsvp($soldier, false, OperationType::OPERATION),
+            $this->rsvp($soldier, true, OperationType::PATROL),
+            $this->rsvp($soldier, false, OperationType::OPERATION),
+        ];
+
+        $this->service->checkAfterAttendanceChange($soldier);
+
+        $this->assertSame(SoldierStatus::AWOL, $soldier->getStatus(), 'Attending a patrol does not break an Operation miss streak.');
+    }
+
     public function testDoesNotFlagSoldiersOnLoa(): void
     {
         $soldier = $this->soldier(SoldierStatus::LOA);
@@ -186,15 +216,19 @@ class AwolServiceTest extends TestCase
     /**
      * @param bool[] $attended newest operation first
      */
-    private function setHistory(SoldierProfile $soldier, array $attended): void
+    private function setHistory(SoldierProfile $soldier, array $attended, OperationType $type = OperationType::OPERATION): void
     {
-        $this->history = array_map(static function (bool $didAttend) use ($soldier): OperationRSVP {
-            $operation = new Operation();
-            $operation->setStartDateTime(new DateTime());
-            $rsvp = new OperationRSVP($operation, $soldier);
-            $rsvp->setAttended($didAttend);
+        $this->history = array_map(fn (bool $didAttend): OperationRSVP => $this->rsvp($soldier, $didAttend, $type), $attended);
+    }
 
-            return $rsvp;
-        }, $attended);
+    private function rsvp(SoldierProfile $soldier, bool $attended, OperationType $type): OperationRSVP
+    {
+        $operation = new Operation();
+        $operation->setType($type);
+        $operation->setStartDateTime(new DateTime());
+        $rsvp = new OperationRSVP($operation, $soldier);
+        $rsvp->setAttended($attended);
+
+        return $rsvp;
     }
 }

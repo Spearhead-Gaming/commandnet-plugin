@@ -14,12 +14,14 @@ use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Repository\OperationRSVPRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\EventRules;
 
 class OperationRsvpController extends AbstractController
 {
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly OperationRSVPRepository $rsvpRepository,
+        private readonly EventRules $eventRules,
     ) {
     }
 
@@ -46,6 +48,11 @@ class OperationRsvpController extends AbstractController
         $status = RsvpStatus::tryFrom($statusValue);
         if ($status === null) {
             $this->addFlash('error', 'Invalid RSVP status.');
+            return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
+        }
+
+        if ($status === RsvpStatus::ATTENDING && $this->eventRules->isFull($operation, $profile)) {
+            $this->addFlash('error', 'This event is full.');
             return $this->redirectToRoute('command_net_operation_detail', ['id' => $operation->getId()]);
         }
 

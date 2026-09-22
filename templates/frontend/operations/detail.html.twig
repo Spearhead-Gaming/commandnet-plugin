@@ -8,6 +8,9 @@
             <div class="flex items-center gap-2 mb-2">
                 <span class="tag">{{ operation.type.label }}</span>
                 <span class="tag">{{ operation.status.label }}</span>
+                {% if aarStatus.value in ['due', 'overdue', 'filed'] %}
+                    <span class="tag {{ aarStatus.value == 'overdue' ? 'tag-error' : '' }}">{{ aarStatus.label }}</span>
+                {% endif %}
             </div>
             <h1 class="mb-2">{{ operation.title }}</h1>
             <p class="text-small mb-1"><i class="ph ph-calendar"></i> {{ operation.startDateTime|format_date }}</p>
@@ -15,7 +18,34 @@
                 <p class="text-small mb-1"><i class="ph ph-map-pin"></i> {{ operation.location }}</p>
             {% endif %}
             {% if operation.unit %}
-                <p class="text-small mb-0"><i class="ph ph-flag"></i> {{ operation.unit.name }}</p>
+                <p class="text-small mb-1"><i class="ph ph-flag"></i> {{ operation.unit.name }}</p>
+            {% endif %}
+            {% if operation.leader %}
+                <p class="text-small mb-1"><i class="ph ph-user"></i> Led by {{ operation.leader.displayName }}</p>
+            {% endif %}
+            {% if operation.deployment %}
+                <p class="text-small mb-1"><i class="ph ph-stack"></i> {{ operation.deployment.name }}</p>
+            {% endif %}
+            {% if operation.maxParticipants %}
+                <p class="text-small mb-1"><i class="ph ph-users"></i> Limited to {{ operation.maxParticipants }} joiners</p>
+            {% endif %}
+            {% if aarStatus.value in ['due', 'overdue'] %}
+                <p class="text-small mb-1 {{ aarStatus.value == 'overdue' ? 'text-bold' : '' }}">
+                    <i class="ph ph-warning"></i>
+                    {{ aarStatus.value == 'overdue' ? 'The after-action report was due' : 'The after-action report is due by' }}
+                    {{ aarDueAt|format_date(true) }}.
+                </p>
+            {% endif %}
+            {% if canManagePatrol %}
+                <div class="flex items-center gap-2 mt-2">
+                    <a class="btn-outlined btn-small" href="{{ path('command_net_patrol_edit', { id: operation.id }) }}">Edit patrol</a>
+                    {% if operation.status.value != 'cancelled' %}
+                        <form method="post" action="{{ path('command_net_patrol_cancel', { id: operation.id }) }}" onsubmit="return confirm('Cancel this patrol?');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('patrol_cancel_' ~ operation.id) }}">
+                            <button type="submit" class="btn-outlined btn-small">Cancel patrol</button>
+                        </form>
+                    {% endif %}
+                </div>
             {% endif %}
             {% if briefingUrl %}
                 <a class="btn-outlined btn-small mt-2" href="{{ briefingUrl }}">
@@ -39,7 +69,7 @@
             <div class="card">
                 <div class="card-title flex items-center justify-between">
                     {{ 'command_net.operations.aars'|trans }}
-                    {% if is_granted('command-net.operations.submit_aar') %}
+                    {% if canFileAar %}
                         <a class="btn-outlined btn-small" href="{{ path('command_net_operation_aar', { id: operation.id }) }}">
                             {{ 'command_net.operations.submit_aar'|trans }}
                         </a>
@@ -111,7 +141,6 @@
 
             <div class="card">
                 <div class="card-title">{{ 'command_net.operations.roster'|trans }}</div>
-                {% set canMarkAttendance = is_granted('command-net.admin.operations.manage') %}
                 {% if attendanceRows is empty %}
                     <div class="card-body">
                         <p class="text-small">{{ 'command_net.operations.no_rsvps'|trans }}</p>

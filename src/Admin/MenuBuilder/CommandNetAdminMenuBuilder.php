@@ -54,6 +54,7 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
                 $item('Awards', 'forumify_admin_command_net_awards_list', 'command-net.admin.awards.view'),
             ]),
             $group('Operations & Forms', [
+                $item('Deployments', 'forumify_admin_command_net_deployments_list', 'command-net.admin.deployments.view'),
                 $item('Operations', 'forumify_admin_command_net_operations_list', 'command-net.admin.operations.view'),
                 $item('Forms', 'forumify_admin_command_net_forms_list', 'command-net.admin.forms.view'),
                 $item('Form Submissions', 'forumify_admin_command_net_form_submissions_list', 'command-net.admin.forms.view'),

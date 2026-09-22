@@ -1,0 +1,24 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}{{ patrol ? 'Edit patrol' : 'Post a patrol' }}{% endblock %}
+
+{% block body %}
+    <h1>{{ patrol ? 'Edit patrol' : 'Post a patrol' }}</h1>
+    {% if not patrol %}
+        <p class="text-small mb-4">You will lead this patrol. Members can join from its page, and you file the after-action report within 24 hours of it ending.</p>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <div class="flex justify-end gap-2 mt-4">
+                <a class="btn-outlined" href="{{ patrol ? path('command_net_operation_detail', { id: patrol.id }) : path('command_net_operations') }}">
+                    {{ 'command_net.cancel'|trans }}
+                </a>
+                <button class="btn-primary" type="submit">{{ patrol ? 'Save' : 'Post patrol' }}</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

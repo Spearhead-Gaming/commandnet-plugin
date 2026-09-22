@@ -1,0 +1,39 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}My patrols{% endblock %}
+
+{% block body %}
+    <div class="flex items-center justify-between gap-2 mb-4">
+        <h1 class="mb-0">My patrols</h1>
+        {% if is_granted('command-net.patrols.create') %}
+            <a class="btn-primary btn-small" href="{{ path('command_net_patrol_new') }}">Post a patrol</a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        {% if rows is empty %}
+            <div class="card-body"><p class="text-small">You have not led a patrol yet.</p></div>
+        {% else %}
+            <ul class="card-body p-0">
+                {% for row in rows %}
+                    <li class="p-2 pr-4 pl-4 flex items-center justify-between gap-2{% if not loop.last %} border-b{% endif %}">
+                        <div>
+                            <a class="text-bold" href="{{ path('command_net_operation_detail', { id: row.patrol.id }) }}">{{ row.patrol.title }}</a>
+                            <span class="text-small">{{ row.patrol.startDateTime|format_date }}</span>
+                            <span class="tag">{{ row.patrol.status.label }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {% if row.aarStatus.value in ['due', 'overdue'] %}
+                                <span class="text-small">due {{ row.dueAt|format_date(true) }}</span>
+                                <a class="btn-small {{ row.aarStatus.value == 'overdue' ? 'btn-primary' : 'btn-outlined' }}" href="{{ path('command_net_operation_aar', { id: row.patrol.id }) }}">File AAR</a>
+                            {% endif %}
+                            {% if row.aarStatus.value != 'not_required' %}
+                                <span class="tag {{ row.aarStatus.value == 'overdue' ? 'tag-error' : '' }}">{{ row.aarStatus.label }}</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+{% endblock %}

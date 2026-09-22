@@ -16,6 +16,7 @@ use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Form\OperationAarType;
 use MajesticDev\CommandNet\Repository\OperationAARRepository;
 use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
+use MajesticDev\CommandNet\Service\EventRules;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
 class OperationAarController extends AbstractController
@@ -24,16 +25,26 @@ class OperationAarController extends AbstractController
         private readonly OperationAARRepository $aarRepository,
         private readonly ServiceRecordRepository $serviceRecordRepository,
         private readonly OperationAttendanceService $attendanceService,
+        private readonly EventRules $eventRules,
     ) {
     }
 
     #[Route('/operations/{id}/aar', name: 'operation_aar', requirements: ['id' => '\d+'])]
     public function __invoke(Operation $operation, Request $request): Response
     {
-        $this->denyAccessUnlessGranted('command-net.operations.submit_aar');
-
         /** @var User $user */
         $user = $this->getUser();
+        // Non-patrol events still need submit_aar; a patrol's leader, attendees and staff may file its AAR.
+        $canFile = $this->eventRules->canFileAar(
+            $operation,
+            $user,
+            $this->isGranted('command-net.admin.operations.manage'),
+            $this->isGranted('command-net.operations.submit_aar'),
+        );
+        if (!$canFile) {
+            throw $this->createAccessDeniedException();
+        }
+
         $aar = new OperationAAR($operation, $user);
 
         $form = $this->createForm(OperationAarType::class, $aar);
@@ -91,8 +102,8 @@ class OperationAarController extends AbstractController
     {
         $this->aarRepository->save($aar);
 
-        // Combat records are derived from attendance once at least one AAR exists, one per
-        // attendee regardless of how many reports are filed - see OperationAttendanceService.
+        // Combat records are derived from attendance (once an AAR exists, for the events that
+        // need one), one per attendee however many reports are filed - see EventRules.
         $operation->getAars()->add($aar);
         $this->attendanceService->syncCombatRecords($operation);
 
