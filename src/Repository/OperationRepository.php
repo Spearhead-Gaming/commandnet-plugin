@@ -105,6 +105,17 @@ class OperationRepository extends AbstractRepository
         return $this->findBy(['type' => OperationType::PATROL, 'leader' => $leader], ['startDateTime' => 'DESC']);
     }
 
+    /**
+     * Looks up an operation by id, but only returns it if it's a patrol - the Discord
+     * patrol commands take a bare id from /command-net-patrol-list, and this keeps them
+     * from acting on (or leaking the existence of) some other kind of event.
+     */
+    public function findPatrol(int $id): ?Operation
+    {
+        $operation = $this->find($id);
+        return $operation?->getType() === OperationType::PATROL ? $operation : null;
+    }
+
     public function countUpcoming(): int
     {
         return (int)$this->createQueryBuilder('o')
