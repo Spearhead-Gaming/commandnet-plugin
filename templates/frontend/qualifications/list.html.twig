@@ -14,7 +14,7 @@
     {% else %}
         <div class="cn-quals">
             {% for entry in tiers %}
-                <section class="cn-quals-tier cn-quals-tier--{{ loop.index0 % 3 + 1 }}">
+                <section class="cn-quals-tier cn-quals-tier--{{ entry.tier.value }}">
                     <h2 class="cn-quals-tier-heading">{{ entry.tier.label }}</h2>
                     <div class="cn-quals-grid">
                         {% for qualification in entry.qualifications %}
@@ -50,9 +50,11 @@
     <style>
         .cn-quals { display: flex; flex-direction: column; gap: 24px; margin-top: 16px; }
         .cn-quals-tier { border: 1px solid var(--border-color, #333); border-radius: var(--border-radius, 6px); padding: 16px; background: var(--c-elevation-1, #171c1a); }
-        .cn-quals-tier--1 { border-left: 4px solid #3d8bd6; }
-        .cn-quals-tier--2 { border-left: 4px solid #c0392b; }
-        .cn-quals-tier--3 { border-left: 4px solid #8a5fc0; }
+        .cn-quals-tier--tier_1 { border-left: 4px solid #3d8bd6; }
+        .cn-quals-tier--tier_2 { border-left: 4px solid #c0392b; }
+        .cn-quals-tier--tier_3 { border-left: 4px solid #8a5fc0; }
+        .cn-quals-tier--special { border-left: 4px solid #2e9e4f; }
+        .cn-quals-tier--special .cn-quals-tier-heading { color: #2e9e4f; }
         .cn-quals-tier-heading { margin: 0 0 16px; font-size: 16px; text-transform: uppercase; letter-spacing: .06em; }
         .cn-quals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
         .cn-quals-badge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 14px 10px; border: 1px solid var(--border-color, #333); border-radius: var(--border-radius, 6px); background: var(--c-elevation-2, #111613); }
