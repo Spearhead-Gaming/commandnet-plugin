@@ -135,7 +135,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.operations.view` | View the operations list and detail pages. |
 | `command-net.operations.rsvp` | RSVP to an operation. |
 | `command-net.operations.submit_aar` | Submit an after-action report on any event except a patrol (a patrol's AAR is filed by its leader, an attendee or staff, see below). |
-| `command-net.patrols.create` | Post a patrol. A migration grants it to Forumify's built-in `user` role, so every member has it; remove it there and give it to a narrower role to restrict posting. |
+| `command-net.patrols.create` | Post a patrol. A migration grants it to Forumify's built-in `user` role, and this plugin's `UserRolePermissionVoter` applies that role's Command Net permissions to every account (Forumify itself only applies the role to what it protects with ACLs, not to permissions), so every member has it, logged in or not - including members imported from Discord. Remove it from the `user` role and give it to a narrower role to restrict posting. Super-admins have it regardless. |
 | `command-net.qualifications.view` | View the public qualifications board. |
 | `command-net.attendance.view_own` / `.view_all` | View your own attendance record on `/attendance` / everyone's. |
 | `command-net.promotions.view` | View promotion eligibility on `/promotions`. |
