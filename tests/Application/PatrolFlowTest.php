@@ -56,10 +56,19 @@ class PatrolFlowTest extends WebTestCase
         $rival = $this->member('rival', [...$viewer, 'command-net.patrols.create']);
         $noPermission = $this->member('none', $viewer);
 
-        // A member without patrols.create cannot post; one with it can.
+        // By default every member can post: the migration puts patrols.create on the built-in
+        // "user" role, and UserRolePermissionVoter applies that role to every account.
         $this->login($noPermission);
         $this->client->request('GET', '/patrols/new');
-        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'A member without patrols.create must not post a patrol.');
+        $this->assertSame(200, $this->client->getResponse()->getStatusCode(), 'A member with no role of their own can post through the "user" role.');
+
+        // Take it off the "user" role and the same member is refused, so it can still be restricted.
+        $userRole = $this->em->getRepository(Role::class)->findOneBy(['slug' => 'user']);
+        $userRole->setPermissions(array_values(array_diff($userRole->getPermissions(), ['command-net.patrols.create'])));
+        $this->em->flush();
+        $this->login($noPermission);
+        $this->client->request('GET', '/patrols/new');
+        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'Without the permission anywhere, a member must not post a patrol.');
 
         $this->login($leader);
         $crawler = $this->client->request('GET', '/patrols/new');
