@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Form;
 
 use Forumify\Core\Form\RichTextEditorType;
+use MajesticDev\CommandNet\Entity\Deployment;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\Unit;
+use MajesticDev\CommandNet\Repository\DeploymentRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
@@ -62,6 +64,16 @@ class PatrolType extends AbstractType
                 'required' => false,
                 'placeholder' => 'Open to everyone',
                 'choice_label' => 'name',
+            ])
+            ->add('deployment', EntityType::class, [
+                'class' => Deployment::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'query_builder' => static fn (DeploymentRepository $repository) => $repository
+                    ->createQueryBuilder('deployment')
+                    ->orderBy('deployment.startDate', 'DESC'),
+                'help' => 'The monthly deployment this patrol belongs to, if any.',
             ])
             ->add('maxParticipants', IntegerType::class, [
                 'label' => 'Maximum joiners',

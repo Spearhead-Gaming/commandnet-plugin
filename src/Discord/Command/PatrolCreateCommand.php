@@ -16,13 +16,14 @@ use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Repository\OperationRepository;
+use MajesticDev\CommandNet\Service\DeploymentLookup;
 use MajesticDev\CommandNet\Service\RawPermissionChecker;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Discord counterpart to PatrolController::create(): same patrols.create permission, same
  * "leader auto-attends when enlisted" behaviour. Announcing the new patrol to Discord is
- * not done here - PatrolAnnouncementListener (in the Discord plugin) reacts to any new
+ * not done here - PatrolPostSubscriber (in the Discord plugin) reacts to any new
  * patrol being persisted, web-posted or command-posted alike, so there is exactly one
  * place deciding "this is new", not two commands racing to announce the same one.
  */
@@ -36,6 +37,7 @@ class PatrolCreateCommand implements DiscordCommandInterface
         private readonly RawPermissionChecker $permissionChecker,
         private readonly OperationRepository $operationRepository,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly DeploymentLookup $deploymentLookup,
     ) {
     }
 
@@ -66,6 +68,9 @@ class PatrolCreateCommand implements DiscordCommandInterface
             new DiscordCommandOption()
                 ->setName('details')
                 ->setDescription('The plan.'),
+            new DiscordCommandOption()
+                ->setName('deployment')
+                ->setDescription('The name of the monthly deployment this patrol belongs to, if any.'),
         ];
     }
 
@@ -102,11 +107,26 @@ class PatrolCreateCommand implements DiscordCommandInterface
         $where = trim((string)($command->options['where'] ?? ''));
         $details = trim((string)($command->options['details'] ?? ''));
 
+        $deploymentName = trim((string)($command->options['deployment'] ?? ''));
+        $deployment = $this->deploymentLookup->findByName($deploymentName);
+        // A name that matches nothing is refused, not ignored: silently posting an unlinked
+        // patrol would look like it worked.
+        if ($deploymentName !== '' && $deployment === null) {
+            $known = $this->deploymentLookup->recentNames();
+            $result->content = sprintf(
+                'We could not find a deployment called "%s".%s',
+                $deploymentName,
+                $known === [] ? ' There are no deployments yet.' : ' Recent deployments: ' . implode(', ', $known) . '.',
+            );
+            return $result;
+        }
+
         $patrol = new Operation();
         $patrol->setType(OperationType::PATROL);
         $patrol->setTitle($title);
         $patrol->setStartDateTime($start);
         $patrol->setLeader($user);
+        $patrol->setDeployment($deployment);
         if ($where !== '') {
             $patrol->setLocation($where);
         }

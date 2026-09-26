@@ -318,9 +318,14 @@ scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the lead
 notification when the AAR falls due and again when it is overdue. It keeps no state, so a run the
 scheduler misses skips that reminder.
 
+A patrol can be linked to a deployment: the web form has an optional **Deployment** choice (newest
+first), and the Discord command takes the deployment's name, matched ignoring case, and refuses a
+name that matches nothing (listing the recent ones) instead of posting an unlinked patrol.
+
 **Discord commands** (only registered when the Discord plugin is installed): `/command-net-patrol-create`
-posts a patrol (same `patrols.create` permission as the web form, checked by hand since a
-Discord-triggered request has no security token to check against - see `RawPermissionChecker`);
+posts a patrol, with an optional `deployment` (same `patrols.create` permission as the web form,
+checked by hand since a Discord-triggered request has no security token to check against - see
+`RawPermissionChecker`);
 `/command-net-patrol-list` shows upcoming patrols; `/command-net-patrol-join` / `-leave` RSVP
 (same `operations.rsvp` permission, joiner-cap and "enlisted only" rules as the web); and
 `/command-net-patrol-aar` files the AAR for a patrol the caller led, or replies with the web
