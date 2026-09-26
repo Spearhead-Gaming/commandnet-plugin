@@ -62,7 +62,7 @@
                                 <tr data-date="{{ row.stats.lastAttended ? row.stats.lastAttended|date('Y-m-d') : '' }}">
                                     <td>
                                         <a href="{{ path('command_net_roster_profile', { username: row.soldier.user.username }) }}">
-                                            {% if row.soldier.rank %}{{ row.soldier.rank.abbreviation }}{% endif %}
+                                            {% if command_net_ranks_enabled() and row.soldier.rank %}{{ row.soldier.rank.abbreviation }}{% endif %}
                                             {{ row.soldier.user.displayName }}
                                         </a>
                                     </td>

@@ -15,6 +15,10 @@ use MajesticDev\CommandNet\Entity\ServiceRecord;
  */
 class DocumentRenderer
 {
+    public function __construct(private readonly RankSettings $rankSettings)
+    {
+    }
+
     /**
      * Placeholder name => what it stands for, listed in the document editor.
      */
@@ -53,10 +57,12 @@ class DocumentRenderer
         $soldier = $record->getSoldier();
         $assignment = $soldier->getPrimaryAssignment();
 
+        $rank = $this->rankSettings->isEnabled() ? $soldier->getRank() : null;
+
         return [
             'user_name' => $soldier->getUser()->getDisplayName(),
-            'user_rank' => (string)$soldier->getRank()?->getName(),
-            'user_rank_abbreviation' => (string)$soldier->getRank()?->getAbbreviation(),
+            'user_rank' => (string)$rank?->getName(),
+            'user_rank_abbreviation' => (string)$rank?->getAbbreviation(),
             'user_callsign' => (string)$soldier->getCallsign(),
             'user_service_number' => (string)$soldier->getServiceNumber(),
             'user_unit' => (string)$assignment?->getUnit()->getName(),

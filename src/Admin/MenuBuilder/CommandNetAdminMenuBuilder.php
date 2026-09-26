@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Admin\MenuBuilder;
 use Forumify\Admin\MenuBuilder\AdminMenuBuilderInterface;
 use Forumify\Core\MenuBuilder\Menu;
 use Forumify\Core\MenuBuilder\MenuItem;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -15,6 +16,7 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Security $security,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
@@ -32,12 +34,16 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             fn (MenuItem $i): bool => $this->security->isGranted((string) $i->getPermission()),
         ) === [] ? null : new Menu($label, [], $items);
 
+        $ranksEnabled = $this->rankSettings->isEnabled();
+
         $groups = array_filter([
             $group('Personnel', [
                 $item('Personnel', 'forumify_admin_command_net_personnel_list', 'command-net.admin.personnel.view'),
                 $item('Enlistment', 'forumify_admin_command_net_enlistment_list', 'command-net.admin.enlistment.view'),
-                $item('Ranks', 'forumify_admin_command_net_ranks_list', 'command-net.admin.ranks.view'),
-                $item('Rank Groups', 'forumify_admin_command_net_rank_groups_list', 'command-net.admin.ranks.view'),
+                ...($ranksEnabled ? [
+                    $item('Ranks', 'forumify_admin_command_net_ranks_list', 'command-net.admin.ranks.view'),
+                    $item('Rank Groups', 'forumify_admin_command_net_rank_groups_list', 'command-net.admin.ranks.view'),
+                ] : []),
                 $item('Specialties', 'forumify_admin_command_net_specialties_list', 'command-net.admin.specialties.view'),
             ]),
             $group('Units & Rosters', [
@@ -62,6 +68,7 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             ]),
             $group('Settings', [
                 $item('Enlistment Settings', 'forumify_admin_command_net_enlistment_settings', 'command-net.admin.enlistment.manage'),
+                $item('Rank Settings', 'forumify_admin_command_net_rank_settings', 'command-net.admin.ranks.manage'),
                 $item('AWOL Settings', 'forumify_admin_command_net_awol_settings', 'command-net.admin.awol.manage'),
                 $item('Report In Settings', 'forumify_admin_command_net_report_in_settings', 'command-net.admin.reportin.manage'),
                 $item('Squad XML', 'forumify_admin_command_net_squad_xml_settings', 'command-net.admin.squadxml.manage'),

@@ -9,6 +9,7 @@ use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\RankRepository;
 use MajesticDev\CommandNet\Repository\UnitRepository;
 use MajesticDev\CommandNet\Service\EnlistmentSettings;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -24,6 +25,7 @@ class EnlistmentSettingsController extends AbstractController
         Request $request,
         EnlistmentSettings $settings,
         RankRepository $rankRepository,
+        RankSettings $rankSettings,
         UnitRepository $unitRepository,
     ): Response {
         $this->denyAccessUnlessGranted('command-net.admin.enlistment.manage');
@@ -33,20 +35,24 @@ class EnlistmentSettingsController extends AbstractController
         $data['defaultRank'] = $data['defaultRank'] !== null ? $rankRepository->find($data['defaultRank']) : null;
         $data['defaultUnit'] = $data['defaultUnit'] !== null ? $unitRepository->find($data['defaultUnit']) : null;
 
-        $form = $this->createFormBuilder($data)
-            ->add('enabled', CheckboxType::class, [
-                'required' => false,
-                'label' => 'Accept applications',
-                'help' => 'Shows the /enlist page. Signed-in members with a verified email can apply.',
-            ])
-            ->add('defaultRank', EntityType::class, [
+        $builder = $this->createFormBuilder($data);
+        $builder->add('enabled', CheckboxType::class, [
+            'required' => false,
+            'label' => 'Accept applications',
+            'help' => 'Shows the /enlist page. Signed-in members with a verified email can apply.',
+        ]);
+        // Hidden with ranks off; the stored default rank stays in $data so saving keeps it.
+        if ($rankSettings->isEnabled()) {
+            $builder->add('defaultRank', EntityType::class, [
                 'class' => Rank::class,
                 'required' => false,
                 'placeholder' => 'None',
                 'choice_label' => 'name',
                 'label' => 'Starting rank',
                 'help' => 'Given to accepted applicants who have no rank yet.',
-            ])
+            ]);
+        }
+        $form = $builder
             ->add('defaultUnit', EntityType::class, [
                 'class' => Unit::class,
                 'required' => false,

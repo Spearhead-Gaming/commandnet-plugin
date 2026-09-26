@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityRepository;
 use MajesticDev\CommandNet\Entity\Course;
 use MajesticDev\CommandNet\Entity\Qualification;
 use MajesticDev\CommandNet\Entity\Rank;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
@@ -21,6 +22,10 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 class CourseType extends AbstractType
 {
+    public function __construct(private readonly RankSettings $rankSettings)
+    {
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
@@ -40,13 +45,6 @@ class CourseType extends AbstractType
             ->add('description', TextareaType::class, [
                 'empty_data' => '',
             ])
-            ->add('minimumRank', EntityType::class, [
-                'class' => Rank::class,
-                'required' => false,
-                'placeholder' => 'No minimum',
-                'choice_label' => 'name',
-                'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
-            ])
             ->add('prerequisites', EntityType::class, [
                 'class' => Course::class,
                 'multiple' => true,
@@ -65,5 +63,15 @@ class CourseType extends AbstractType
                 'help' => 'Granted to every student who passes a class of this course.',
             ])
         ;
+
+        if ($this->rankSettings->isEnabled()) {
+            $builder->add('minimumRank', EntityType::class, [
+                'class' => Rank::class,
+                'required' => false,
+                'placeholder' => 'No minimum',
+                'choice_label' => 'name',
+                'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
+            ]);
+        }
     }
 }

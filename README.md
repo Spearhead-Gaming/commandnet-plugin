@@ -102,10 +102,20 @@ bin/console doctrine:migrations:migrate
 Every catalog has a standard Forumify CRUD screen under **Admin → Command Net**: Personnel, Units,
 Ranks, Rank Groups, Rosters, Positions, Specialties, Equipment, Documents, Forms, Courses, Course
 Classes, Awards, Qualifications, Deployments and Operations. Form Submissions and Enlistment are review queues:
-opening an entry is the review screen. Enlistment Settings, AWOL Settings, Report In Settings and Squad XML are
+opening an entry is the review screen. Enlistment Settings, Rank Settings, AWOL Settings, Report In Settings and Squad XML are
 single settings pages, and Personnel rows have a Discharge action. There's no separate admin screen
 for awards issued, qualifications earned, assignments, or service records — those are managed from
 the frontend personnel file instead, since they only make sense in the context of one soldier.
+
+## Ranks
+
+Ranks are on by default. Turn them off under **Admin → Command Net → Rank Settings**
+(`command-net.admin.ranks.manage`) for a community that doesn't use them: rank stops showing on the
+roster, personnel files, org chart, attendance, courses, generated documents, the ORBAT export and
+Discord commands, the Promotions page and its nav link disappear, the rank field drops off the
+personnel edit form, and rank-role syncing stops running in the background. Nothing is deleted — the
+Rank/Rank Group catalog, every soldier's rank, and past promotion/demotion history are all kept, so
+turning it back on restores everything exactly as it was.
 
 ## Permissions
 
@@ -127,7 +137,7 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.courses.view` / `.manage` | View / edit courses and classes, and record class results. |
 | `command-net.courses.enroll` | See courses and enrol in classes at `/courses`. |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
-| `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder. |
+| `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder, and edit Rank Settings. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
 | `command-net.admin.qualifications.view` / `.manage` | View / edit the qualification catalog and issue/remove qualifications. |
 | `command-net.admin.operations.view` / `.manage` | View / edit operations, mark attendance, remove any AAR. |

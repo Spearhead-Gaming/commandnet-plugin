@@ -8,6 +8,7 @@ use Doctrine\ORM\QueryBuilder;
 use Forumify\Core\Component\Table\AbstractDoctrineTable;
 use Forumify\Core\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -16,6 +17,7 @@ use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\RankSettings;
 
 #[AsLiveComponent('SoldierProfileTable', '@CommandNetPlugin/admin/personnel/table.html.twig')]
 #[IsGranted('command-net.admin.personnel.view')]
@@ -33,6 +35,14 @@ class SoldierProfileTable extends AbstractDoctrineTable
 
     #[LiveProp(writable: true)]
     public string $bulkStatus = '';
+
+    private RankSettings $rankSettings;
+
+    #[Required]
+    public function setRankSettings(RankSettings $rankSettings): void
+    {
+        $this->rankSettings = $rankSettings;
+    }
 
     protected function getEntityClass(): string
     {
@@ -126,12 +136,17 @@ class SoldierProfileTable extends AbstractDoctrineTable
                 'label' => 'Name',
                 'field' => 'user',
                 'renderer' => fn (User $user) => $user->getDisplayName(),
-            ])
-            ->addColumn('rank', [
+            ]);
+
+        if ($this->rankSettings->isEnabled()) {
+            $this->addColumn('rank', [
                 'field' => 'rank',
                 'searchable' => false,
                 'renderer' => fn (?Rank $rank) => $rank !== null ? (string)$rank : 'Unranked',
-            ])
+            ]);
+        }
+
+        $this
             // primaryAssignment is a derived getter, not a mapped association — kept as
             // a single-segment field so the table never tries to build a DQL join on it.
             ->addColumn('unit', [

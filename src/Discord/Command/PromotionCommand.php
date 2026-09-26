@@ -12,6 +12,7 @@ use Forumify\OAuth\Idp\DiscordIdp;
 use Forumify\OAuth\Repository\IdentityProviderUserRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\PromotionEligibility;
+use MajesticDev\CommandNet\Service\RankSettings;
 
 /**
  * Self-service only: shows the caller's own promotion progress via their linked Discord
@@ -24,6 +25,7 @@ class PromotionCommand implements DiscordCommandInterface
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly IdentityProviderUserRepository $idpUserRepository,
         private readonly PromotionEligibility $promotionEligibility,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
@@ -45,6 +47,11 @@ class PromotionCommand implements DiscordCommandInterface
     public function run(DiscordCommandRun $command): DiscordCommandResult
     {
         $result = new DiscordCommandResult();
+
+        if (!$this->rankSettings->isEnabled()) {
+            $result->content = 'Ranks are disabled on this server.';
+            return $result;
+        }
 
         $self = $this->idpUserRepository->findOneByExternalIdAndIdpType($command->discordUserId, DiscordIdp::getType());
         $profile = $self !== null ? $this->soldierProfileRepository->findOneBy(['user' => $self->getUser()]) : null;

@@ -164,6 +164,7 @@ class PermissionsTest extends WebTestCase
             [[$a . 'qualifications.manage'], 'POST', '/roster/' . $ids['username'] . '/qualification/999999/delete'],
             [[$a . 'personnel.discharge'], 'GET', '/admin/command-net/personnel/' . $ids['profile'] . '/discharge'],
             [[$a . 'awol.manage'], 'GET', '/admin/command-net/awol-settings'],
+            [[$a . 'ranks.manage'], 'GET', '/admin/command-net/rank-settings'],
             [[$a . 'reportin.manage'], 'GET', '/admin/command-net/report-in-settings'],
             [[$a . 'enlistment.manage'], 'GET', '/admin/command-net/enlistment-settings'],
             [[$a . 'squadxml.manage'], 'GET', '/admin/command-net/squad-xml-settings'],

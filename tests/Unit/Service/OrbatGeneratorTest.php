@@ -11,6 +11,7 @@ use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Service\OrbatGenerator;
+use MajesticDev\CommandNet\Service\RankSettings;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -24,7 +25,7 @@ class OrbatGeneratorTest extends TestCase
         $this->child($company, $platoon);
         $this->child($platoon, $squad);
 
-        $config = (new OrbatGenerator())->generate([$company], 'West');
+        $config = $this->generator()->generate([$company], 'West');
 
         $this->assertStringContainsString('class Unit_1', $config);
         $this->assertStringContainsString('size = "Company";', $config);
@@ -42,7 +43,7 @@ class OrbatGeneratorTest extends TestCase
         $unit->setOrbatType('Armored');
         $plain = $this->unit(2, 'Rifles', 'R');
 
-        $config = (new OrbatGenerator())->generate([$unit, $plain], 'East');
+        $config = $this->generator()->generate([$unit, $plain], 'East');
 
         $this->assertStringContainsString('size = "Company";', $config);
         $this->assertStringContainsString('type = "Armored";', $config);
@@ -52,7 +53,7 @@ class OrbatGeneratorTest extends TestCase
 
     public function testAnUnknownSideFallsBackToWest(): void
     {
-        $this->assertStringContainsString('side = "West";', (new OrbatGenerator())->generate([$this->unit(1, 'A', 'A')], 'nonsense'));
+        $this->assertStringContainsString('side = "West";', $this->generator()->generate([$this->unit(1, 'A', 'A')], 'nonsense'));
     }
 
     public function testVehiclesWithAClassnameBecomeCountedAssets(): void
@@ -63,7 +64,7 @@ class OrbatGeneratorTest extends TestCase
         $unit->addVehicle($this->vehicle('B_Heli_Light_01_F'));
         $unit->addVehicle($this->vehicle(null));
 
-        $config = (new OrbatGenerator())->generate([$unit], 'West');
+        $config = $this->generator()->generate([$unit], 'West');
 
         $this->assertStringContainsString('assets[] = {{"B_MRAP_01_F", 2}, {"B_Heli_Light_01_F", 1}};', $config);
     }
@@ -73,7 +74,7 @@ class OrbatGeneratorTest extends TestCase
         $unit = $this->unit(1, 'Motor Pool', 'MP');
         $unit->addVehicle($this->vehicle(null));
 
-        $this->assertStringNotContainsString('assets', (new OrbatGenerator())->generate([$unit], 'West'));
+        $this->assertStringNotContainsString('assets', $this->generator()->generate([$unit], 'West'));
     }
 
     public function testCommanderAndRankAreExported(): void
@@ -86,7 +87,7 @@ class OrbatGeneratorTest extends TestCase
         $unit = $this->unit(1, 'HQ', 'HQ');
         $unit->setCommander($commander);
 
-        $config = (new OrbatGenerator())->generate([$unit], 'West');
+        $config = $this->generator()->generate([$unit], 'West');
 
         $this->assertStringContainsString('commander = "Ghost";', $config);
         $this->assertStringContainsString('commanderRank = "Captain";', $config);
@@ -97,10 +98,34 @@ class OrbatGeneratorTest extends TestCase
         $unit = $this->unit(1, 'The "Best" Unit', 'TBU');
         $unit->setDescription("Line one\r\nLine two");
 
-        $config = (new OrbatGenerator())->generate([$unit], 'West');
+        $config = $this->generator()->generate([$unit], 'West');
 
         $this->assertStringContainsString('text = "The ""Best"" Unit";', $config);
         $this->assertStringContainsString('description = "Line one Line two";', $config);
+    }
+
+    public function testCommanderRankIsBlankWhenRanksAreDisabled(): void
+    {
+        $rank = new Rank();
+        $rank->setName('Captain');
+        $commander = new SoldierProfile(new User());
+        $commander->setCallsign('Ghost');
+        $commander->setRank($rank);
+        $unit = $this->unit(1, 'HQ', 'HQ');
+        $unit->setCommander($commander);
+
+        $config = $this->generator(ranksEnabled: false)->generate([$unit], 'West');
+
+        $this->assertStringContainsString('commander = "Ghost";', $config);
+        $this->assertStringContainsString('commanderRank = "";', $config);
+    }
+
+    private function generator(bool $ranksEnabled = true): OrbatGenerator
+    {
+        $rankSettings = $this->createMock(RankSettings::class);
+        $rankSettings->method('isEnabled')->willReturn($ranksEnabled);
+
+        return new OrbatGenerator($rankSettings);
     }
 
     private function unit(int $id, string $name, string $abbreviation): Unit

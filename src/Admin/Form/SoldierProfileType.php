@@ -23,12 +23,17 @@ use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Specialty;
+use MajesticDev\CommandNet\Service\RankSettings;
 
 /**
  * @extends AbstractType<SoldierProfile>
  */
 class SoldierProfileType extends AbstractType
 {
+    public function __construct(private readonly RankSettings $rankSettings)
+    {
+    }
+
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
@@ -57,14 +62,17 @@ class SoldierProfileType extends AbstractType
             'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('u')->orderBy('u.displayName', 'ASC'),
         ]);
 
-        $builder
-            ->add('rank', EntityType::class, [
+        if ($this->rankSettings->isEnabled()) {
+            $builder->add('rank', EntityType::class, [
                 'class' => Rank::class,
                 'required' => false,
                 'placeholder' => 'Unranked',
                 'choice_label' => fn (Rank $r) => (string)$r,
                 'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
-            ])
+            ]);
+        }
+
+        $builder
             ->add('specialty', EntityType::class, [
                 'class' => Specialty::class,
                 'required' => false,

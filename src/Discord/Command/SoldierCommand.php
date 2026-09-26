@@ -13,6 +13,7 @@ use Forumify\OAuth\Idp\DiscordIdp;
 use Forumify\OAuth\Repository\IdentityProviderUserRepository;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -29,6 +30,7 @@ class SoldierCommand implements DiscordCommandInterface
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Packages $packages,
         private readonly UrlHelper $urlHelper,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
@@ -90,7 +92,7 @@ class SoldierCommand implements DiscordCommandInterface
             ], UrlGeneratorInterface::ABSOLUTE_URL),
         );
 
-        $rank = $profile->getRank();
+        $rank = $this->rankSettings->isEnabled() ? $profile->getRank() : null;
         if ($rank !== null) {
             $embed->title = $rank->getAbbreviation() . ' ' . $embed->title;
             $embed->addField('Rank', trim($rank->getPayGrade() . ' ' . $rank->getName()));

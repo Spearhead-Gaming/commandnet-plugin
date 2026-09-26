@@ -14,6 +14,10 @@ use MajesticDev\CommandNet\Entity\Unit;
  */
 class OrbatGenerator
 {
+    public function __construct(private readonly RankSettings $rankSettings)
+    {
+    }
+
     /** Smallest to largest; a unit with no size set gets the one matching how many echelons sit below it. */
     public const array SIZES = ['Squad', 'Platoon', 'Company', 'Battalion', 'Regiment', 'Brigade', 'Division', 'Corps', 'Army'];
 
@@ -73,7 +77,7 @@ class OrbatGenerator
             'size' => $this->string($unit->getOrbatSize() ?: self::SIZES[min($this->height($unit), count(self::SIZES) - 1)]),
             'type' => $this->string($unit->getOrbatType() ?: 'Infantry'),
             'commander' => $this->string($commander !== null ? ($commander->getCallsign() ?? $commander->getUser()->getDisplayName()) : ''),
-            'commanderRank' => $this->string($commander?->getRank()?->getName() ?? ''),
+            'commanderRank' => $this->string($this->rankSettings->isEnabled() ? ($commander?->getRank()?->getName() ?? '') : ''),
             'text' => $this->string($unit->getName()),
             'textShort' => $this->string($unit->getAbbreviation()),
             'description' => $this->string($unit->getDescription() ?? ''),
