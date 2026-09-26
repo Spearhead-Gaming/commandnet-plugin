@@ -171,11 +171,12 @@
 
                     {# ---------- Service Record (everything, unified) ---------- #}
                     <div class="cnf-panel" data-tab-panel="service" hidden>
-                        {% if profile.serviceRecords is empty %}
+                        {% set serviceRecords = command_net_service_records(profile) %}
+                        {% if serviceRecords is empty %}
                             <p class="text-small mb-0">{{ 'command_net.personnel.no_service_records'|trans }}</p>
                         {% else %}
                             {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
-                                rows: profile.serviceRecords,
+                                rows: serviceRecords,
                                 profile: profile,
                                 showType: true,
                             } only %}

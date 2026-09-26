@@ -10,6 +10,7 @@ use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
 use Forumify\Core\Security\Voter\PermissionVoter;
 use Forumify\Testing\Traits\UserTrait;
+use MajesticDev\CommandNet\Entity\Deployment;
 use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
@@ -73,12 +74,21 @@ class PatrolFlowTest extends WebTestCase
         $this->client->request('GET', '/patrols/new');
         $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'Without the permission anywhere, a member must not post a patrol.');
 
+        $deployment = new Deployment();
+        $deployment->setName('Deployment ' . $this->sfx);
+        $deployment->setStartDate(new DateTime('-10 days'));
+        $deployment->setEndDate(new DateTime('+20 days'));
+        $this->em->persist($deployment);
+        $this->em->flush();
+        $deploymentId = $deployment->getId();
+
         $this->login($leader);
         $crawler = $this->client->request('GET', '/patrols/new');
         $this->assertSame(200, $this->client->getResponse()->getStatusCode());
         $form = $crawler->selectButton('Post patrol')->form();
         $title = 'Patrol ' . $this->sfx;
         $form['patrol[title]'] = $title;
+        $form['patrol[deployment]'] = (string)$deploymentId;
         // Three days ago, so its AAR deadline (24 hours after it ends) has already passed.
         $form['patrol[startDateTime]'] = (new DateTime('-3 days 20:00'))->format('Y-m-d\TH:i');
         $form['patrol[endDateTime]'] = (new DateTime('-3 days 22:00'))->format('Y-m-d\TH:i');
@@ -90,6 +100,7 @@ class PatrolFlowTest extends WebTestCase
         $this->assertNotNull($patrol);
         $this->assertSame(OperationType::PATROL, $patrol->getType());
         $this->assertSame($leader->getId(), $patrol->getLeader()?->getId(), 'The poster becomes the leader.');
+        $this->assertSame($deploymentId, $patrol->getDeployment()?->getId(), 'The deployment chosen on the form is linked.');
         $id = $patrol->getId();
 
         // Unfiled and past its deadline: overdue on the patrol page and on the leader's own page.
