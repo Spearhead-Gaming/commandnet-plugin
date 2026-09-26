@@ -15,6 +15,7 @@ use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
+use MajesticDev\CommandNet\Service\DtgFormatter;
 use MajesticDev\CommandNet\Service\EventRules;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
@@ -51,6 +52,7 @@ class OperationDetailController extends AbstractController
             // Staff and a patrol's leader manage it: edit and cancel.
             'canManagePatrol' => $operation->getType() === OperationType::PATROL && ($isStaff || $this->eventRules->isLeader($operation, $user)),
             'canDeletePatrol' => $this->eventRules->canDeletePatrol($operation, $user, $isStaff),
+            'dtg' => DtgFormatter::format($operation->getStartDateTime()),
             'aarStatus' => $this->eventRules->aarStatus($operation, new DateTimeImmutable()),
             'aarDueAt' => $this->eventRules->aarDueAt($operation),
             // Whoever can mark attendance sees everyone expected; everyone else just sees RSVPs.
