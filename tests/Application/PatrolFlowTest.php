@@ -165,6 +165,73 @@ class PatrolFlowTest extends WebTestCase
         $this->assertStringContainsString('AAR filed', $content);
         $this->assertStringNotContainsString('AAR overdue', $content);
         $this->assertCount(1, $this->combatRecords($soldierId), 'The attendee is credited once the AAR is filed.');
+
+        // With an AAR on the record the leader can no longer delete the patrol: no button, and a
+        // forged request is refused. Staff still can, and the combat records go with the patrol.
+        $crawler = $this->client->request('GET', '/operations/' . $id);
+        $this->assertSame(0, $crawler->filter('form[action$="/patrols/' . $id . '/delete"]')->count(), 'No delete button for the leader once an AAR is filed.');
+        $this->client->request('POST', '/patrols/' . $id . '/delete');
+        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'The leader must not delete a patrol that has an AAR.');
+
+        $admin = $this->member('admin', [...$viewer, 'command-net.admin.operations.manage']);
+        $this->login($admin);
+        $crawler = $this->client->request('GET', '/operations/' . $id);
+        $node = $crawler->filter('form[action$="/patrols/' . $id . '/delete"]');
+        $this->assertGreaterThan(0, $node->count(), 'Staff can delete any patrol.');
+        $this->client->submit($node->first()->form());
+        $this->assertTrue($this->client->getResponse()->isRedirect());
+        $this->assertNull($this->em->find(Operation::class, $id), 'The patrol is gone.');
+        $this->assertSame([], $this->em->getRepository(OperationRSVP::class)->findBy(['soldier' => $soldierId]), 'Its sign-ups went with it.');
+        $this->assertSame([], $this->combatRecords($soldierId), 'The combat records it earned are removed too, not left on the personnel file.');
+    }
+
+    public function testALeaderCanDeleteTheirOwnPatrolUntilItHasAnAar(): void
+    {
+        $this->client = static::createClient();
+        $this->client->disableReboot();
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $this->em = $em;
+        $this->sfx = substr(uniqid(), -6);
+        $viewer = ['command-net.operations.view', 'command-net.operations.rsvp'];
+
+        $leader = $this->member('leader', $viewer);
+        $other = $this->member('other', $viewer);
+        $admin = $this->member('admin', [...$viewer, 'command-net.admin.operations.manage']);
+        $patrolId = $this->patrolLedBy($leader->getId(), 'Test patrol ' . $this->sfx)->getId();
+        $operation = new Operation();
+        $operation->setTitle('Op ' . $this->sfx);
+        $operation->setStartDateTime(new DateTime('+2 days'));
+        $this->em->persist($operation);
+        $this->em->flush();
+        $operationId = $operation->getId();
+
+        // Someone else's patrol is not theirs to delete.
+        $this->login($other);
+        $crawler = $this->client->request('GET', '/operations/' . $patrolId);
+        $this->assertSame(0, $crawler->filter('form[action$="/patrols/' . $patrolId . '/delete"]')->count());
+        $this->client->request('POST', '/patrols/' . $patrolId . '/delete');
+        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), "Nobody else's patrol can be deleted.");
+
+        // A forged request without the page's token does nothing, even for the leader.
+        $this->login($leader);
+        $this->client->request('POST', '/patrols/' . $patrolId . '/delete', ['_token' => 'forged']);
+        $this->assertTrue($this->client->getResponse()->isRedirect('/operations/' . $patrolId), 'A bad token sends them back to the patrol.');
+        $this->assertNotNull($this->em->find(Operation::class, $patrolId), 'A bad token must not delete anything.');
+
+        // The leader deletes their own unfiled patrol from the button.
+        $crawler = $this->client->request('GET', '/operations/' . $patrolId);
+        $node = $crawler->filter('form[action$="/patrols/' . $patrolId . '/delete"]');
+        $this->assertGreaterThan(0, $node->count(), 'The leader sees the delete button on their own unfiled patrol.');
+        $this->client->submit($node->first()->form());
+        $this->assertTrue($this->client->getResponse()->isRedirect('/patrols/mine'));
+        $this->assertNull($this->em->find(Operation::class, $patrolId), 'The patrol is gone.');
+
+        // Only patrols can be deleted this way, even by staff.
+        $this->login($admin);
+        $this->client->request('POST', '/patrols/' . $operationId . '/delete');
+        $this->assertSame(404, $this->client->getResponse()->getStatusCode(), 'A non-patrol event is not deleted through the patrol route.');
+        $this->assertNotNull($this->em->find(Operation::class, $operationId));
     }
 
     /**

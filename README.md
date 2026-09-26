@@ -83,6 +83,7 @@ bin/console doctrine:migrations:migrate
 | `command_net_patrol_new` | `/patrols/new` | Post a patrol (`command-net.patrols.create`). You become its leader. |
 | `command_net_patrol_edit` | `/patrols/{id}/edit` | Edit a patrol (its leader, or an operations manager). |
 | `command_net_patrol_cancel` | `/patrols/{id}/cancel` (POST) | Cancel a patrol (its leader, or an operations manager). |
+| `command_net_patrol_delete` | `/patrols/{id}/delete` (POST) | Permanently delete a patrol, for test patrols and mistakes (an operations manager always; its leader only until an AAR is filed). |
 | `command_net_patrols_mine` | `/patrols/mine` | The patrols you have led, with each one's AAR state and a File AAR button. |
 | `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
 | `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
@@ -319,6 +320,12 @@ stops "attending" RSVPs once it is full. The leader, or an operations manager, c
 patrols are never put on a calendar, so a synced calendar does not announce them twice. The leader can
 mark attendance and file the AAR for their own patrol and no one else's; an attendee or staff can also
 file it. Other events keep the `submit_aar` and `operations.manage` rules.
+
+A patrol can be **deleted permanently** from its page: an operations manager can always, and its
+leader only until an AAR has been filed (once it is on the record, only staff can remove it). The
+patrol, its sign-ups and its reports go, and so do the combat records they earned on personnel
+files. That cleanup runs whenever any operation is deleted, including from the admin list, which
+used to leave those records behind. With the Discord plugin, the patrol's post is deleted too.
 
 **AAR due date.** A patrol's AAR is due 24 hours after it ends (its start, if it has no end time).
 "Due" and "overdue" are worked out from the end time, that deadline and whether an AAR exists, so

@@ -127,6 +127,21 @@ class EventRules
     }
 
     /**
+     * Who may permanently delete a patrol. Staff always can. The patrol's own leader can only
+     * until an AAR has been filed: that lets a mistaken or test patrol go without an admin, but
+     * a patrol that is on the record (its AAR credits combat records to the attendees) cannot be
+     * erased by the person who led it.
+     */
+    public function canDeletePatrol(Operation $operation, ?User $user, bool $isStaff): bool
+    {
+        if ($operation->getType() !== OperationType::PATROL) {
+            return false;
+        }
+
+        return $isStaff || ($this->isLeader($operation, $user) && count($operation->getAars()) === 0);
+    }
+
+    /**
      * Who may file an AAR. Patrols: the leader, someone marked as attended, or staff. Other
      * events keep the existing rule, decided by the submit_aar permission ($hasSubmitPermission).
      */
