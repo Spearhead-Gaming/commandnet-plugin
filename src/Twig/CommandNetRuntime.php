@@ -8,6 +8,7 @@ use DateInterval;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Forumify\Core\Entity\User;
+use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Service\DocumentRenderer;
@@ -53,6 +54,27 @@ class CommandNetRuntime implements RuntimeExtensionInterface
             ->setParameter('min', $min)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * The soldier's whole timeline for the personnel file's Service Record tab, in the order the
+     * profile keeps it. With ranks turned off, promotions and demotions are left out: their title
+     * is the rank itself ("Sergeant"), so showing them would put rank back on a page that is meant
+     * not to have it. The records stay stored and reappear if ranks are switched back on.
+     *
+     * @return array<ServiceRecord>
+     */
+    public function getServiceRecords(SoldierProfile $profile): array
+    {
+        $records = $profile->getServiceRecords()->toArray();
+        if ($this->rankSettings->isEnabled()) {
+            return $records;
+        }
+
+        return array_values(array_filter(
+            $records,
+            static fn (ServiceRecord $record): bool => !in_array($record->getType(), [ServiceRecordType::PROMOTION, ServiceRecordType::DEMOTION], true),
+        ));
     }
 
     /**
