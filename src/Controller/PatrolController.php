@@ -111,6 +111,36 @@ class PatrolController extends AbstractController
     }
 
     /**
+     * Permanently deletes a patrol - for test patrols and mistakes. Staff can always; the leader
+     * only until an AAR is filed (see EventRules::canDeletePatrol). Its RSVPs and AARs go with
+     * it, OperationRemovalListener removes the combat records they earned, and the Discord
+     * plugin removes its post.
+     */
+    #[Route('/patrols/{id}/delete', name: 'patrol_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(Operation $patrol, Request $request): RedirectResponse
+    {
+        if ($patrol->getType() !== OperationType::PATROL) {
+            throw $this->createNotFoundException();
+        }
+        /** @var User|null $user */
+        $user = $this->getUser();
+        if (!$this->eventRules->canDeletePatrol($patrol, $user, $this->isGranted('command-net.admin.operations.manage'))) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('patrol_delete_' . $patrol->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('error', 'Your session expired, please try again.');
+            return $this->redirectToRoute('command_net_operation_detail', ['id' => $patrol->getId()]);
+        }
+
+        $title = $patrol->getTitle();
+        $this->operationRepository->remove($patrol);
+
+        $this->addFlash('success', sprintf('Patrol "%s" deleted.', $title));
+        return $this->redirectToRoute('command_net_patrols_mine');
+    }
+
+    /**
      * The leader's own page: every patrol they have led, with its AAR state.
      */
     #[Route('/patrols/mine', name: 'patrols_mine')]

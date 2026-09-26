@@ -223,6 +223,40 @@ class EventRulesTest extends TestCase
         $this->assertFalse($this->rules->canFileAar($patrol, $bystander, false, true), 'submit_aar alone is not enough for a patrol.');
     }
 
+    public function testWhoMayDeleteAPatrol(): void
+    {
+        $leader = $this->createStub(User::class);
+        $other = $this->createStub(User::class);
+        $patrol = $this->event(OperationType::PATROL);
+        $patrol->setLeader($leader);
+
+        $this->assertTrue($this->rules->canDeletePatrol($patrol, $leader, false), 'A leader can delete their own patrol before any AAR.');
+        $this->assertFalse($this->rules->canDeletePatrol($patrol, $other, false), "Nobody else's patrol.");
+        $this->assertFalse($this->rules->canDeletePatrol($patrol, null, false));
+        $this->assertTrue($this->rules->canDeletePatrol($patrol, $other, true), 'Staff can delete any patrol.');
+    }
+
+    public function testALeaderCannotDeleteAPatrolThatHasAnAar(): void
+    {
+        $leader = $this->createStub(User::class);
+        $patrol = $this->event(OperationType::PATROL);
+        $patrol->setLeader($leader);
+        $this->fileAar($patrol);
+
+        $this->assertFalse($this->rules->canDeletePatrol($patrol, $leader, false), "A patrol on the record is not the leader's to erase.");
+        $this->assertTrue($this->rules->canDeletePatrol($patrol, $leader, true), 'Staff still can.');
+    }
+
+    public function testOnlyPatrolsCanBeDeletedThatWay(): void
+    {
+        $user = $this->createStub(User::class);
+        $operation = $this->event(OperationType::OPERATION);
+        $operation->setLeader($user);
+
+        $this->assertFalse($this->rules->canDeletePatrol($operation, $user, false));
+        $this->assertFalse($this->rules->canDeletePatrol($operation, $user, true), 'Even staff use the admin list for other events.');
+    }
+
     public function testOtherEventsKeepTheSubmitAarPermissionRule(): void
     {
         $user = $this->createStub(User::class);

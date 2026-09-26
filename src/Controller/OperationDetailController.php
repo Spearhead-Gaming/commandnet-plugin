@@ -50,6 +50,7 @@ class OperationDetailController extends AbstractController
             'canFileAar' => $this->eventRules->canFileAar($operation, $user, $isStaff, $this->isGranted('command-net.operations.submit_aar')),
             // Staff and a patrol's leader manage it: edit and cancel.
             'canManagePatrol' => $operation->getType() === OperationType::PATROL && ($isStaff || $this->eventRules->isLeader($operation, $user)),
+            'canDeletePatrol' => $this->eventRules->canDeletePatrol($operation, $user, $isStaff),
             'aarStatus' => $this->eventRules->aarStatus($operation, new DateTimeImmutable()),
             'aarDueAt' => $this->eventRules->aarDueAt($operation),
             // Whoever can mark attendance sees everyone expected; everyone else just sees RSVPs.

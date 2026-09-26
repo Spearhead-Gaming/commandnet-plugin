@@ -45,6 +45,12 @@
                             <button type="submit" class="btn-outlined btn-small">Cancel patrol</button>
                         </form>
                     {% endif %}
+                    {% if canDeletePatrol %}
+                        <form method="post" action="{{ path('command_net_patrol_delete', { id: operation.id }) }}" onsubmit="return confirm('Permanently delete this patrol? This removes it, its sign-ups and its reports, and cannot be undone.');">
+                            <input type="hidden" name="_token" value="{{ csrf_token('patrol_delete_' ~ operation.id) }}">
+                            <button type="submit" class="btn-outlined btn-small">Delete patrol</button>
+                        </form>
+                    {% endif %}
                 </div>
             {% endif %}
             {% if infoUrl or briefingUrl %}
