@@ -19,8 +19,7 @@ class CourseEnrollmentService
     public function __construct(
         private readonly CourseClassStudentRepository $studentRepository,
         private readonly RankSettings $rankSettings,
-    )
-    {
+    ) {
     }
 
     /**

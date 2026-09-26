@@ -9,6 +9,7 @@ use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\RankRepository;
 use MajesticDev\CommandNet\Repository\UnitRepository;
 use MajesticDev\CommandNet\Service\EnlistmentSettings;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
