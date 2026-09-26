@@ -8,10 +8,12 @@ use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\PromotionEligibility;
 use MajesticDev\CommandNet\Service\RankChangeService;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 class PromotionsController extends AbstractController
@@ -20,12 +22,17 @@ class PromotionsController extends AbstractController
         private readonly PromotionEligibility $promotionEligibility,
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly RankChangeService $rankChangeService,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
     #[Route('/promotions', name: 'promotions')]
     public function __invoke(): Response
     {
+        if (!$this->rankSettings->isEnabled()) {
+            throw new NotFoundHttpException();
+        }
+
         if (!$this->isGranted('command-net.promotions.view')) {
             throw $this->createAccessDeniedException();
         }
@@ -43,6 +50,10 @@ class PromotionsController extends AbstractController
     #[Route('/promotions/{id}/promote', name: 'promotions_promote', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function promote(int $id, Request $request): RedirectResponse
     {
+        if (!$this->rankSettings->isEnabled()) {
+            throw new NotFoundHttpException();
+        }
+
         $this->denyAccessUnlessGranted('command-net.admin.personnel.manage');
 
         if (!$this->isCsrfTokenValid('promote_' . $id, $request->request->getString('_token'))) {

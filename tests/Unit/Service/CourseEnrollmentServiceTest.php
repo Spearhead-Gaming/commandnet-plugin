@@ -15,16 +15,19 @@ use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\CourseClassStudentRepository;
 use MajesticDev\CommandNet\Service\CourseEnrollmentService;
+use MajesticDev\CommandNet\Service\RankSettings;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class CourseEnrollmentServiceTest extends TestCase
 {
     private CourseEnrollmentService $service;
+    private RankSettings&MockObject $rankSettings;
     private CourseClassStudentRepository&MockObject $repository;
 
     /** @var array<Course> courses the soldier is treated as having passed */
     private array $passed = [];
+    private bool $ranksEnabled = true;
 
     protected function setUp(): void
     {
@@ -32,7 +35,9 @@ class CourseEnrollmentServiceTest extends TestCase
         $this->repository->method('hasPassed')
             ->willReturnCallback(fn (SoldierProfile $soldier, Course $course) => in_array($course, $this->passed, true));
 
-        $this->service = new CourseEnrollmentService($this->repository);
+        $this->rankSettings = $this->createMock(RankSettings::class);
+        $this->rankSettings->method('isEnabled')->willReturnCallback(fn () => $this->ranksEnabled);
+        $this->service = new CourseEnrollmentService($this->repository, $this->rankSettings);
     }
 
     public function testAnEnlistedSoldierCanEnrolInAFutureClassWithNoRequirements(): void
@@ -86,6 +91,15 @@ class CourseEnrollmentServiceTest extends TestCase
         $this->assertNotNull($this->service->ineligibleReason($this->soldier(), $class), 'No rank at all is below any minimum.');
         $this->assertNull($this->service->ineligibleReason($this->soldier($this->rank('Sergeant', 3)), $class));
         $this->assertNull($this->service->ineligibleReason($this->soldier($this->rank('Captain', 5)), $class));
+    }
+
+    public function testTheMinimumRankIsIgnoredWhenRanksAreDisabled(): void
+    {
+        $this->ranksEnabled = false;
+        $class = $this->newClass();
+        $class->getCourse()->setMinimumRank($this->rank('Sergeant', 3));
+
+        $this->assertNull($this->service->ineligibleReason($this->soldier(), $class));
     }
 
     public function testEveryPrerequisiteMustHaveBeenPassed(): void

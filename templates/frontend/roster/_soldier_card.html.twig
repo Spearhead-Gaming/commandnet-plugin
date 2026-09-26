@@ -6,7 +6,7 @@
         } only %}
         <div>
             <p class="mb-0 text-bold">
-                {% if soldier.rank %}{{ soldier.rank.abbreviation }}{% endif %}
+                {% if command_net_ranks_enabled() and soldier.rank %}{{ soldier.rank.abbreviation }}{% endif %}
                 {{ soldier.user.displayName }}
             </p>
             {% if soldier.callsign %}

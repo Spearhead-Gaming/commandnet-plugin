@@ -11,6 +11,7 @@ use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\RankRepository;
 use MajesticDev\CommandNet\Service\RankRoleSyncer;
+use MajesticDev\CommandNet\Service\RankSettings;
 use PHPUnit\Framework\TestCase;
 
 class RankRoleSyncerTest extends TestCase
@@ -64,6 +65,22 @@ class RankRoleSyncerTest extends TestCase
         $this->assertFalse($user->getRoleEntities()->contains($role));
     }
 
+    public function testDoesNothingWhenRanksAreDisabled(): void
+    {
+        $role = new Role();
+        $rank = $this->rank($role);
+        $user = new User();
+        $soldier = new SoldierProfile($user);
+        $soldier->setRank($rank);
+
+        $userRepository = $this->createMock(UserRepository::class);
+        $userRepository->expects($this->never())->method('save');
+
+        $this->syncer([$rank], $userRepository, false)->sync($soldier);
+
+        $this->assertFalse($user->getRoleEntities()->contains($role));
+    }
+
     public function testDoesNotSaveWhenNothingChanged(): void
     {
         $role = new Role();
@@ -82,12 +99,15 @@ class RankRoleSyncerTest extends TestCase
     /**
      * @param Rank[] $ranks
      */
-    private function syncer(array $ranks, ?UserRepository $userRepository = null): RankRoleSyncer
+    private function syncer(array $ranks, ?UserRepository $userRepository = null, bool $ranksEnabled = true): RankRoleSyncer
     {
         $rankRepository = $this->createMock(RankRepository::class);
         $rankRepository->method('findAll')->willReturn($ranks);
 
-        return new RankRoleSyncer($rankRepository, $userRepository ?? $this->createMock(UserRepository::class));
+        $rankSettings = $this->createMock(RankSettings::class);
+        $rankSettings->method('isEnabled')->willReturn($ranksEnabled);
+
+        return new RankRoleSyncer($rankRepository, $userRepository ?? $this->createMock(UserRepository::class), $rankSettings);
     }
 
     private function rank(?Role $role): Rank

@@ -1,7 +1,7 @@
 {% extends '@Forumify/frontend/base.html.twig' %}
 
 {% block title_page %}
-    {{ profile.rank ? profile.rank.abbreviation ~ ' ' : '' }}{{ profile.user.displayName }}
+    {{ command_net_ranks_enabled() and profile.rank ? profile.rank.abbreviation ~ ' ' : '' }}{{ profile.user.displayName }}
 {% endblock %}
 
 {% block body %}
@@ -15,7 +15,7 @@
                     } only %}
                     <div>
                         <h2 class="mb-0">
-                            {% if profile.rank %}{{ profile.rank.abbreviation }}{% endif %}
+                            {% if command_net_ranks_enabled() and profile.rank %}{{ profile.rank.abbreviation }}{% endif %}
                             {{ profile.user.displayName }}
                             <span class="tag {{ profile.status.value == 'active' ? 'tag-success' : (profile.status.value == 'awol' ? 'tag-error' : '') }} text-regular ml-2">
                                 {{ profile.status.label }}
@@ -119,7 +119,9 @@
                         <button type="button" class="cnf-tab" data-tab="service" role="tab" aria-selected="false">Service Record</button>
                         <button type="button" class="cnf-tab" data-tab="award" role="tab" aria-selected="false">Award Record</button>
                         <button type="button" class="cnf-tab" data-tab="combat" role="tab" aria-selected="false">Combat Record</button>
-                        <button type="button" class="cnf-tab" data-tab="rank" role="tab" aria-selected="false">Rank Record</button>
+                        {% if command_net_ranks_enabled() %}
+                            <button type="button" class="cnf-tab" data-tab="rank" role="tab" aria-selected="false">Rank Record</button>
+                        {% endif %}
                         <button type="button" class="cnf-tab" data-tab="assignment" role="tab" aria-selected="false">Assignment Record</button>
                         <button type="button" class="cnf-tab" data-tab="qualification" role="tab" aria-selected="false">Qualification Record</button>
                     </div>
@@ -231,18 +233,20 @@
                     </div>
 
                     {# ---------- Rank Record ---------- #}
-                    <div class="cnf-panel" data-tab-panel="rank" hidden>
-                        {% set rankRecords = command_net_records_by_type(profile, ['promotion', 'demotion', 'enlistment']) %}
-                        {% if rankRecords is empty %}
-                            <p class="text-small mb-0">No rank history.</p>
-                        {% else %}
-                            {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
-                                rows: rankRecords,
-                                profile: profile,
-                                showType: true,
-                            } only %}
-                        {% endif %}
-                    </div>
+                    {% if command_net_ranks_enabled() %}
+                        <div class="cnf-panel" data-tab-panel="rank" hidden>
+                            {% set rankRecords = command_net_records_by_type(profile, ['promotion', 'demotion', 'enlistment']) %}
+                            {% if rankRecords is empty %}
+                                <p class="text-small mb-0">No rank history.</p>
+                            {% else %}
+                                {% include '@CommandNetPlugin/frontend/personnel/_record_table.html.twig' with {
+                                    rows: rankRecords,
+                                    profile: profile,
+                                    showType: true,
+                                } only %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
 
                     {# ---------- Assignment Record ---------- #}
                     <div class="cnf-panel" data-tab-panel="assignment" hidden>

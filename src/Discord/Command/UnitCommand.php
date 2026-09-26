@@ -13,6 +13,7 @@ use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
+use MajesticDev\CommandNet\Service\RankSettings;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
@@ -24,6 +25,7 @@ class UnitCommand implements DiscordCommandInterface
     public function __construct(
         private readonly UnitRepository $unitRepository,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
@@ -100,7 +102,7 @@ class UnitCommand implements DiscordCommandInterface
 
     private function formatSoldier(SoldierProfile $soldier): string
     {
-        $rank = $soldier->getRank();
+        $rank = $this->rankSettings->isEnabled() ? $soldier->getRank() : null;
         $rankAbbreviation = $rank !== null ? $rank->getAbbreviation() . ' ' : '';
 
         return trim($rankAbbreviation . $soldier->getUser()->getDisplayName());

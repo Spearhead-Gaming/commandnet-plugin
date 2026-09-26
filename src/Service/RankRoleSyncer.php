@@ -18,15 +18,23 @@ class RankRoleSyncer
     public function __construct(
         private readonly RankRepository $rankRepository,
         private readonly UserRepository $userRepository,
+        private readonly RankSettings $rankSettings,
     ) {
     }
 
     /**
      * With $revokeAll, no rank role is kept - for a soldier leaving the unit, who keeps their
      * rank on file but shouldn't keep the role that goes with it.
+     *
+     * A no-op while ranks are disabled: a community that turned ranks off doesn't want rank
+     * roles granted or revoked in the background, but nothing here touches rank data itself.
      */
     public function sync(SoldierProfile $profile, bool $revokeAll = false): void
     {
+        if (!$this->rankSettings->isEnabled()) {
+            return;
+        }
+
         $user = $profile->getUser();
         $keepRole = $revokeAll ? null : $profile->getRank()?->getRole();
 

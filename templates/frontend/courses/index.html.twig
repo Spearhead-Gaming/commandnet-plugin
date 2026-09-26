@@ -42,7 +42,7 @@
                 <div class="mb-3">
                     <p class="text-bold mb-0">{{ course.name }}</p>
                     <p class="text-small mb-0">{{ course.description|nl2br }}</p>
-                    {% if course.minimumRank %}<p class="text-small mb-0">Minimum rank: {{ course.minimumRank.name }}</p>{% endif %}
+                    {% if command_net_ranks_enabled() and course.minimumRank %}<p class="text-small mb-0">Minimum rank: {{ course.minimumRank.name }}</p>{% endif %}
                     {% if course.prerequisites|length %}<p class="text-small mb-0">Needs: {{ course.prerequisites|join(', ') }}</p>{% endif %}
                     {% if course.qualifications|length %}<p class="text-small mb-0">Grants: {{ course.qualifications|map(q => q.name)|join(', ') }}</p>{% endif %}
                 </div>

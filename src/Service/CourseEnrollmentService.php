@@ -12,11 +12,14 @@ use MajesticDev\CommandNet\Repository\CourseClassStudentRepository;
 
 /**
  * Enrolling in and withdrawing from a class, and the rules for who may: enlisted, before the
- * class starts, a free slot, the course minimum rank, and every prerequisite course passed.
+ * class starts, a free slot, the course minimum rank (while ranks are enabled), and every prerequisite course passed.
  */
 class CourseEnrollmentService
 {
-    public function __construct(private readonly CourseClassStudentRepository $studentRepository)
+    public function __construct(
+        private readonly CourseClassStudentRepository $studentRepository,
+        private readonly RankSettings $rankSettings,
+    )
     {
     }
 
@@ -40,7 +43,7 @@ class CourseEnrollmentService
 
         $course = $class->getCourse();
         $minimumRank = $course->getMinimumRank();
-        if ($minimumRank !== null && ($soldier->getRank()?->getPosition() ?? -1) < $minimumRank->getPosition()) {
+        if ($this->rankSettings->isEnabled() && $minimumRank !== null && ($soldier->getRank()?->getPosition() ?? -1) < $minimumRank->getPosition()) {
             return 'This course needs the rank ' . $minimumRank->getName() . ' or higher.';
         }
 

@@ -14,7 +14,7 @@
                 {{ activeCount }} assigned
                 &middot;
                 {% if unit.commander %}
-                    CO: {{ unit.commander.rank ? unit.commander.rank.abbreviation ~ ' ' : '' }}{{ unit.commander.user.displayName }}
+                    CO: {{ command_net_ranks_enabled() and unit.commander.rank ? unit.commander.rank.abbreviation ~ ' ' : '' }}{{ unit.commander.user.displayName }}
                 {% else %}
                     CO: Vacant
                 {% endif %}

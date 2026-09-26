@@ -14,7 +14,7 @@
                     <i class="ph ph-chart-bar"></i> Attendance
                 </a>
             {% endif %}
-            {% if is_granted('command-net.promotions.view') %}
+            {% if command_net_ranks_enabled() and is_granted('command-net.promotions.view') %}
                 <a class="btn-outlined btn-small" href="{{ path('command_net_promotions') }}">
                     <i class="ph ph-medal"></i> Promotions
                 </a>
