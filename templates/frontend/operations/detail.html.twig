@@ -113,7 +113,26 @@
                                         </form>
                                     {% endif %}
                                 </div>
+                                {% if aar.tasking is not null %}
+                                    <p class="text-small mb-1"><span class="text-bold">DTG:</span> {{ dtg }}</p>
+                                    <p class="text-small mb-1"><span class="text-bold">Tasking:</span> {{ aar.tasking }}</p>
+                                    <p class="text-small mb-1"><span class="text-bold">Callsigns:</span> {{ aar.callsigns }}</p>
+                                    <p class="text-small mb-1"><span class="text-bold">FKIA / FWIA / FMIA:</span> {{ aar.friendlyCasualties }}</p>
+                                    <p class="text-small mb-2"><span class="text-bold">EKIA:</span> {{ aar.enemyKia }}</p>
+                                {% endif %}
                                 {{ aar.summary|rich }}
+                                {% for group, images in {'Map': aar.mapImages, 'Intel': aar.intelImages} %}
+                                    {% if images %}
+                                        <p class="text-small text-bold mt-2 mb-1">{{ group }}</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for image in images %}
+                                                <a href="{{ asset(image, 'forumify.asset') }}" target="_blank" rel="noopener">
+                                                    <img src="{{ asset(image, 'forumify.asset') }}" alt="{{ group }} image {{ loop.index }}" style="max-height: 160px; border-radius: 4px;" loading="lazy">
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
                                 {% if aar.notes %}
                                     <p class="text-small mt-2">{{ aar.notes }}</p>
                                 {% endif %}

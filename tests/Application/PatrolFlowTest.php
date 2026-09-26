@@ -14,14 +14,17 @@ use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Operation;
+use MajesticDev\CommandNet\Entity\OperationAAR;
 use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\RankGroup;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use League\Flysystem\FilesystemOperator;
 use ReflectionProperty;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * The Phase A acceptance criteria for patrols, driven through the real controllers, forms and
@@ -154,10 +157,44 @@ class PatrolFlowTest extends WebTestCase
         $this->login($leader);
         $crawler = $this->client->request('GET', '/operations/' . $id . '/aar');
         $this->assertSame(200, $this->client->getResponse()->getStatusCode(), 'The leader files their own patrol AAR without submit_aar.');
+        $this->assertStringContainsString('DTG:', (string)$this->client->getResponse()->getContent(), 'A patrol AAR shows its date-time group.');
         $form = $crawler->selectButton('Submit AAR')->form();
-        $form['operation_aar[summary]'] = 'We patrolled the road and returned.';
-        $this->client->submit($form);
-        $this->assertTrue($this->client->getResponse()->isRedirect());
+        $this->assertNotSame('', $form['operation_aar[callsigns]']->getValue(), 'Callsigns are filled in from who joined.');
+
+        $values = $form->getPhpValues();
+        $values['operation_aar']['tasking'] = 'Recon the road';
+        $values['operation_aar']['friendlyCasualties'] = '0 / 1 / 0';
+        $values['operation_aar']['enemyKia'] = '3';
+        $values['operation_aar']['summary'] = 'We patrolled the road and returned.';
+
+        // Without a map and an intel image a patrol's AAR is refused, and nothing is filed.
+        $this->client->request('POST', $form->getUri(), $values);
+        $this->assertSame(422, $this->client->getResponse()->getStatusCode(), 'The form is shown again with its errors.');
+        $this->assertCount(0, $this->em->getRepository(OperationAAR::class)->findBy(['operation' => $id]), 'A patrol AAR without images must not be filed.');
+
+        $files = ['operation_aar' => [
+            'mapImages' => ['file' => [$this->pngUpload('map.png')]],
+            'intelImages' => ['file' => [$this->pngUpload('intel.png')]],
+        ]];
+        $this->client->request('POST', $form->getUri(), $values, $files);
+        $this->assertTrue($this->client->getResponse()->isRedirect(), 'With both images the AAR is filed.');
+
+        $aar = $this->em->getRepository(OperationAAR::class)->findOneBy(['operation' => $id]);
+        $this->assertNotNull($aar);
+        $this->assertSame('Recon the road', $aar->getTasking());
+        $this->assertSame('0 / 1 / 0', $aar->getFriendlyCasualties());
+        $this->assertCount(1, $aar->getMapImages());
+        $this->assertCount(1, $aar->getIntelImages());
+        $mapImage = $aar->getMapImages()[0];
+        $intelImage = $aar->getIntelImages()[0];
+        /** @var FilesystemOperator $storage */
+        $storage = static::getContainer()->get('asset.storage');
+        $this->assertTrue($storage->fileExists($mapImage), 'The uploaded map is stored.');
+
+        $this->client->request('GET', '/operations/' . $id);
+        $content = (string)$this->client->getResponse()->getContent();
+        $this->assertStringContainsString('Recon the road', $content, 'The report shows the template fields.');
+        $this->assertStringContainsString($mapImage, $content, 'The report shows its map.');
 
         // Filing it clears the overdue state and credits the attendee.
         $this->client->request('GET', '/operations/' . $id);
@@ -183,6 +220,8 @@ class PatrolFlowTest extends WebTestCase
         $this->assertNull($this->em->find(Operation::class, $id), 'The patrol is gone.');
         $this->assertSame([], $this->em->getRepository(OperationRSVP::class)->findBy(['soldier' => $soldierId]), 'Its sign-ups went with it.');
         $this->assertSame([], $this->combatRecords($soldierId), 'The combat records it earned are removed too, not left on the personnel file.');
+        $this->assertFalse($storage->fileExists($mapImage), "The report's map image is deleted with the patrol.");
+        $this->assertFalse($storage->fileExists($intelImage), "The report's intel image is deleted with the patrol.");
     }
 
     public function testALeaderCanDeleteTheirOwnPatrolUntilItHasAnAar(): void
@@ -246,6 +285,17 @@ class PatrolFlowTest extends WebTestCase
         $voter = static::getContainer()->get(PermissionVoter::class);
         (new ReflectionProperty($voter, 'permissions'))->setValue($voter, null);
         $this->client->loginUser($user);
+    }
+
+    /**
+     * A real (1x1) PNG, as if picked in the upload field.
+     */
+    private function pngUpload(string $name): UploadedFile
+    {
+        $path = sys_get_temp_dir() . '/' . uniqid('aar-test-') . '.png';
+        file_put_contents($path, (string)base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+
+        return new UploadedFile($path, $name, 'image/png', null, true);
     }
 
     /**
