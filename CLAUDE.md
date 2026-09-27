@@ -23,7 +23,7 @@ This is the foundation plugin. Siblings, all under `G:\Github Repos`:
 - **commandnet-discord-bot** — the Node.js/discord.js process the Discord plugin talks to.
 - **command-net-theme** — the Forumify theme; reads this plugin's `Operation` repository for
   the homepage operation-status panel via `command_net_online_count()` and similar helpers.
-- **forumify-id-card-plugin** — issues fictional MILSIM ID cards; can pull organization data
+- **milsim-id-card-plugin** — issues fictional MILSIM ID cards; can pull organization data
   from this plugin's soldier/unit records via `CommandNetCardProvider`.
 
 ## Community model (important context)

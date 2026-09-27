@@ -1,16 +1,66 @@
 # Command Net
 
+**Personnel & unit management for a MILSIM Arma 3 community, with one unified service-record
+timeline instead of history scattered across modules.**
+
+![PHP](https://img.shields.io/badge/PHP-%3E%3D8.4-777bb4)
+![Forumify](https://img.shields.io/badge/Forumify-%5E1.3-2c3e50)
+![License](https://img.shields.io/badge/license-proprietary-lightgrey)
+
 A [forumify](https://forumify.net) plugin for personnel and unit management, built to be compared
 against [forumify-milhq-plugin](https://github.com/forumify/forumify-milhq-plugin): ranks (in
 promotion tracks), positions, specialties, equipment, assignments, awards, qualifications and
 operations with RSVP, attendance and after-action reports, plus enlistment, discharge, forms,
 courses, documents, promotions, Report In and AWOL detection. Everything a soldier does feeds a
-single append-only service-record timeline on their personnel file, rather than each module keeping
-its own history.
+single append-only service-record timeline on their personnel file, rather than each module
+keeping its own history.
 
 Built for a specific MILSIM community's Forumify install; not a general-purpose skeleton.
 
-## Requirements
+## Table of contents
+
+**Overview & setup**
+- [Requirements](#requirements)
+- [Install](#install)
+
+**Entities & data model**
+- [Entities](#entities)
+
+**Frontend routes**
+- [Frontend routes](#frontend-routes)
+
+**Admin & permissions**
+- [Admin](#admin)
+- [Ranks](#ranks)
+- [Permissions](#permissions)
+
+**Feature modules**
+- [Rosters](#rosters)
+- [Courses](#courses)
+- [Forms](#forms)
+- [Documents](#documents)
+- [Equipment](#equipment)
+- [Specialties](#specialties)
+- [Enlistment](#enlistment)
+- [Discharge](#discharge)
+- [Promotions](#promotions)
+- [Events and patrols](#events-and-patrols)
+- [AWOL detection](#awol-detection)
+- [Report In](#report-in)
+
+**Design & status**
+- [Design notes](#design-notes)
+- [Known gaps](#known-gaps)
+
+**Exports**
+- [Squad XML](#squad-xml)
+- [ORBAT export](#orbat-export)
+
+**Integrations**
+- [Integrations](#integrations)
+- [Works well with](#works-well-with)
+
+## 🧩 Requirements
 
 - PHP 8.4 or newer
 - A Forumify 1.3.x install
@@ -21,9 +71,9 @@ Optional, picked up automatically when installed:
 
 - The Forumify **calendar** plugin: operations are mirrored onto a community calendar.
 - The Discord plugin (`MajesticDev\Discord`): slash commands, and mapping the forumify roles this
-  plugin grants to Discord roles. See Integrations below.
+  plugin grants to Discord roles. See [Integrations](#integrations) below.
 
-## Install
+## 📦 Install
 
 ```bash
 composer require majesticdev/commandnet-plugin
@@ -36,7 +86,10 @@ bin/console forumify:plugins:refresh
 bin/console doctrine:migrations:migrate
 ```
 
-## Entities
+## 🗂️ Entities
+
+<details>
+<summary><strong>Show the full entity table</strong></summary>
 
 | Entity | Notes |
 | --- | --- |
@@ -59,7 +112,12 @@ bin/console doctrine:migrations:migrate
 | `Course`, `CourseClass`, `CourseClassStudent` | A course (with prerequisites and the qualifications a pass grants), a scheduled class of it, and a soldier enrolled in a class with their result. |
 | `ServiceRecord` | The unified timeline entry. Assignments, awards, qualifications, AARs, promotions, course passes, AWOL changes and discharges each write one; deleting the entry that created one removes it too where that applies. |
 
-## Frontend routes
+</details>
+
+## 🧭 Frontend routes
+
+<details>
+<summary><strong>Show the full route table</strong></summary>
 
 | Route | Path | What it does |
 | --- | --- | --- |
@@ -98,30 +156,36 @@ bin/console doctrine:migrations:migrate
 | `command_net_course_class` | `/courses/class/{id}` | A class: its students, enrol/withdraw, and (for managers) recording results. |
 | `command_net_course_class_enroll` / `_withdraw` / `_results` | `/courses/class/{id}/enroll`, `/withdraw`, `/results` (POST) | Enrol, withdraw, and record every student's result. |
 
-## Admin
+</details>
+
+## 🛠️ Admin
 
 Every catalog has a standard Forumify CRUD screen under **Admin → Command Net**: Personnel, Units,
 Ranks, Rank Groups, Rosters, Positions, Specialties, Equipment, Documents, Forms, Courses, Course
-Classes, Awards, Qualifications, Deployments and Operations. Form Submissions and Enlistment are review queues:
-opening an entry is the review screen. Enlistment Settings, Rank Settings, AWOL Settings, Report In Settings and Squad XML are
-single settings pages, and Personnel rows have a Discharge action. There's no separate admin screen
-for awards issued, qualifications earned, assignments, or service records — those are managed from
-the frontend personnel file instead, since they only make sense in the context of one soldier.
+Classes, Awards, Qualifications, Deployments and Operations. Form Submissions and Enlistment are
+review queues: opening an entry is the review screen. Enlistment Settings, Rank Settings, AWOL
+Settings, Report In Settings and Squad XML are single settings pages, and Personnel rows have a
+Discharge action. There's no separate admin screen for awards issued, qualifications earned,
+assignments, or service records — those are managed from the frontend personnel file instead,
+since they only make sense in the context of one soldier.
 
-## Ranks
+## 🎖️ Ranks
 
 Ranks are on by default. Turn them off under **Admin → Command Net → Rank Settings**
-(`command-net.admin.ranks.manage`) for a community that doesn't use them: rank stops showing on the
-roster, personnel files, org chart, attendance, courses, generated documents, the ORBAT export and
-Discord commands, the Promotions page and its nav link disappear, the rank field drops off the
-personnel edit form, and rank-role syncing stops running in the background. Nothing is deleted — the
-Rank/Rank Group catalog, every soldier's rank, and past promotion/demotion history are all kept, so
-turning it back on restores everything exactly as it was.
+(`command-net.admin.ranks.manage`) for a community that doesn't use them: rank stops showing on
+the roster, personnel files, org chart, attendance, courses, generated documents, the ORBAT export
+and Discord commands, the Promotions page and its nav link disappear, the rank field drops off the
+personnel edit form, and rank-role syncing stops running in the background. Nothing is deleted —
+the Rank/Rank Group catalog, every soldier's rank, and past promotion/demotion history are all
+kept, so turning it back on restores everything exactly as it was.
 
-## Permissions
+## 🔐 Permissions
 
-Checked as `command-net.<area>.<action>` (the prefix is slugged from the plugin's display
-name, "Command Net" — note the hyphen, unlike the underscored route/translation names).
+Checked as `command-net.<area>.<action>` (the prefix is slugged from the plugin's display name,
+"Command Net" — note the hyphen, unlike the underscored route/translation names).
+
+<details>
+<summary><strong>Show the full permission table</strong></summary>
 
 | Permission | Grants |
 | --- | --- |
@@ -155,11 +219,12 @@ name, "Command Net" — note the hyphen, unlike the underscored route/translatio
 | `command-net.admin.awol.manage` | Edit AWOL Settings. |
 | `command-net.admin.squadxml.manage` | Edit Squad XML settings. |
 
-`admin.attendance` is also
-declared in `CommandNetPlugin::getPermissions()`, reserved for features that don't exist yet
-(see below) — granting it today has no effect.
+</details>
 
-## Rosters
+`admin.attendance` is also declared in `CommandNetPlugin::getPermissions()`, reserved for
+features that don't exist yet (see [Known gaps](#known-gaps)) — granting it today has no effect.
+
+## 📋 Rosters
 
 By default `/roster` is one list of every active soldier. Under Admin → Command Net → Rosters
 (`command-net.admin.rosters.view` / `.manage`) staff can define named **rosters**, each made of
@@ -169,98 +234,100 @@ least one exists the roster page shows a tab per roster (the first is selected, 
 assignment is that unit, senior first. A soldier in none of a roster's units is not on it, and
 child units are not folded into their parent. Delete every roster to go back to the single list.
 
-## Courses
+## 🎓 Courses
 
 Staff define **courses** under Admin → Command Net → Courses (`command-net.admin.courses.view` /
-`.manage`): a description, an optional minimum rank, prerequisite courses, and the qualifications a
-pass grants. They schedule **classes** of a course under Course Classes: start and end, an optional
-number of places and an instructor.
+`.manage`): a description, an optional minimum rank, prerequisite courses, and the qualifications
+a pass grants. They schedule **classes** of a course under Course Classes: start and end, an
+optional number of places and an instructor.
 
 Members with `command-net.courses.enroll` see `/courses`, open a class and enrol or withdraw until
-it starts. Enrolling checks that they are enlisted, the class has a free place, they meet the minimum
-rank and have passed every prerequisite. Once a class has started, someone with
+it starts. Enrolling checks that they are enlisted, the class has a free place, they meet the
+minimum rank and have passed every prerequisite. Once a class has started, someone with
 `command-net.admin.courses.manage` records a result for every student on the class page (passed,
-failed, no-show or excused) in one go. That is final: each pass writes a course record and grants the
-course qualifications the student does not already hold, and everyone is notified. To correct a
-mistake, remove the entries it wrote from the personnel file.
+failed, no-show or excused) in one go. That is final: each pass writes a course record and grants
+the course qualifications the student does not already hold, and everyone is notified. To correct
+a mistake, remove the entries it wrote from the personnel file.
 
-Not included yet (MILHQ has): several instructors per class with roles, a signup window, awards as a
-course reward, a course image, calendar sync, and per-student service record text.
+> **Not included yet (MILHQ has):** several instructors per class with roles, a signup window,
+> awards as a course reward, a course image, calendar sync, and per-student service record text.
 
-## Forms
+## 📝 Forms
 
-Staff build forms under Admin → Command Net → Forms (`command-net.admin.forms.view` / `.manage`), such
-as a leave request or a transfer request. Fields are written as text, one per line, and checked when
-the form is saved:
+Staff build forms under Admin → Command Net → Forms (`command-net.admin.forms.view` /
+`.manage`), such as a leave request or a transfer request. Fields are written as text, one per
+line, and checked when the form is saved:
 
     type | Label | required | options
 
-Types are `text`, `textarea`, `number`, `boolean`, `date` and `select` (only select takes options,
-comma separated); the third part is `required` or `optional`. For example
-`select | Branch | required | Army, Navy, Air Force`. Members with `command-net.forms.submit` see open
-forms at `/forms` and can follow the status of what they submitted. Staff review submissions under
-Admin → Command Net → Form Submissions: accept or decline with an optional note, and the submitter is
-notified. Answers are saved as text next to the question, so editing a form later never changes what
-was already submitted.
+Types are `text`, `textarea`, `number`, `boolean`, `date` and `select` (only select takes
+options, comma separated); the third part is `required` or `optional`. For example
+`select | Branch | required | Army, Navy, Air Force`. Members with `command-net.forms.submit` see
+open forms at `/forms` and can follow the status of what they submitted. Staff review submissions
+under Admin → Command Net → Form Submissions: accept or decline with an optional note, and the
+submitter is notified. Answers are saved as text next to the question, so editing a form later
+never changes what was already submitted.
 
-Not included yet (MILHQ has): a point-and-click field editor, help text per field, custom statuses,
-supervisor routing and using a form for enlistment.
+> **Not included yet (MILHQ has):** a point-and-click field editor, help text per field, custom
+> statuses, supervisor routing and using a form for enlistment.
 
-## Documents
+## 📄 Documents
 
-A **document** is a reusable rich-text template with `{placeholders}`, such as an award citation or a
-promotion order (Admin → Command Net → Documents, `command-net.admin.documents.view` / `.manage`).
-When issuing an award, issuing a qualification or creating an assignment from a personnel file, you
-can pick one; it is shown under that entry in the service record, filled in for the soldier and
-record. The placeholders (`{user_name}`, `{user_rank}`, `{record_title}`, ...) are listed in the
-document editor. Values are HTML-escaped, and a placeholder that is not recognised is left as
-written.
+A **document** is a reusable rich-text template with `{placeholders}`, such as an award citation
+or a promotion order (Admin → Command Net → Documents, `command-net.admin.documents.view` /
+`.manage`). When issuing an award, issuing a qualification or creating an assignment from a
+personnel file, you can pick one; it is shown under that entry in the service record, filled in
+for the soldier and record. The placeholders (`{user_name}`, `{user_rank}`, `{record_title}`,
+...) are listed in the document editor. Values are HTML-escaped, and a placeholder that is not
+recognised is left as written.
 
-Not included yet: documents can not be attached to promotions or to entries created another way,
-and there is no print or download view.
+> **Not included yet:** documents can not be attached to promotions or to entries created another
+> way, and there is no print or download view.
 
-## Equipment
+## 🎯 Equipment
 
 **Equipment** is a catalog of weapons and vehicles (Admin → Command Net → Equipment,
 `command-net.admin.equipment.view` / `.manage`). Each is a primary weapon, a secondary weapon or a
 vehicle. Positions list the primary and secondary weapons their holder may use, and units list the
-vehicles they have. A soldier's personnel file shows a **Loadout** card worked out from the position
-and unit of their primary assignment; nothing is stored per soldier, so changing a position or unit
-changes it for everyone who holds it.
+vehicles they have. A soldier's personnel file shows a **Loadout** card worked out from the
+position and unit of their primary assignment; nothing is stored per soldier, so changing a
+position or unit changes it for everyone who holds it.
 
-Each item can carry an **Arma classname** (e.g. `B_MRAP_01_F`), which the ORBAT export needs. Not
-included yet: the Discord soldier and unit replies do not show equipment.
+Each item can carry an **Arma classname** (e.g. `B_MRAP_01_F`), which the ORBAT export needs.
 
-## Specialties
+> **Not included yet:** the Discord soldier and unit replies do not show equipment.
+
+## 🏅 Specialties
 
 A **specialty** is a soldier's trade (Combat Medic, Radio Operator, ...): one per soldier, set on
-their profile in Admin → Command Net → Personnel, and shown on their personnel file and the roster.
-Unlike a position it follows them between units. Manage them under Admin → Command Net →
+their profile in Admin → Command Net → Personnel, and shown on their personnel file and the
+roster. Unlike a position it follows them between units. Manage them under Admin → Command Net →
 Specialties (`command-net.admin.specialties.view` / `.manage`). A specialty can carry a forumify
 **Role**: a soldier holds the role of their specialty, and it is removed if it changes or they are
 discharged (map it to a Discord role in the Discord plugin to keep Discord in step).
 
-Changes to a soldier's specialty are not written to their service record, and it is not shown in the
-Discord `/command-net-soldier` reply yet.
+Changes to a soldier's specialty are not written to their service record, and it is not shown in
+the Discord `/command-net-soldier` reply yet.
 
-## Enlistment
+## 🪖 Enlistment
 
-Turn it on under **Admin → Command Net → Enlistment Settings**. Signed-in members with a verified,
-non-banned account can then apply at `/enlist` (add it to the menu with the Command Net menu item):
-callsign, Steam ID, why they want to join, experience and availability. Staff review applications
-under **Admin → Command Net → Enlistment** (`command-net.admin.enlistment.view` / `.manage`) and
-accept or decline with an optional note.
+Turn it on under **Admin → Command Net → Enlistment Settings**. Signed-in members with a
+verified, non-banned account can then apply at `/enlist` (add it to the menu with the Command Net
+menu item): callsign, Steam ID, why they want to join, experience and availability. Staff review
+applications under **Admin → Command Net → Enlistment** (`command-net.admin.enlistment.view` /
+`.manage`) and accept or decline with an optional note.
 
-Accepting creates the personnel file (or restores a discharged or retired one), sets the enlistment
-date, gives the configured starting rank if they have none, posts them to the configured starting
-unit, writes the enlistment and assignment records, and notifies the applicant. Declining just
-notifies. A declined applicant can apply again; someone with a pending application, or who is
-already enlisted, can't.
+Accepting creates the personnel file (or restores a discharged or retired one), sets the
+enlistment date, gives the configured starting rank if they have none, posts them to the
+configured starting unit, writes the enlistment and assignment records, and notifies the
+applicant. Declining just notifies. A declined applicant can apply again; someone with a pending
+application, or who is already enlisted, can't.
 
-Unlike MILHQ, the application is a fixed form rather than one built in a form builder, and it
-doesn't open a forum topic for recruiters; both come with a forms feature, which doesn't exist yet.
+> Unlike MILHQ, the application is a fixed form rather than one built in a form builder, and it
+> doesn't open a forum topic for recruiters; both come with a forms feature, which doesn't exist
+> yet.
 
-## Discharge
+## 🚪 Discharge
 
 **Discharge** appears on each row of Admin → Command Net → Personnel and on the personnel edit
 screen, for people with `command-net.admin.personnel.discharge`. Pick General, Honorable,
@@ -269,11 +336,12 @@ effective date and an optional reason. It ends the soldier's open assignments, r
 rank and AWOL roles, and writes a discharge service record. The soldier leaves the roster, and can
 no longer RSVP or report in.
 
-Unlike MILHQ it keeps everything: rank, awards, qualifications and the full service record stay
-on the personnel file rather than being cleared, and it doesn't offer a final rank or new posting
-as part of the discharge. Enlistment can bring a discharged soldier back, keeping their history.
+> Unlike MILHQ it keeps everything: rank, awards, qualifications and the full service record stay
+> on the personnel file rather than being cleared, and it doesn't offer a final rank or new
+> posting as part of the discharge. Enlistment can bring a discharged soldier back, keeping their
+> history.
 
-## Promotions
+## 🎖️ Promotions
 
 `/promotions` (permission `command-net.promotions.view`) lists active soldiers against the
 requirements of the next rank up — minimum time in the previous rank and required
@@ -290,10 +358,10 @@ A rank can be given a forumify **Role** in the admin. A soldier holds the role o
 rank and loses every other rank's role on any rank change, from either the Promote button or the
 admin form; map those roles to Discord roles in the Discord plugin to keep Discord in step.
 
-## Events and patrols
+## ⚔️ Events and patrols
 
-The community runs several kinds of event, and an event's **type** decides how it behaves. The rules
-live in one class, `Service/EventRules`, which the AWOL, attendance and AAR code all ask.
+The community runs several kinds of event, and an event's **type** decides how it behaves. The
+rules live in one class, `Service/EventRules`, which the AWOL, attendance and AAR code all ask.
 
 | Type | Expected roster | Counts toward AWOL | Combat credit | AAR |
 | --- | --- | --- | --- | --- |
@@ -316,10 +384,10 @@ already has one, so it is safe to run twice.
 **Patrols** are led by members. Anyone with `command-net.patrols.create` can post one from
 `/patrols/new` (title, start, optional end, area, plan, optional unit, optional joiner cap) and
 becomes its leader and first attendee. Members join with the normal RSVP buttons, and a cap
-stops "attending" RSVPs once it is full. The leader, or an operations manager, can edit or cancel it;
-patrols are never put on a calendar, so a synced calendar does not announce them twice. The leader can
-mark attendance and file the AAR for their own patrol and no one else's; an attendee or staff can also
-file it. Other events keep the `submit_aar` and `operations.manage` rules.
+stops "attending" RSVPs once it is full. The leader, or an operations manager, can edit or cancel
+it; patrols are never put on a calendar, so a synced calendar does not announce them twice. The
+leader can mark attendance and file the AAR for their own patrol and no one else's; an attendee or
+staff can also file it. Other events keep the `submit_aar` and `operations.manage` rules.
 
 A patrol can be **deleted permanently** from its page: an operations manager can always, and its
 leader only until an AAR has been filed (once it is on the record, only staff can remove it). The
@@ -327,56 +395,57 @@ patrol, its sign-ups and its reports go, and so do the combat records they earne
 files. That cleanup runs whenever any operation is deleted, including from the admin list, which
 used to leave those records behind. With the Discord plugin, the patrol's post is deleted too.
 
-**A patrol's AAR follows the community's template** and must include images. The form has the date-time
-group (`DDHHHHRMMMYY`, worked out from the patrol's start time in UTC, e.g. `261900ZSEP26`), tasking,
-callsigns (filled in from who joined, editable), FKIA / FWIA / FMIA, EKIA, and the report (with the
-objectives-met choice and notes as before), and **at least one map and one intel image** - the form is
-refused without them. Images are JPEG, PNG, GIF or WebP, up to 8 MB each (5 per kind from Discord), and are
-stored with the asset storage; they are shown on the patrol page, and deleted with the report or the
-patrol. Every other kind of event keeps the original short form. Reports filed before this have none of
-the new fields and show as before.
+**A patrol's AAR follows the community's template** and must include images. The form has the
+date-time group (`DDHHHHRMMMYY`, worked out from the patrol's start time in UTC, e.g.
+`261900ZSEP26`), tasking, callsigns (filled in from who joined, editable), FKIA / FWIA / FMIA,
+EKIA, and the report (with the objectives-met choice and notes as before), and **at least one map
+and one intel image** - the form is refused without them. Images are JPEG, PNG, GIF or WebP, up to
+8 MB each (5 per kind from Discord), and are stored with the asset storage; they are shown on the
+patrol page, and deleted with the report or the patrol. Every other kind of event keeps the
+original short form. Reports filed before this have none of the new fields and show as before.
 
-**AAR due date.** A patrol's AAR is due 24 hours after it ends (its start, if it has no end time).
-"Due" and "overdue" are worked out from the end time, that deadline and whether an AAR exists, so
-nothing is stored: a cancelled patrol owes none, and filing the AAR clears the flag. There is no
-penalty, only the flag, which shows on the patrol page and on **My patrols** (`/patrols/mine`). A
-scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the leader a forum
-notification when the AAR falls due and again when it is overdue. It keeps no state, so a run the
-scheduler misses skips that reminder.
+**AAR due date.** A patrol's AAR is due 24 hours after it ends (its start, if it has no end
+time). "Due" and "overdue" are worked out from the end time, that deadline and whether an AAR
+exists, so nothing is stored: a cancelled patrol owes none, and filing the AAR clears the flag.
+There is no penalty, only the flag, which shows on the patrol page and on **My patrols**
+(`/patrols/mine`). A scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the
+leader a forum notification when the AAR falls due and again when it is overdue. It keeps no
+state, so a run the scheduler misses skips that reminder.
 
-A patrol can be linked to a deployment: the web form has an optional **Deployment** choice (newest
-first), and the Discord command takes the deployment's name, matched ignoring case, and refuses a
-name that matches nothing (listing the recent ones) instead of posting an unlinked patrol.
+A patrol can be linked to a deployment: the web form has an optional **Deployment** choice
+(newest first), and the Discord command takes the deployment's name, matched ignoring case, and
+refuses a name that matches nothing (listing the recent ones) instead of posting an unlinked
+patrol.
 
-**Discord commands** (only registered when the Discord plugin is installed): `/command-net-patrol-create`
-posts a patrol, with an optional `deployment` (same `patrols.create` permission as the web form,
-checked by hand since a Discord-triggered request has no security token to check against - see
-`RawPermissionChecker`);
-`/command-net-patrol-list` shows upcoming patrols; `/command-net-patrol-join` / `-leave` RSVP
-(same `operations.rsvp` permission, joiner-cap and "enlisted only" rules as the web); and
-`/command-net-patrol-aar` says how to file the AAR, because a slash command cannot carry images. The AAR
-is filed by the **Submit AAR** button on the patrol's Discord post (needs the Discord plugin's patrol posts
-and a bot with the two-step AAR form): the bot collects the template's text and the map and intel uploads
-and passes them to this command, which fetches the images from Discord's own CDN only, checks they really
-are pictures, and files the report for the patrol's leader. Anyone else, or a report missing something,
-gets the web form's link. All five need the caller's
-Discord account linked to a forum account. New patrols (web or Discord-posted) are announced to
-Discord and the AAR due/overdue reminder is echoed to a channel, mentioning the leader, by the
-Discord plugin's own listeners - this plugin only exposes the `PatrolReminderNotifier` interface
-(a no-op without Discord) for that second half.
+**Discord commands** (only registered when the Discord plugin is installed):
+`/command-net-patrol-create` posts a patrol, with an optional `deployment` (same
+`patrols.create` permission as the web form, checked by hand since a Discord-triggered request
+has no security token to check against - see `RawPermissionChecker`); `/command-net-patrol-list`
+shows upcoming patrols; `/command-net-patrol-join` / `-leave` RSVP (same `operations.rsvp`
+permission, joiner-cap and "enlisted only" rules as the web); and `/command-net-patrol-aar` says
+how to file the AAR, because a slash command cannot carry images. The AAR is filed by the
+**Submit AAR** button on the patrol's Discord post (needs the Discord plugin's patrol posts and a
+bot with the two-step AAR form): the bot collects the template's text and the map and intel
+uploads and passes them to this command, which fetches the images from Discord's own CDN only,
+checks they really are pictures, and files the report for the patrol's leader. Anyone else, or a
+report missing something, gets the web form's link. All five need the caller's Discord account
+linked to a forum account. New patrols (web or Discord-posted) are announced to Discord and the
+AAR due/overdue reminder is echoed to a channel, mentioning the leader, by the Discord plugin's
+own listeners - this plugin only exposes the `PatrolReminderNotifier` interface (a no-op without
+Discord) for that second half.
 
-## AWOL detection
+## 🚨 AWOL detection
 
 Turn it on under **Admin → Command Net → AWOL Settings** (`command-net.admin.awol.manage`), with a
-number of consecutive missed operations and an optional forumify **AWOL role**. An active soldier who
-misses that many in a row is flagged AWOL, and the flag clears when they next attend one. Only
-events of type Operation where attendance was taken count (a no-show at a patrol, fun day, training
-or meeting does not), only those of the soldier's current unit (or with no unit), and only ones since
-they last became Active, so leave and transfers do not count against them.
+number of consecutive missed operations and an optional forumify **AWOL role**. An active soldier
+who misses that many in a row is flagged AWOL, and the flag clears when they next attend one. Only
+events of type Operation where attendance was taken count (a no-show at a patrol, fun day,
+training or meeting does not), only those of the soldier's current unit (or with no unit), and
+only ones since they last became Active, so leave and transfers do not count against them.
 An AWOL set by an admin is never cleared automatically. Every change writes an AWOL service record
 and notifies the soldier. Failing to report in flags AWOL too, and is cleared by reporting in.
 
-## Report In
+## 📡 Report In
 
 Soldiers with `command-net.reportin.submit` get a **Report In** button on the roster. Turn on
 enforcement under **Admin → Command Net → Report In Settings**: a daily scheduled task
@@ -387,7 +456,7 @@ writes the same audit record and notification. A soldier with no report in on fi
 baseline entry rather than being failed, so enabling this doesn't flag everyone at once. An AWOL
 set by an admin or by missed operations is never cleared by reporting in.
 
-## Design notes
+## 🧱 Design notes
 
 - **Corrections happen by deletion, not editing.** Awards, qualifications, assignments,
   service records, and AARs can all be removed but never edited in place — the same
@@ -403,78 +472,80 @@ set by an admin or by missed operations is never cleared by reporting in.
   RSVP'd "attending" doesn't get a combat record, and someone who shows up unannounced can
   still get credit.
 
-## Known gaps
+## ⚠️ Known gaps
 
 The earliest features have run against a live install. Everything added since the audit (rank
-groups, enlistment, discharge, specialties, equipment, documents, forms, courses, rosters, and the
-fixes) has been through CI and the application tests below, but not a live install with real data;
-`docs/merge-and-test-plan.md` says what has been tested and what to check on a staging copy before
-relying on it.
+groups, enlistment, discharge, specialties, equipment, documents, forms, courses, rosters, and
+the fixes) has been through CI and the application tests below, but not a live install with real
+data; `docs/merge-and-test-plan.md` says what has been tested and what to check on a staging copy
+before relying on it.
 
 - **Tests are thinner than the plugin.** CI runs PHPUnit, phpcs and PHPStan. The unit tests mock
   the repositories. Two application tests boot the plugin in a real Forumify install on MySQL
   (`tests/Application`): one loads every page as an administrator, the other drives the main
   submit-and-review flows (enlistment, promotion, RSVP and attendance, transfers, discharge,
   forms, courses) and checks the database. A third checks every endpoint against the
-  permission it needs, as a member with none, with everything but that one, and with only that one,
-  and a fourth checks that the pages listing every soldier run the same number of queries at 3
-  and at 15 soldiers. A fifth checks what the main pages show a member holding each single
+  permission it needs, as a member with none, with everything but that one, and with only that
+  one, and a fourth checks that the pages listing every soldier run the same number of queries
+  at 3 and at 15 soldiers. A fifth checks what the main pages show a member holding each single
   permission (buttons, forms, report details), and a sixth checks what pages say and do: the
-  specialty, Loadout card and record types, HTML escaping in documents, the roster tabs, the squad
-  file against its DTD, the Rank form, and what a discharged soldier is offered and refused.
-  The flow test also checks that the notifications those actions should send are created, and
-  drives AWOL detection and the Report In command. A seventh reorders rows in the sortable admin
-  tables and checks a notification appears in its recipient's bell. Email and Discord delivery of notifications, the cron trigger of
-  the Report In task and the Discord integration are not covered.
-- **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click form
-  builder, several instructors per course class, calendar sync for classes, and the Discord
-  `/award`, `/qualification` and `/rank` commands. The section for each feature above lists what its
-  first version leaves out. MILHQ's PERSCOM migration tool is deliberately left out; this install
-  does not migrate from PERSCOM.
-- **Discord replies** do not show a soldier's specialty or loadout, and `Unit`'s Discord server id
-  is stored but unused.
+  specialty, Loadout card and record types, HTML escaping in documents, the roster tabs, the
+  squad file against its DTD, the Rank form, and what a discharged soldier is offered and
+  refused. The flow test also checks that the notifications those actions should send are
+  created, and drives AWOL detection and the Report In command. A seventh reorders rows in the
+  sortable admin tables and checks a notification appears in its recipient's bell. Email and
+  Discord delivery of notifications, the cron trigger of the Report In task and the Discord
+  integration are not covered.
+- **Not in this plugin yet, although MILHQ has it:** configurable statuses, a point-and-click
+  form builder, several instructors per course class, calendar sync for classes, and the
+  Discord `/award`, `/qualification` and `/rank` commands. The section for each feature above
+  lists what its first version leaves out. MILHQ's PERSCOM migration tool is deliberately left
+  out; this install does not migrate from PERSCOM.
+- **Discord replies** do not show a soldier's specialty or loadout, and `Unit`'s Discord server
+  id is stored but unused.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
   `MajesticDev\Discord` plugin.
 
-## Squad XML
+## 🗺️ Squad XML
 
 Arma reads a unit's squad page from three files at the site root. Turn them on under **Admin →
-Command Net → Squad XML** (`command-net.admin.squadxml.manage`): a squad tag, name, title, web address
-and email (each falls back to the community title, the site address or `N/A`), and an optional `.paa`
-logo. `/squad.xml` then lists every enlisted soldier who has a Steam ID: the Steam ID as the member
-id, their callsign (or display name) as the nick, their display name, and their unit as the remark,
-senior first. `/squad.dtd` and `/logo.paa` are served alongside it. Names with symbols such as `&` are
-escaped. The files are public and off until enabled, since they publish members' Steam IDs; the XML
-is cached for 15 minutes, and saving the settings clears the cache.
+Command Net → Squad XML** (`command-net.admin.squadxml.manage`): a squad tag, name, title, web
+address and email (each falls back to the community title, the site address or `N/A`), and an
+optional `.paa` logo. `/squad.xml` then lists every enlisted soldier who has a Steam ID: the Steam
+ID as the member id, their callsign (or display name) as the nick, their display name, and their
+unit as the remark, senior first. `/squad.dtd` and `/logo.paa` are served alongside it. Names with
+symbols such as `&` are escaped. The files are public and off until enabled, since they publish
+members' Steam IDs; the XML is cached for 15 minutes, and saving the settings clears the cache.
 
-## ORBAT export
+## 🪖 ORBAT export
 
-**Admin → Command Net → ORBAT Export** (`command-net.admin.units.view`) turns the unit tree into an
-Arma 3 `CfgORBAT` block to copy or download as `orbat.hpp`. Each unit becomes a nested group with its
-name, abbreviation, description, commander (callsign or display name) and their rank. A unit's vehicles
-become its `assets`, counted by classname; vehicles without an Arma classname are left out. Size and
-type come from the unit's **ORBAT size** and **ORBAT type** fields; a blank size is worked out from
-how many echelons sit below the unit (squad, platoon, company, ... army) and a blank type exports as
-Infantry. The side (BLUFOR, OPFOR, Independent, Civilian) is picked on the export page. Nothing is
-published: the file is fetched here when a mission or mod needs updating. The exact `CfgORBAT` keys
-have not been checked against a running Arma 3 client yet.
+**Admin → Command Net → ORBAT Export** (`command-net.admin.units.view`) turns the unit tree into
+an Arma 3 `CfgORBAT` block to copy or download as `orbat.hpp`. Each unit becomes a nested group
+with its name, abbreviation, description, commander (callsign or display name) and their rank. A
+unit's vehicles become its `assets`, counted by classname; vehicles without an Arma classname are
+left out. Size and type come from the unit's **ORBAT size** and **ORBAT type** fields; a blank
+size is worked out from how many echelons sit below the unit (squad, platoon, company, ... army)
+and a blank type exports as Infantry. The side (BLUFOR, OPFOR, Independent, Civilian) is picked on
+the export page. Nothing is published: the file is fetched here when a mission or mod needs
+updating. The exact `CfgORBAT` keys have not been checked against a running Arma 3 client yet.
 
-## Integrations
+## 🔗 Integrations
 
-- **Calendar plugin:** when installed, an operation can be linked to a calendar and is mirrored as a
-  calendar event (removed if the operation is cancelled).
-- **Discord plugin:** the forumify roles this plugin grants (unit, rank, specialty, AWOL) can be mapped
-  to Discord roles in that plugin's own settings, which keeps Discord in step without any Discord code
-  here. It also adds slash commands: `/command-net-soldier`, `/command-net-unit`,
+- **Calendar plugin:** when installed, an operation can be linked to a calendar and is mirrored
+  as a calendar event (removed if the operation is cancelled).
+- **Discord plugin:** the forumify roles this plugin grants (unit, rank, specialty, AWOL) can be
+  mapped to Discord roles in that plugin's own settings, which keeps Discord in step without any
+  Discord code here. It also adds slash commands: `/command-net-soldier`, `/command-net-unit`,
   `/command-net-promotion`, and the patrol commands in [Events and patrols](#events-and-patrols).
   `Unit` has a Discord server id field, but nothing reads it yet.
 
-## Works well with
+## 🤝 Works well with
 
-- [`forumify-id-card-plugin`](https://github.com/MajesticDevBox/forumify-id-card-plugin) —
+- [`milsim-id-card-plugin`](https://github.com/MajesticDevBox/milsim-id-card-plugin) —
   if installed, a soldier's personnel file gets a button to view or create their MILSIM ID
   card, and the ID card plugin can use this plugin as a personnel source without ever
   naming it anywhere public.
 - [`command-net-theme`](https://github.com/Spearhead-Gaming/command-net-theme) — the
   frontend theme this plugin is designed to be used with; its homepage reads this plugin's
   `Operation` repository and online-count Twig function directly.
+</content>

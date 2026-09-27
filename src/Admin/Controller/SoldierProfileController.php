@@ -20,7 +20,7 @@ use MajesticDev\CommandNet\Service\SpecialtyRoleSyncer;
 #[Route('/command-net/personnel', 'command_net_personnel')]
 class SoldierProfileController extends AbstractCrudController
 {
-    // Adds an optional "Create/View ID Card" action when majesticdev/forumify-id-card-plugin
+    // Adds an optional "Create/View ID Card" action when majesticdev/milsim-id-card-plugin
     // is installed; a no-op include on any install that doesn't have it.
     protected string $formTemplate = '@CommandNetPlugin/admin/soldier_profile/form.html.twig';
 

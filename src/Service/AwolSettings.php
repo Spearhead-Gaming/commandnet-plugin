@@ -7,7 +7,7 @@ namespace MajesticDev\CommandNet\Service;
 use Forumify\Core\Repository\SettingRepository;
 
 /**
- * Same shape as forumify-id-card-plugin's CardSettings: a single JSON-blob setting key,
+ * Same shape as milsim-id-card-plugin's CardSettings: a single JSON-blob setting key,
  * wrapped so callers never touch the raw array.
  */
 class AwolSettings

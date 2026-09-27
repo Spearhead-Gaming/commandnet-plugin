@@ -1,7 +1,21 @@
-# Command Net
+# License
 
-The Open Software License version 3.0
+Copyright (c) 2026 MajesticDev / Spearhead Gaming. All rights reserved.
 
-Full original license is at: http://opensource.org/licenses/OSL-3.0
+This software and its associated documentation (the "Software") are the
+proprietary property of MajesticDev and Spearhead Gaming. No permission is
+granted to any other person or organization to use, copy, modify, merge,
+publish, distribute, sublicense, or sell copies of the Software, in whole or
+in part, without the prior written permission of the copyright holders.
 
-Copyright (c) 2025, Jannes Drijkoningen.
+The Software is built for Spearhead Gaming's private Forumify installation
+and is not made available for use by any other individual, community, or
+organization.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
