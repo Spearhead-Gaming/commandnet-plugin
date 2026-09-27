@@ -37,6 +37,39 @@ class OperationAAR
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes = null;
 
+    // The fields below follow the community's AAR template (the summary above is its "Report").
+    // They are nullable because reports filed before the template existed, and non-patrol
+    // reports, do not have them.
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $tasking = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $callsigns = null;
+
+    /** FKIA / FWIA / FMIA, as the reporter wrote it (e.g. "0 / 1 / 0"). */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $friendlyCasualties = null;
+
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $enemyKia = null;
+
+    /**
+     * Paths in the asset storage of the map screenshots (required for a patrol's report).
+     *
+     * @var list<string>|null
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $mapImages = null;
+
+    /**
+     * Paths in the asset storage of the intel images and other media (required for a patrol's report).
+     *
+     * @var list<string>|null
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $intelImages = null;
+
     public function __construct(Operation $operation, User $submittedBy)
     {
         $this->operation = $operation;
@@ -81,5 +114,77 @@ class OperationAAR
     public function setNotes(?string $notes): void
     {
         $this->notes = $notes;
+    }
+
+    public function getTasking(): ?string
+    {
+        return $this->tasking;
+    }
+
+    public function setTasking(?string $tasking): void
+    {
+        $this->tasking = $tasking;
+    }
+
+    public function getCallsigns(): ?string
+    {
+        return $this->callsigns;
+    }
+
+    public function setCallsigns(?string $callsigns): void
+    {
+        $this->callsigns = $callsigns;
+    }
+
+    public function getFriendlyCasualties(): ?string
+    {
+        return $this->friendlyCasualties;
+    }
+
+    public function setFriendlyCasualties(?string $friendlyCasualties): void
+    {
+        $this->friendlyCasualties = $friendlyCasualties;
+    }
+
+    public function getEnemyKia(): ?string
+    {
+        return $this->enemyKia;
+    }
+
+    public function setEnemyKia(?string $enemyKia): void
+    {
+        $this->enemyKia = $enemyKia;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getMapImages(): array
+    {
+        return $this->mapImages ?? [];
+    }
+
+    /**
+     * @param list<string> $mapImages
+     */
+    public function setMapImages(array $mapImages): void
+    {
+        $this->mapImages = $mapImages;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getIntelImages(): array
+    {
+        return $this->intelImages ?? [];
+    }
+
+    /**
+     * @param list<string> $intelImages
+     */
+    public function setIntelImages(array $intelImages): void
+    {
+        $this->intelImages = $intelImages;
     }
 }

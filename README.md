@@ -83,6 +83,7 @@ bin/console doctrine:migrations:migrate
 | `command_net_patrol_new` | `/patrols/new` | Post a patrol (`command-net.patrols.create`). You become its leader. |
 | `command_net_patrol_edit` | `/patrols/{id}/edit` | Edit a patrol (its leader, or an operations manager). |
 | `command_net_patrol_cancel` | `/patrols/{id}/cancel` (POST) | Cancel a patrol (its leader, or an operations manager). |
+| `command_net_patrol_delete` | `/patrols/{id}/delete` (POST) | Permanently delete a patrol, for test patrols and mistakes (an operations manager always; its leader only until an AAR is filed). |
 | `command_net_patrols_mine` | `/patrols/mine` | The patrols you have led, with each one's AAR state and a File AAR button. |
 | `command_net_operation_detail` | `/operations/{id}` | OPORD, roster with attendance, RSVP controls, AARs. |
 | `command_net_operation_rsvp` | `/operations/{id}/rsvp` (POST) | Set or change your own RSVP. |
@@ -320,6 +321,21 @@ patrols are never put on a calendar, so a synced calendar does not announce them
 mark attendance and file the AAR for their own patrol and no one else's; an attendee or staff can also
 file it. Other events keep the `submit_aar` and `operations.manage` rules.
 
+A patrol can be **deleted permanently** from its page: an operations manager can always, and its
+leader only until an AAR has been filed (once it is on the record, only staff can remove it). The
+patrol, its sign-ups and its reports go, and so do the combat records they earned on personnel
+files. That cleanup runs whenever any operation is deleted, including from the admin list, which
+used to leave those records behind. With the Discord plugin, the patrol's post is deleted too.
+
+**A patrol's AAR follows the community's template** and must include images. The form has the date-time
+group (`DDHHHHRMMMYY`, worked out from the patrol's start time in UTC, e.g. `261900ZSEP26`), tasking,
+callsigns (filled in from who joined, editable), FKIA / FWIA / FMIA, EKIA, and the report (with the
+objectives-met choice and notes as before), and **at least one map and one intel image** - the form is
+refused without them. Images are JPEG, PNG, GIF or WebP, up to 8 MB each (5 per kind from Discord), and are
+stored with the asset storage; they are shown on the patrol page, and deleted with the report or the
+patrol. Every other kind of event keeps the original short form. Reports filed before this have none of
+the new fields and show as before.
+
 **AAR due date.** A patrol's AAR is due 24 hours after it ends (its start, if it has no end time).
 "Due" and "overdue" are worked out from the end time, that deadline and whether an AAR exists, so
 nothing is stored: a cancelled patrol owes none, and filing the AAR clears the flag. There is no
@@ -328,13 +344,22 @@ scheduled task (`command-net:patrols:send-aar-reminders`, hourly) sends the lead
 notification when the AAR falls due and again when it is overdue. It keeps no state, so a run the
 scheduler misses skips that reminder.
 
+A patrol can be linked to a deployment: the web form has an optional **Deployment** choice (newest
+first), and the Discord command takes the deployment's name, matched ignoring case, and refuses a
+name that matches nothing (listing the recent ones) instead of posting an unlinked patrol.
+
 **Discord commands** (only registered when the Discord plugin is installed): `/command-net-patrol-create`
-posts a patrol (same `patrols.create` permission as the web form, checked by hand since a
-Discord-triggered request has no security token to check against - see `RawPermissionChecker`);
+posts a patrol, with an optional `deployment` (same `patrols.create` permission as the web form,
+checked by hand since a Discord-triggered request has no security token to check against - see
+`RawPermissionChecker`);
 `/command-net-patrol-list` shows upcoming patrols; `/command-net-patrol-join` / `-leave` RSVP
 (same `operations.rsvp` permission, joiner-cap and "enlisted only" rules as the web); and
-`/command-net-patrol-aar` files the AAR for a patrol the caller led, or replies with the web
-form's link if `summary` is left blank or the caller isn't its leader. All five need the caller's
+`/command-net-patrol-aar` says how to file the AAR, because a slash command cannot carry images. The AAR
+is filed by the **Submit AAR** button on the patrol's Discord post (needs the Discord plugin's patrol posts
+and a bot with the two-step AAR form): the bot collects the template's text and the map and intel uploads
+and passes them to this command, which fetches the images from Discord's own CDN only, checks they really
+are pictures, and files the report for the patrol's leader. Anyone else, or a report missing something,
+gets the web form's link. All five need the caller's
 Discord account linked to a forum account. New patrols (web or Discord-posted) are announced to
 Discord and the AAR due/overdue reminder is echoed to a channel, mentioning the leader, by the
 Discord plugin's own listeners - this plugin only exposes the `PatrolReminderNotifier` interface

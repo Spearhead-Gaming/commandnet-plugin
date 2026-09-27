@@ -10,12 +10,16 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Operation;
 use MajesticDev\CommandNet\Entity\OperationAAR;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Form\OperationAarType;
 use MajesticDev\CommandNet\Repository\OperationAARRepository;
 use MajesticDev\CommandNet\Repository\ServiceRecordRepository;
+use MajesticDev\CommandNet\Service\AarDefaults;
+use MajesticDev\CommandNet\Service\AarImageStore;
+use MajesticDev\CommandNet\Service\DtgFormatter;
 use MajesticDev\CommandNet\Service\EventRules;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
 
@@ -26,6 +30,7 @@ class OperationAarController extends AbstractController
         private readonly ServiceRecordRepository $serviceRecordRepository,
         private readonly OperationAttendanceService $attendanceService,
         private readonly EventRules $eventRules,
+        private readonly AarImageStore $imageStore,
     ) {
     }
 
@@ -47,7 +52,14 @@ class OperationAarController extends AbstractController
 
         $aar = new OperationAAR($operation, $user);
 
-        $form = $this->createForm(OperationAarType::class, $aar);
+        // A patrol's AAR follows the community template and needs map and intel images; every other
+        // event keeps the original short form.
+        $isPatrol = $operation->getType() === OperationType::PATROL;
+        if ($isPatrol) {
+            $aar->setCallsigns(AarDefaults::callsigns($operation));
+        }
+
+        $form = $this->createForm(OperationAarType::class, $aar, ['patrol' => $isPatrol]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -57,6 +69,8 @@ class OperationAarController extends AbstractController
         return $this->render('@CommandNetPlugin/frontend/operations/aar_form.html.twig', [
             'operation' => $operation,
             'form' => $form,
+            'isPatrol' => $isPatrol,
+            'dtg' => DtgFormatter::format($operation->getStartDateTime()),
         ]);
     }
 
@@ -90,8 +104,10 @@ class OperationAarController extends AbstractController
         foreach ($this->serviceRecordRepository->findBySource(ServiceRecord::SOURCE_OPERATION_AAR, $aarId) as $record) {
             $this->serviceRecordRepository->remove($record, false);
         }
+        $images = [...$aar->getMapImages(), ...$aar->getIntelImages()];
         $this->aarRepository->remove($aar);
         $operation->getAars()->removeElement($aar);
+        $this->imageStore->delete($images);
         $this->attendanceService->syncCombatRecords($operation);
 
         $this->addFlash('success', 'After-action report removed.');

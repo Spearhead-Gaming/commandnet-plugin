@@ -10,18 +10,22 @@ use Forumify\Core\Entity\Role;
 use Forumify\Core\Entity\User;
 use Forumify\Core\Security\Voter\PermissionVoter;
 use Forumify\Testing\Traits\UserTrait;
+use MajesticDev\CommandNet\Entity\Deployment;
 use MajesticDev\CommandNet\Entity\Enum\OperationType;
 use MajesticDev\CommandNet\Entity\Enum\RsvpStatus;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Operation;
+use MajesticDev\CommandNet\Entity\OperationAAR;
 use MajesticDev\CommandNet\Entity\OperationRSVP;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\RankGroup;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use League\Flysystem\FilesystemOperator;
 use ReflectionProperty;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * The Phase A acceptance criteria for patrols, driven through the real controllers, forms and
@@ -70,12 +74,21 @@ class PatrolFlowTest extends WebTestCase
         $this->client->request('GET', '/patrols/new');
         $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'Without the permission anywhere, a member must not post a patrol.');
 
+        $deployment = new Deployment();
+        $deployment->setName('Deployment ' . $this->sfx);
+        $deployment->setStartDate(new DateTime('-10 days'));
+        $deployment->setEndDate(new DateTime('+20 days'));
+        $this->em->persist($deployment);
+        $this->em->flush();
+        $deploymentId = $deployment->getId();
+
         $this->login($leader);
         $crawler = $this->client->request('GET', '/patrols/new');
         $this->assertSame(200, $this->client->getResponse()->getStatusCode());
         $form = $crawler->selectButton('Post patrol')->form();
         $title = 'Patrol ' . $this->sfx;
         $form['patrol[title]'] = $title;
+        $form['patrol[deployment]'] = (string)$deploymentId;
         // Three days ago, so its AAR deadline (24 hours after it ends) has already passed.
         $form['patrol[startDateTime]'] = (new DateTime('-3 days 20:00'))->format('Y-m-d\TH:i');
         $form['patrol[endDateTime]'] = (new DateTime('-3 days 22:00'))->format('Y-m-d\TH:i');
@@ -87,6 +100,7 @@ class PatrolFlowTest extends WebTestCase
         $this->assertNotNull($patrol);
         $this->assertSame(OperationType::PATROL, $patrol->getType());
         $this->assertSame($leader->getId(), $patrol->getLeader()?->getId(), 'The poster becomes the leader.');
+        $this->assertSame($deploymentId, $patrol->getDeployment()?->getId(), 'The deployment chosen on the form is linked.');
         $id = $patrol->getId();
 
         // Unfiled and past its deadline: overdue on the patrol page and on the leader's own page.
@@ -154,10 +168,44 @@ class PatrolFlowTest extends WebTestCase
         $this->login($leader);
         $crawler = $this->client->request('GET', '/operations/' . $id . '/aar');
         $this->assertSame(200, $this->client->getResponse()->getStatusCode(), 'The leader files their own patrol AAR without submit_aar.');
+        $this->assertStringContainsString('DTG:', (string)$this->client->getResponse()->getContent(), 'A patrol AAR shows its date-time group.');
         $form = $crawler->selectButton('Submit AAR')->form();
-        $form['operation_aar[summary]'] = 'We patrolled the road and returned.';
-        $this->client->submit($form);
-        $this->assertTrue($this->client->getResponse()->isRedirect());
+        $this->assertNotSame('', $form['operation_aar[callsigns]']->getValue(), 'Callsigns are filled in from who joined.');
+
+        $values = $form->getPhpValues();
+        $values['operation_aar']['tasking'] = 'Recon the road';
+        $values['operation_aar']['friendlyCasualties'] = '0 / 1 / 0';
+        $values['operation_aar']['enemyKia'] = '3';
+        $values['operation_aar']['summary'] = 'We patrolled the road and returned.';
+
+        // Without a map and an intel image a patrol's AAR is refused, and nothing is filed.
+        $this->client->request('POST', $form->getUri(), $values);
+        $this->assertSame(422, $this->client->getResponse()->getStatusCode(), 'The form is shown again with its errors.');
+        $this->assertCount(0, $this->em->getRepository(OperationAAR::class)->findBy(['operation' => $id]), 'A patrol AAR without images must not be filed.');
+
+        $files = ['operation_aar' => [
+            'mapImages' => ['file' => [$this->pngUpload('map.png')]],
+            'intelImages' => ['file' => [$this->pngUpload('intel.png')]],
+        ]];
+        $this->client->request('POST', $form->getUri(), $values, $files);
+        $this->assertTrue($this->client->getResponse()->isRedirect(), 'With both images the AAR is filed.');
+
+        $aar = $this->em->getRepository(OperationAAR::class)->findOneBy(['operation' => $id]);
+        $this->assertNotNull($aar);
+        $this->assertSame('Recon the road', $aar->getTasking());
+        $this->assertSame('0 / 1 / 0', $aar->getFriendlyCasualties());
+        $this->assertCount(1, $aar->getMapImages());
+        $this->assertCount(1, $aar->getIntelImages());
+        $mapImage = $aar->getMapImages()[0];
+        $intelImage = $aar->getIntelImages()[0];
+        /** @var FilesystemOperator $storage */
+        $storage = static::getContainer()->get('asset.storage');
+        $this->assertTrue($storage->fileExists($mapImage), 'The uploaded map is stored.');
+
+        $this->client->request('GET', '/operations/' . $id);
+        $content = (string)$this->client->getResponse()->getContent();
+        $this->assertStringContainsString('Recon the road', $content, 'The report shows the template fields.');
+        $this->assertStringContainsString($mapImage, $content, 'The report shows its map.');
 
         // Filing it clears the overdue state and credits the attendee.
         $this->client->request('GET', '/operations/' . $id);
@@ -165,6 +213,75 @@ class PatrolFlowTest extends WebTestCase
         $this->assertStringContainsString('AAR filed', $content);
         $this->assertStringNotContainsString('AAR overdue', $content);
         $this->assertCount(1, $this->combatRecords($soldierId), 'The attendee is credited once the AAR is filed.');
+
+        // With an AAR on the record the leader can no longer delete the patrol: no button, and a
+        // forged request is refused. Staff still can, and the combat records go with the patrol.
+        $crawler = $this->client->request('GET', '/operations/' . $id);
+        $this->assertSame(0, $crawler->filter('form[action$="/patrols/' . $id . '/delete"]')->count(), 'No delete button for the leader once an AAR is filed.');
+        $this->client->request('POST', '/patrols/' . $id . '/delete');
+        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), 'The leader must not delete a patrol that has an AAR.');
+
+        $admin = $this->member('admin', [...$viewer, 'command-net.admin.operations.manage']);
+        $this->login($admin);
+        $crawler = $this->client->request('GET', '/operations/' . $id);
+        $node = $crawler->filter('form[action$="/patrols/' . $id . '/delete"]');
+        $this->assertGreaterThan(0, $node->count(), 'Staff can delete any patrol.');
+        $this->client->submit($node->first()->form());
+        $this->assertTrue($this->client->getResponse()->isRedirect());
+        $this->assertNull($this->em->find(Operation::class, $id), 'The patrol is gone.');
+        $this->assertSame([], $this->em->getRepository(OperationRSVP::class)->findBy(['soldier' => $soldierId]), 'Its sign-ups went with it.');
+        $this->assertSame([], $this->combatRecords($soldierId), 'The combat records it earned are removed too, not left on the personnel file.');
+        $this->assertFalse($storage->fileExists($mapImage), "The report's map image is deleted with the patrol.");
+        $this->assertFalse($storage->fileExists($intelImage), "The report's intel image is deleted with the patrol.");
+    }
+
+    public function testALeaderCanDeleteTheirOwnPatrolUntilItHasAnAar(): void
+    {
+        $this->client = static::createClient();
+        $this->client->disableReboot();
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $this->em = $em;
+        $this->sfx = substr(uniqid(), -6);
+        $viewer = ['command-net.operations.view', 'command-net.operations.rsvp'];
+
+        $leader = $this->member('leader', $viewer);
+        $other = $this->member('other', $viewer);
+        $admin = $this->member('admin', [...$viewer, 'command-net.admin.operations.manage']);
+        $patrolId = $this->patrolLedBy($leader->getId(), 'Test patrol ' . $this->sfx)->getId();
+        $operation = new Operation();
+        $operation->setTitle('Op ' . $this->sfx);
+        $operation->setStartDateTime(new DateTime('+2 days'));
+        $this->em->persist($operation);
+        $this->em->flush();
+        $operationId = $operation->getId();
+
+        // Someone else's patrol is not theirs to delete.
+        $this->login($other);
+        $crawler = $this->client->request('GET', '/operations/' . $patrolId);
+        $this->assertSame(0, $crawler->filter('form[action$="/patrols/' . $patrolId . '/delete"]')->count());
+        $this->client->request('POST', '/patrols/' . $patrolId . '/delete');
+        $this->assertSame(403, $this->client->getResponse()->getStatusCode(), "Nobody else's patrol can be deleted.");
+
+        // A forged request without the page's token does nothing, even for the leader.
+        $this->login($leader);
+        $this->client->request('POST', '/patrols/' . $patrolId . '/delete', ['_token' => 'forged']);
+        $this->assertTrue($this->client->getResponse()->isRedirect('/operations/' . $patrolId), 'A bad token sends them back to the patrol.');
+        $this->assertNotNull($this->em->find(Operation::class, $patrolId), 'A bad token must not delete anything.');
+
+        // The leader deletes their own unfiled patrol from the button.
+        $crawler = $this->client->request('GET', '/operations/' . $patrolId);
+        $node = $crawler->filter('form[action$="/patrols/' . $patrolId . '/delete"]');
+        $this->assertGreaterThan(0, $node->count(), 'The leader sees the delete button on their own unfiled patrol.');
+        $this->client->submit($node->first()->form());
+        $this->assertTrue($this->client->getResponse()->isRedirect('/patrols/mine'));
+        $this->assertNull($this->em->find(Operation::class, $patrolId), 'The patrol is gone.');
+
+        // Only patrols can be deleted this way, even by staff.
+        $this->login($admin);
+        $this->client->request('POST', '/patrols/' . $operationId . '/delete');
+        $this->assertSame(404, $this->client->getResponse()->getStatusCode(), 'A non-patrol event is not deleted through the patrol route.');
+        $this->assertNotNull($this->em->find(Operation::class, $operationId));
     }
 
     /**
@@ -179,6 +296,17 @@ class PatrolFlowTest extends WebTestCase
         $voter = static::getContainer()->get(PermissionVoter::class);
         (new ReflectionProperty($voter, 'permissions'))->setValue($voter, null);
         $this->client->loginUser($user);
+    }
+
+    /**
+     * A real (1x1) PNG, as if picked in the upload field.
+     */
+    private function pngUpload(string $name): UploadedFile
+    {
+        $path = sys_get_temp_dir() . '/' . uniqid('aar-test-') . '.png';
+        file_put_contents($path, (string)base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+
+        return new UploadedFile($path, $name, 'image/png', null, true);
     }
 
     /**

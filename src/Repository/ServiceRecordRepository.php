@@ -63,4 +63,29 @@ class ServiceRecordRepository extends AbstractRepository
     {
         return $this->findBy(['sourceType' => $sourceType, 'sourceId' => $sourceId]);
     }
+
+    /**
+     * Removes what a deleted operation left on personnel files: the combat records credited to
+     * it, and the records written by each of its AARs. Records point at their source by id, with
+     * no database link, so nothing removes them when the operation goes.
+     *
+     * @param array<int> $aarIds the operation's AAR ids, taken before it was deleted
+     */
+    public function deleteForOperation(int $operationId, array $aarIds): void
+    {
+        $query = $this->createQueryBuilder('record')
+            ->delete()
+            ->where('record.sourceType = :operation AND record.sourceId = :operationId')
+            ->setParameter('operation', ServiceRecord::SOURCE_OPERATION)
+            ->setParameter('operationId', $operationId);
+
+        if ($aarIds !== []) {
+            $query
+                ->orWhere('record.sourceType = :aar AND record.sourceId IN (:aarIds)')
+                ->setParameter('aar', ServiceRecord::SOURCE_OPERATION_AAR)
+                ->setParameter('aarIds', $aarIds);
+        }
+
+        $query->getQuery()->execute();
+    }
 }

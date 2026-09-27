@@ -5,6 +5,9 @@
 {% block body %}
     <h1>{{ 'command_net.operations.submit_aar'|trans }}</h1>
     <p class="text-small mb-4">{{ operation.title }} &middot; {{ operation.startDateTime|format_date }}</p>
+    {% if isPatrol %}
+        <p class="text-small mb-4"><span class="text-bold">DTG:</span> {{ dtg }}</p>
+    {% endif %}
 
     <div class="card">
         <div class="card-body">
