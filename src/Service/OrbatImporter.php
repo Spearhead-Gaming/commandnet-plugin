@@ -75,7 +75,7 @@ class OrbatImporter
                 default => null,
             };
             if ($titles !== null) {
-                if ($depth < 1) {
+                if ($depth < 1 || $parentNode === null) {
                     throw new \DomainException("Line {$lineNumber}: a position must be indented under a unit or squad/team.");
                 }
                 $counts['positions'] += $this->linkPositions($titles, $parentNode);
