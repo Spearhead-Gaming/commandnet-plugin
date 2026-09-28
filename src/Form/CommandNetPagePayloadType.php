@@ -15,6 +15,7 @@ class CommandNetPagePayloadType extends AbstractType
 {
     public const PAGES = [
         'Roster' => 'command_net_roster',
+        'My Units' => 'command_net_my_units',
         'Operations' => 'command_net_operations',
         'Org Chart' => 'command_net_units',
         'Attendance' => 'command_net_attendance',

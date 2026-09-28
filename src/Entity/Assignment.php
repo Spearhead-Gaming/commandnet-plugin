@@ -34,6 +34,15 @@ class Assignment
     private ?Position $position = null;
 
     /**
+     * Which squad/team within the unit, if any - independent of position, since a squad/team
+     * is a grouping (Squad::unit is always this same unit) rather than a command in its own
+     * right, so it isn't itself an assignable "unit".
+     */
+    #[ORM\ManyToOne(targetEntity: Squad::class)]
+    #[ORM\JoinColumn(name: 'squad_id', onDelete: 'SET NULL')]
+    private ?Squad $squad = null;
+
+    /**
      * A soldier may hold several assignments at once, but only one should be primary —
      * that's the one used for the roster display, forum sync, and org chart placement.
      */
@@ -76,6 +85,16 @@ class Assignment
     public function setPosition(?Position $position): void
     {
         $this->position = $position;
+    }
+
+    public function getSquad(): ?Squad
+    {
+        return $this->squad;
+    }
+
+    public function setSquad(?Squad $squad): void
+    {
+        $this->squad = $squad;
     }
 
     public function isPrimary(): bool

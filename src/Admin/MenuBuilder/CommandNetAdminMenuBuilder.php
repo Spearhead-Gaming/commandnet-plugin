@@ -37,6 +37,9 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
         $ranksEnabled = $this->rankSettings->isEnabled();
 
         $groups = array_filter([
+            $group('Overview', [
+                $item('Overview', 'forumify_admin_command_net_overview', 'command-net.admin.personnel.view'),
+            ]),
             $group('Personnel', [
                 $item('Personnel', 'forumify_admin_command_net_personnel_list', 'command-net.admin.personnel.view'),
                 $item('Enlistment', 'forumify_admin_command_net_enlistment_list', 'command-net.admin.enlistment.view'),
@@ -48,6 +51,7 @@ class CommandNetAdminMenuBuilder implements AdminMenuBuilderInterface
             ]),
             $group('Units & Rosters', [
                 $item('Units', 'forumify_admin_command_net_units_list', 'command-net.admin.units.view'),
+                $item('Import ORBAT', 'forumify_admin_command_net_units_import', 'command-net.admin.units.manage'),
                 $item('Positions', 'forumify_admin_command_net_positions_list', 'command-net.admin.units.view'),
                 $item('Rosters', 'forumify_admin_command_net_rosters_list', 'command-net.admin.rosters.view'),
                 $item('Equipment', 'forumify_admin_command_net_equipment_list', 'command-net.admin.equipment.view'),

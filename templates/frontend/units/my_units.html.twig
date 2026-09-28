@@ -1,0 +1,35 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}My Units{% endblock %}
+
+{% block body %}
+    <h1>My Units</h1>
+    <p class="text-small mb-4">Units you command. Open one to manage its structure.</p>
+
+    <div class="card">
+        <div class="card-body">
+            {% if units is empty %}
+                <p class="mb-0">You aren't the commander of any unit.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Unit</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for unit in units %}
+                            <tr>
+                                <td>{{ unit.name }} <span class="text-small">({{ unit.abbreviation }})</span></td>
+                                <td class="cnf-row-actions">
+                                    <a class="btn-outlined btn-small" href="{{ path('command_net_my_unit', { id: unit.id }) }}">Manage</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

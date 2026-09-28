@@ -1,0 +1,19 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}Units{% endblock %}
+{% block body %}
+    <h2>
+        Units
+        {% if capabilities.create %}
+            <a
+                class="btn-primary btn-small btn-icon"
+                aria-label="Create unit"
+                href="{{ path(route ~ '_create') }}"
+            >
+                <i class="ph ph-plus"></i>
+            </a>
+        {% endif %}
+        <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_units_import') }}">Import ORBAT</a>
+        <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_units_import_template') }}">Download template</a>
+    </h2>
+    {{ component(table) }}
+{% endblock %}

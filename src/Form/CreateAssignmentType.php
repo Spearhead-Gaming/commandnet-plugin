@@ -18,6 +18,7 @@ use MajesticDev\CommandNet\Entity\Assignment;
 use MajesticDev\CommandNet\Entity\Position;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Document;
+use MajesticDev\CommandNet\Entity\Squad;
 use MajesticDev\CommandNet\Entity\Unit;
 
 /**
@@ -65,6 +66,19 @@ class CreateAssignmentType extends AbstractType
                 'placeholder' => 'None',
                 'choice_label' => fn (Position $p) => $p->getTitle(),
                 'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('p')->orderBy('p.title', 'ASC'),
+            ])
+            ->add('squad', EntityType::class, [
+                'class' => Squad::class,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => fn (Squad $s) => $s->getParent() !== null
+                    ? sprintf('%s › %s › %s', $s->getUnit()->getName(), $s->getParent()->getName(), $s->getName())
+                    : sprintf('%s › %s', $s->getUnit()->getName(), $s->getName()),
+                'query_builder' => fn (EntityRepository $er) => $er->createQueryBuilder('s')
+                    ->leftJoin('s.unit', 'u')->addSelect('u')
+                    ->leftJoin('s.parent', 'p')->addSelect('p')
+                    ->orderBy('u.name', 'ASC')->addOrderBy('s.name', 'ASC'),
+                'help' => 'Optional. Which squad or team within the unit above.',
             ])
             ->add('isPrimary', CheckboxType::class, [
                 'label' => 'Primary assignment',
