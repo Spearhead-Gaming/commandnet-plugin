@@ -112,11 +112,11 @@ class OrbatImporter
     /**
      * @param array<string> $titles
      */
-    private function linkPositions(array $titles, Unit|Squad|null $owner): int
+    private function linkPositions(array $titles, Unit|Squad $owner): int
     {
         $linked = 0;
         foreach ($this->positions->resolve($titles) as $position) {
-            if ($owner === null || $owner->getPositions()->contains($position)) {
+            if ($owner->getPositions()->contains($position)) {
                 continue;
             }
             $owner->addPosition($position);
