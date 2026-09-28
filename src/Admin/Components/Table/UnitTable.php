@@ -32,6 +32,12 @@ class UnitTable extends AbstractDoctrineTable
             ->addPositionColumn()
             ->addColumn('name', [
                 'field' => 'name',
+                // Position is a single global ordering (see the class docblock), so a
+                // unit's children aren't necessarily adjacent rows in this list - indenting
+                // by tree depth is what makes parent/child still readable at a glance.
+                'renderer' => fn (string $name, Unit $unit) => str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $this->depth($unit))
+                    . ($unit->getParent() !== null ? '↳ ' : '')
+                    . htmlspecialchars($name, ENT_QUOTES),
             ])
             ->addColumn('abbreviation', [
                 'field' => 'abbreviation',
@@ -62,5 +68,15 @@ class UnitTable extends AbstractDoctrineTable
         $actions .= $this->renderAction('forumify_admin_command_net_units_edit', ['identifier' => $id], 'pencil-simple-line');
         $actions .= $this->renderAction('forumify_admin_command_net_units_delete', ['identifier' => $id], 'x');
         return $actions;
+    }
+
+    private function depth(Unit $unit): int
+    {
+        $depth = 0;
+        for ($ancestor = $unit->getParent(); $ancestor !== null; $ancestor = $ancestor->getParent()) {
+            $depth++;
+        }
+
+        return $depth;
     }
 }

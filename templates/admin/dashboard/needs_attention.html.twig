@@ -1,0 +1,49 @@
+<div class="box rounded">
+    <h3 class="mb-4">Needs Attention</h3>
+
+    <div class="mb-4">
+        <p class="text-bold mb-1">Pending Enlistment Applications</p>
+        {% if this.pendingApplicationCount > 0 %}
+            <a href="{{ path('forumify_admin_command_net_enlistment_list') }}">
+                {{ this.pendingApplicationCount }} pending application{{ this.pendingApplicationCount == 1 ? '' : 's' }} to review
+            </a>
+        {% else %}
+            <p class="mb-0 text-small">No pending applications.</p>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        <p class="text-bold mb-1">AWOL Roster</p>
+        {% if this.awolSoldiers|length > 0 %}
+            <ul class="mb-0">
+                {% for soldier in this.awolSoldiers %}
+                    <li>
+                        <a href="{{ path('forumify_admin_command_net_personnel_edit', { identifier: soldier.id }) }}">
+                            {{ soldier.user.displayName }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="mb-0 text-small">Nobody is currently AWOL.</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <p class="text-bold mb-1">Unfilled Command Billets</p>
+        {% if this.unfilledCommandUnits|length > 0 %}
+            <ul class="mb-0">
+                {% for unit in this.unfilledCommandUnits %}
+                    <li>
+                        <a href="{{ path('forumify_admin_command_net_units_edit', { identifier: unit.id }) }}">
+                            {{ unit.name }}
+                        </a>
+                        has no commander
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="mb-0 text-small">Every unit has a commander.</p>
+        {% endif %}
+    </div>
+</div>

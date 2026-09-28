@@ -21,7 +21,7 @@ use MajesticDev\CommandNet\Repository\UnitRepository;
  * needing a separate entity per echelon type.
  */
 #[ORM\Entity(UnitRepository::class)]
-class Unit implements SortableEntityInterface
+class Unit implements SortableEntityInterface, HasPositions
 {
     use IdentifiableEntityTrait;
     use TimestampableEntityTrait;
@@ -96,11 +96,24 @@ class Unit implements SortableEntityInterface
     #[ORM\JoinTable(name: 'unit_vehicle')]
     private Collection $vehicles;
 
+    /**
+     * The billets this unit is expected to hold, e.g. a squad's "Squad Leader"/"Team Leader".
+     * Position itself stays a shared, reusable title catalog (the same Position can be listed
+     * on many units) - this is only which of those titles apply here, not a vacancy/slot
+     * count or a link to who currently holds one (that's still Assignment, unrelated to this).
+     *
+     * @var Collection<int, Position>
+     */
+    #[ORM\ManyToMany(targetEntity: Position::class)]
+    #[ORM\JoinTable(name: 'unit_position')]
+    private Collection $positions;
+
     public function __construct()
     {
         $this->vehicles = new ArrayCollection();
         $this->children = new ArrayCollection();
         $this->assignments = new ArrayCollection();
+        $this->positions = new ArrayCollection();
     }
 
     /**
@@ -237,6 +250,26 @@ class Unit implements SortableEntityInterface
     public function getAssignments(): Collection
     {
         return $this->assignments;
+    }
+
+    /**
+     * @return Collection<int, Position>
+     */
+    public function getPositions(): Collection
+    {
+        return $this->positions;
+    }
+
+    public function addPosition(Position $position): void
+    {
+        if (!$this->positions->contains($position)) {
+            $this->positions->add($position);
+        }
+    }
+
+    public function removePosition(Position $position): void
+    {
+        $this->positions->removeElement($position);
     }
 
     public function __toString(): string

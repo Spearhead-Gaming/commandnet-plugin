@@ -1,0 +1,63 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Manage {{ squad.name }}{% endblock %}
+
+{% block body %}
+    <h1>{{ squad.name }}</h1>
+    <p class="text-small mb-4">
+        {% if squad.parent %}team within {{ squad.parent.name }}, {% endif %}part of {{ squad.unit.name }}
+    </p>
+
+    <div class="flex gap-2 mb-4">
+        <a class="btn-outlined btn-small" href="{{ path('command_net_my_squad_edit', { id: squad.id }) }}">Edit this squad/team</a>
+        <a class="btn-outlined btn-small" href="{{ path('command_net_my_squad_create_child', { id: squad.id }) }}">Add team</a>
+        <a class="btn-outlined btn-small" href="{{ path('command_net_my_squad_import', { id: squad.id }) }}">Import structure</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="mb-2">Positions in this squad/team</h3>
+            {% if squad.positions is empty %}
+                <p class="mb-0">No positions set. <a href="{{ path('command_net_my_squad_edit', { id: squad.id }) }}">Add some</a> - e.g. squad lead or team lead titles.</p>
+            {% else %}
+                <p class="mb-0">
+                    {% for position in squad.positions %}<span class="tag mr-2">{{ position.title }}</span>{% endfor %}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 class="mb-2">Teams</h3>
+            {% if squad.children is empty %}
+                <p class="mb-0">No teams yet.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for child in squad.children %}
+                            <tr>
+                                <td>{{ child.name }}</td>
+                                <td class="cnf-row-actions">
+                                    <a class="btn-outlined btn-small" href="{{ path('command_net_my_squad', { id: child.id }) }}">Manage</a>
+                                    {% if child.children is empty %}
+                                        <form method="post" action="{{ path('command_net_my_squad_delete', { id: child.id }) }}" onsubmit="return confirm('Delete this team? This cannot be undone.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('my_squad_delete_' ~ child.id) }}">
+                                            <button type="submit" class="btn-link btn-small" title="Delete team"><i class="ph ph-trash"></i></button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

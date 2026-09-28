@@ -1,0 +1,33 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}Overview{% endblock %}
+{% block body %}
+    <h1 class="mb-6">
+        Command Net Overview
+        {% if is_granted('command-net.admin.personnel.manage') %}
+            <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_personnel_create') }}">Create Personnel</a>
+        {% endif %}
+        {% if is_granted('command-net.admin.units.manage') %}
+            <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_units_import') }}">Import ORBAT</a>
+        {% endif %}
+        {% if is_granted('command-net.admin.operations.manage') %}
+            <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_operations_create') }}">Create Operation</a>
+        {% endif %}
+    </h1>
+    <div class="grid gap-6">
+        <div class="col-xs-12">
+            {{ component('CommandNet\\Admin\\NeedsAttentionPanel') }}
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            {{ component('CommandNet\\Admin\\PersonnelGraph') }}
+        </div>
+        <div class="col-xs-12 col-lg-6">
+            {{ component('CommandNet\\Admin\\UnitGraph') }}
+        </div>
+        <div class="col-xs-12 col-md-6">
+            {{ component('CommandNet\\Admin\\ActivePersonnelTile') }}
+        </div>
+        <div class="col-xs-12 col-md-6">
+            {{ component('CommandNet\\Admin\\AwolPersonnelTile') }}
+        </div>
+    </div>
+{% endblock %}

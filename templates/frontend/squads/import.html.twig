@@ -1,0 +1,29 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Import Structure - {{ squad.name }}{% endblock %}
+
+{% block body %}
+    <h1>Import structure into {{ squad.name }}</h1>
+    <p>
+        Paste teams and create them all at once instead of adding each one at a time. One
+        team per line (start it with <code>+ </code>), indented 2 spaces deeper than
+        {{ squad.name }}. A line starting with <code>= </code> links a position; a line
+        starting with <code>@</code> expands to a standard billet set.
+    </p>
+    <pre class="p-2 border rounded mb-3">+ Team 1
+  @Team
++ Team 2
+  @Team</pre>
+
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <div class="flex justify-end gap-2 mt-4">
+                <a class="btn-outlined" href="{{ path('command_net_my_squad', { id: squad.id }) }}">Cancel</a>
+                <button class="btn-primary" type="submit">Import</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

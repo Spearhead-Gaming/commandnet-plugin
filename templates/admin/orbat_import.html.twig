@@ -1,0 +1,31 @@
+{% extends '@Forumify/admin/base.html.twig' %}
+{% block title_page %}Import ORBAT{% endblock %}
+{% block body %}
+    <h1 class="mb-4">
+        Import ORBAT
+        <a class="btn-outlined btn-small" href="{{ path('forumify_admin_command_net_units_import_template') }}">Download template</a>
+    </h1>
+    <p>
+        Paste a unit structure and create it all at once instead of adding each unit one at a
+        time. One unit per line, indented 2 spaces per nesting level. A line starting with
+        <code>+ </code> creates a squad/team instead of a unit - squads and teams aren't
+        commands in their own right, so they're never Unit rows. A line starting with
+        <code>= </code> links a position to whatever it's indented under, creating it in the
+        catalog first if needed. A line starting with <code>@</code> expands to a standard
+        billet set instead of typing it out for every squad/team: {% for name in presets|keys %}<code>@{{ name }}</code>{{ not loop.last ? ', ' }}{% endfor %}.
+    </p>
+    <pre class="p-2 border rounded mb-3">Misfit Platoon
+  = Platoon Lead
+  = Platoon Sergeant
+  + Squad 1
+    @Squad
+    + Team 1
+      @Team
+  + Squad 2
+    @Squad</pre>
+    {{ form_start(form) }}
+    {{ form_row(form.parent) }}
+    {{ form_row(form.outline) }}
+    <button class="btn-primary" type="submit">Import</button>
+    {{ form_end(form) }}
+{% endblock %}

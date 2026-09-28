@@ -16,6 +16,10 @@ use MajesticDev\CommandNet\Entity\Unit;
 #[Route('/command-net/units', 'command_net_units')]
 class UnitController extends AbstractCrudController
 {
+    // Adds "Import ORBAT" / "Download template" next to the generic create button - see
+    // templates/admin/unit_list.html.twig.
+    protected string $listTemplate = '@CommandNetPlugin/admin/unit_list.html.twig';
+
     protected ?string $permissionView = 'command-net.admin.units.view';
     protected ?string $permissionCreate = 'command-net.admin.units.manage';
     protected ?string $permissionEdit = 'command-net.admin.units.manage';

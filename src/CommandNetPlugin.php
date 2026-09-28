@@ -70,6 +70,10 @@ class CommandNetPlugin extends AbstractForumifyPlugin
                 'squadxml' => ['manage'],
             ],
             'roster' => ['view'],
+            // Lets a unit's own commander (checked against Unit::getCommander(), not an ACL
+            // row per unit) create/edit/delete units in their own sub-tree without the full
+            // "command-net.admin.units.manage" grant - see UnitAuthorizationChecker.
+            'units' => ['manage_own'],
             'qualifications' => ['view'],
             'operations' => ['view', 'rsvp', 'submit_aar'],
             // Granted to every member by default (migration Version20260921130000); a role can

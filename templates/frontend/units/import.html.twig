@@ -1,0 +1,33 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Import Structure - {{ unit.name }}{% endblock %}
+
+{% block body %}
+    <h1>Import structure into {{ unit.name }}</h1>
+    <p>
+        Paste a unit structure and create it all at once instead of adding each unit one at a
+        time. One unit per line, indented 2 spaces per nesting level, nesting under
+        {{ unit.name }}. A line starting with <code>+ </code> creates a squad/team instead of
+        a unit. A line starting with <code>= </code> links a position to whatever it's
+        indented under. A line starting with <code>@</code> expands to a standard billet
+        set: {% for name in presets|keys %}<code>@{{ name }}</code>{{ not loop.last ? ', ' }}{% endfor %}.
+    </p>
+    <pre class="p-2 border rounded mb-3">+ Squad 1
+  @Squad
+  + Team 1
+    @Team
++ Squad 2
+  @Squad</pre>
+
+    <div class="card">
+        <div class="card-body">
+            {{ form_start(form) }}
+            {{ form_widget(form) }}
+            <div class="flex justify-end gap-2 mt-4">
+                <a class="btn-outlined" href="{{ path('command_net_my_unit', { id: unit.id }) }}">Cancel</a>
+                <button class="btn-primary" type="submit">Import</button>
+            </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

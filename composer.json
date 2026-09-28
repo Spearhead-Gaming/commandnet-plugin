@@ -38,6 +38,9 @@
         "lock": false
     },
     "extra": {
-        "forumify-plugin-class": "MajesticDev\\CommandNet\\CommandNetPlugin"
+        "forumify-plugin-class": "MajesticDev\\CommandNet\\CommandNetPlugin",
+        "branch-alias": {
+            "dev-master": "1.1.x-dev"
+        }
     }
 }
