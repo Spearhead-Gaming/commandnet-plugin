@@ -125,6 +125,9 @@ bin/console doctrine:migrations:migrate
 | `command_net_units` | `/units` | Org chart. |
 | `command_net_qualifications` | `/qualifications` | Public qualifications board. |
 | `command_net_attendance` | `/attendance` | Your attendance record, or everyone's with the right permission. |
+| `command_net_attendance_review` | `/attendance/review` | Leadership review: soldiers in your scope with filters (unit, no-show rate, miss streak). `admin.attendance.view` sees everyone; a unit commander (`units.manage_own`) sees their unit tree. |
+| `command_net_attendance_review_soldier` | `/attendance/review/{username}` | One soldier's operation-by-operation attendance, with correction controls where allowed. A member can open their own (`attendance.view_own`), read only. |
+| `command_net_attendance_review_correct` | `/attendance/review/{username}/rsvp/{id}` (POST) | Correct a soldier's attended / no-show mark, or clear it. `admin.attendance.manage` for anyone, or a commander for their tree, but never their own record. Each correction is logged (actor, soldier, operation, old and new value). |
 | `command_net_promotions` | `/promotions` | Promotion eligibility, with a Promote button for managers. |
 | `command_net_promotions_promote` | `/promotions/{id}/promote` (POST) | Promote an eligible soldier. |
 | `command_net_report_in` | `/roster/report-in` (POST) | Report in. |
@@ -221,8 +224,9 @@ Checked as `command-net.<area>.<action>` (the prefix is slugged from the plugin'
 
 </details>
 
-`admin.attendance` is also declared in `CommandNetPlugin::getPermissions()`, reserved for
-features that don't exist yet (see [Known gaps](#known-gaps)) — granting it today has no effect.
+`command-net.admin.attendance.view` / `.manage` power the attendance review pages (see below): view
+lets a member review everyone's attendance, manage lets them correct it. Unit commanders reach the
+same pages through `command-net.units.manage_own` instead, scoped to their unit tree.
 
 ## 📋 Rosters
 

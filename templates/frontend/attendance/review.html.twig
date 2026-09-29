@@ -1,0 +1,76 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Attendance Review{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Attendance Review</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="cnf-filters">
+                <label>Unit
+                    <select name="unit">
+                        <option value="">All</option>
+                        {% for unit in units %}
+                            <option value="{{ unit.id }}"{{ filters.unit == unit.id ? ' selected' }}>{{ unit.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>No-show rate at least (%)
+                    <input type="number" name="min_rate" min="0" max="100" step="1" value="{{ filters.min_rate }}">
+                </label>
+                <label>Current miss streak at least
+                    <input type="number" name="min_miss" min="0" step="1" value="{{ filters.min_miss }}">
+                </label>
+                <button type="submit" class="btn-primary btn-small">Filter</button>
+                <a href="{{ path('command_net_attendance_review') }}" class="btn-link btn-small">Reset</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if rows is empty %}
+                <p class="text-small mb-0">No personnel match.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Soldier</th>
+                            <th>Attended</th>
+                            <th>No-shows</th>
+                            <th>No-show rate</th>
+                            <th>Miss streak</th>
+                            <th>Last attended</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                <td>
+                                    <a href="{{ path('command_net_attendance_review_soldier', { username: row.soldier.user.username }) }}">
+                                        {% if command_net_ranks_enabled() and row.soldier.rank %}{{ row.soldier.rank.abbreviation }}{% endif %}
+                                        {{ row.soldier.user.displayName }}
+                                    </a>
+                                </td>
+                                <td>{{ row.stats.attended }}</td>
+                                <td>{{ row.stats.noShows }}</td>
+                                <td>{{ row.stats.noShowRate is not null ? row.stats.noShowRate ~ '%' : '—' }}</td>
+                                <td>{{ row.stats.currentMissStreak }}</td>
+                                <td>{{ row.stats.lastAttended ? row.stats.lastAttended|format_date : '—' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .cnf-filters { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+        .cnf-filters label { display: flex; flex-direction: column; font-size: 12px; gap: 4px; }
+        table.cnf-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table.cnf-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .65; padding: 8px 4px; white-space: nowrap; }
+        table.cnf-table td { padding: 10px 4px; border-top: 1px solid var(--border-color, #eee); vertical-align: top; }
+    </style>
+{% endblock %}

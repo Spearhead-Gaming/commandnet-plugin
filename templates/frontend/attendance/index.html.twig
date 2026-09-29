@@ -5,9 +5,13 @@
 {% block body %}
     <h1 class="mb-4">Attendance</h1>
 
+    {% if canReview %}
+        <p class="mb-4"><a class="btn-primary btn-small" href="{{ path('command_net_attendance_review') }}">Leadership review</a></p>
+    {% endif %}
+
     {% if myStats %}
         <div class="card mb-4">
-            <div class="card-title">My Attendance</div>
+            <div class="card-title">My Attendance{% if canReviewOwn %} <a class="text-small" href="{{ path('command_net_attendance_review_soldier', { username: myProfile.user.username }) }}">View history</a>{% endif %}</div>
             <div class="card-body cnf-stat-row">
                 <div>
                     <p class="text-small mb-0">Attended</p>
