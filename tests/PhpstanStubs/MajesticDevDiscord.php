@@ -1,8 +1,10 @@
 <?php
 
 /**
- * PHPStan-only stubs for the private MajesticDev\Discord plugin (commandnet-discord-plugin), which
- * CI cannot install. Signatures mirror the real classes; nothing here is loaded at runtime.
+ * Stand-ins for the private MajesticDev\Discord plugin (commandnet-discord-plugin), which CI cannot
+ * install. Signatures and behaviour mirror the real classes (minus their API Platform/serializer
+ * attributes). PHPStan reads this file (scanFiles) and tests/bootstrap.php loads it when the real
+ * plugin is absent, so the Discord commands can be unit tested.
  */
 
 namespace MajesticDev\Discord\Api\DTO {
@@ -15,18 +17,25 @@ namespace MajesticDev\Discord\Api\DTO {
 
         public function __construct(string $type = 'string')
         {
+            $this->type = $type;
         }
 
         public function setName(string $name): static
         {
+            $this->name = $name;
+            return $this;
         }
 
         public function setDescription(string $description): static
         {
+            $this->description = $description;
+            return $this;
         }
 
         public function setRequired(bool $required = true): static
         {
+            $this->required = $required;
+            return $this;
         }
     }
 
@@ -64,18 +73,26 @@ namespace MajesticDev\Discord\Api\DTO {
 
         public function setThumbnail(string $thumbnail): static
         {
+            $this->thumbnail = ['url' => $thumbnail];
+            return $this;
         }
 
         public function setImage(string $image): static
         {
+            $this->image = ['url' => $image];
+            return $this;
         }
 
         public function addField(string $name = '', string $value = '', bool $inline = false): static
         {
+            $this->fields[] = ['name' => $name, 'value' => $value, 'inline' => $inline];
+            return $this;
         }
 
         public function setFooter(string $text): static
         {
+            $this->footer = ['text' => $text];
+            return $this;
         }
     }
 }
