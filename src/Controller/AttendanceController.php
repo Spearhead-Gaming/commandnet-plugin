@@ -10,12 +10,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\AttendanceCalculator;
+use MajesticDev\CommandNet\Service\AttendanceScope;
 
 class AttendanceController extends AbstractController
 {
     public function __construct(
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly AttendanceCalculator $attendanceCalculator,
+        private readonly AttendanceScope $attendanceScope,
     ) {
     }
 
@@ -48,6 +50,8 @@ class AttendanceController extends AbstractController
             'myStats' => $myProfile !== null ? $this->attendanceCalculator->calculate($myProfile) : null,
             'canViewAll' => $canViewAll,
             'roster' => $roster,
+            'canReview' => $this->attendanceScope->hasLeadershipAccess(),
+            'canReviewOwn' => $myProfile !== null && $this->attendanceScope->canReview($myProfile),
         ]);
     }
 }

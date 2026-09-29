@@ -1,0 +1,72 @@
+{% extends '@Forumify/frontend/base.html.twig' %}
+
+{% block title_page %}Attendance: {{ soldier.user.displayName }}{% endblock %}
+
+{% block body %}
+    <h1 class="mb-1">{{ soldier.user.displayName }}</h1>
+    <p class="mb-4">
+        <a href="{{ path('command_net_roster_profile', { username: soldier.user.username }) }}">Personnel file</a>
+        &middot; <a href="{{ path('command_net_attendance') }}">Attendance</a>
+    </p>
+
+    <div class="card mb-4">
+        <div class="card-title">Summary</div>
+        <div class="card-body cnf-stat-row">
+            <div><p class="text-small mb-0">Attended</p><p class="text-bold mb-0">{{ stats.attended }}</p></div>
+            <div><p class="text-small mb-0">No-shows</p><p class="text-bold mb-0">{{ stats.noShows }}</p></div>
+            <div><p class="text-small mb-0">No-show rate</p><p class="text-bold mb-0">{{ stats.noShowRate is not null ? stats.noShowRate ~ '%' : '—' }}</p></div>
+            <div><p class="text-small mb-0">Miss streak</p><p class="text-bold mb-0">{{ stats.currentMissStreak }}</p></div>
+            <div><p class="text-small mb-0">Last attended</p><p class="text-bold mb-0">{{ stats.lastAttended ? stats.lastAttended|format_date : '—' }}</p></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">History</div>
+        <div class="card-body">
+            {% if history is empty %}
+                <p class="text-small mb-0">No recorded attendance.</p>
+            {% else %}
+                <table class="cnf-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Operation</th>
+                            <th>Attendance</th>
+                            {% if canCorrect %}<th></th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rsvp in history %}
+                            <tr>
+                                <td>{{ rsvp.operation.startDateTime|format_date }}</td>
+                                <td><a href="{{ path('command_net_operation_detail', { id: rsvp.operation.id }) }}">{{ rsvp.operation.title }}</a></td>
+                                <td>{{ rsvp.attended ? 'Attended' : 'No-show' }}</td>
+                                {% if canCorrect %}
+                                    <td>
+                                        <form method="post" action="{{ path('command_net_attendance_review_correct', { username: soldier.user.username, id: rsvp.id }) }}" class="cnf-correct">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('attendance_correct_' ~ rsvp.id) }}">
+                                            <select name="attended" aria-label="Correct attendance for {{ rsvp.operation.title }}">
+                                                <option value="1"{{ rsvp.attended ? ' selected' }}>Attended</option>
+                                                <option value="0"{{ not rsvp.attended ? ' selected' }}>No-show</option>
+                                                <option value="">Clear record</option>
+                                            </select>
+                                            <button type="submit" class="btn-small btn-primary">Save</button>
+                                        </form>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>
+        .cnf-stat-row { display: flex; flex-wrap: wrap; gap: 24px; }
+        .cnf-correct { display: flex; gap: 8px; align-items: center; }
+        table.cnf-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        table.cnf-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .65; padding: 8px 4px; white-space: nowrap; }
+        table.cnf-table td { padding: 10px 4px; border-top: 1px solid var(--border-color, #eee); vertical-align: middle; }
+    </style>
+{% endblock %}
