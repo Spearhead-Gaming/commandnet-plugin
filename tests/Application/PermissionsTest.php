@@ -143,7 +143,8 @@ class PermissionsTest extends WebTestCase
             [[$p . 'operations.rsvp'], 'POST', '/operations/' . $ids['operation'] . '/rsvp'],
             [[$p . 'operations.submit_aar'], 'GET', '/operations/' . $ids['operation'] . '/aar'],
             [[$a . 'operations.manage'], 'POST', '/operations/' . $ids['operation'] . '/attendance'],
-            [[$p . 'attendance.view_own', $p . 'attendance.view_all'], 'GET', '/attendance'],
+            // Leadership review is reached from this page, so admin.attendance.view opens it too.
+            [[$p . 'attendance.view_own', $p . 'attendance.view_all', $a . 'attendance.view'], 'GET', '/attendance'],
             [[$p . 'promotions.view'], 'GET', '/promotions'],
             [[$a . 'personnel.manage'], 'POST', '/promotions/' . $ids['profile'] . '/promote'],
             [[$p . 'forms.submit'], 'GET', '/forms'],
