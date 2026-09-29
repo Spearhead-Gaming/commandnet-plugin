@@ -42,7 +42,7 @@ class UnitAuthorizationChecker
         }
 
         for ($ancestor = $unit; $ancestor !== null; $ancestor = $ancestor->getParent()) {
-            if ($ancestor->getCommander() === $soldier) {
+            if ($ancestor->getCommander()?->getId() === $soldier->getId()) {
                 return true;
             }
         }

@@ -125,7 +125,7 @@ class MySquadController extends AbstractController
             return $this->redirectToRoute('command_net_my_squad', ['id' => $squad->getId()]);
         }
 
-        if (!$squad->getChildren()->isEmpty() || $this->assignments->count(['squad' => $squad]) > 0) {
+        if (!$squad->getChildren()->isEmpty() || $this->assignments->count(['squad' => $squad->getId()]) > 0) {
             $this->addFlash('error', "Remove this squad/team's own child teams and assignments before deleting it.");
             return $this->redirectToRoute('command_net_my_squad', ['id' => $squad->getId()]);
         }

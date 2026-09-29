@@ -91,7 +91,7 @@ class MyUnitController extends AbstractController
             $this->em->persist($squad);
             $this->em->flush();
             $this->addFlash('success', 'Squad created.');
-            return $this->redirectToRoute('command_net_my_unit', ['id' => $unit->getId()]);
+            return $this->redirectToRoute('command_net_my_squad', ['id' => $squad->getId()]);
         }
 
         return $this->render('@CommandNetPlugin/frontend/squads/edit.html.twig', [
