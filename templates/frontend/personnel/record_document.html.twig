@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>{{ document.name }} &ndash; {{ record.soldier.user.displayName }}</title>
+    <style>
+        body { font-family: Georgia, 'Times New Roman', serif; color: #111; background: #fff; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+        .toolbar { margin-bottom: 1.5rem; }
+        button { font: inherit; padding: .4rem 1rem; cursor: pointer; }
+        @media print { .toolbar { display: none; } body { margin: 0; max-width: none; } }
+    </style>
+</head>
+<body>
+    <div class="toolbar"><button type="button" onclick="window.print()">Print / save as PDF</button></div>
+    {{ content|rich }}
+</body>
+</html>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MajesticDev\CommandNet\Controller;
 
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
+use MajesticDev\CommandNet\Repository\DocumentRepository;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\PromotionEligibility;
 use MajesticDev\CommandNet\Service\RankChangeService;
@@ -23,6 +24,7 @@ class PromotionsController extends AbstractController
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly RankChangeService $rankChangeService,
         private readonly RankSettings $rankSettings,
+        private readonly DocumentRepository $documentRepository,
     ) {
     }
 
@@ -39,6 +41,7 @@ class PromotionsController extends AbstractController
 
         return $this->render('@CommandNetPlugin/frontend/promotions/index.html.twig', [
             'rows' => $this->promotionEligibility->evaluateRoster(),
+            'documents' => $this->documentRepository->findBy([], ['name' => 'ASC']),
         ]);
     }
 
@@ -73,7 +76,11 @@ class PromotionsController extends AbstractController
             return $this->redirectToRoute('command_net_promotions');
         }
 
-        $this->rankChangeService->changeRank($soldier, $evaluation['nextRank']);
+        // Optional; a missing or unknown id just means no document.
+        $documentId = $request->request->getInt('document');
+        $document = $documentId > 0 ? $this->documentRepository->find($documentId) : null;
+
+        $this->rankChangeService->changeRank($soldier, $evaluation['nextRank'], $document);
 
         $this->addFlash('success', sprintf('%s promoted to %s.', $soldier->getUser()->getDisplayName(), $evaluation['nextRank']->getName()));
         return $this->redirectToRoute('command_net_promotions');

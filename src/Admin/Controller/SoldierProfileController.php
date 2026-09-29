@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use MajesticDev\CommandNet\Admin\Form\SoldierProfileType;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
+use MajesticDev\CommandNet\Repository\DocumentRepository;
 use MajesticDev\CommandNet\Service\RankChangeService;
 use MajesticDev\CommandNet\Service\SpecialtyRoleSyncer;
 
@@ -32,6 +33,7 @@ class SoldierProfileController extends AbstractCrudController
     public function __construct(
         private readonly RankChangeService $rankChangeService,
         private readonly SpecialtyRoleSyncer $specialtyRoleSyncer,
+        private readonly DocumentRepository $documentRepository,
     ) {
     }
 
@@ -67,7 +69,10 @@ class SoldierProfileController extends AbstractCrudController
         $response = parent::edit($request, $identifier);
 
         if ($profile !== null && $response->isRedirect()) {
-            $this->rankChangeService->afterRankChange($profile, $previousRank);
+            // The picker is an unmapped form field, so read it from the submitted request.
+            $documentId = (int)($request->request->all('soldier_profile')['document'] ?? 0);
+            $document = $documentId > 0 ? $this->documentRepository->find($documentId) : null;
+            $this->rankChangeService->afterRankChange($profile, $previousRank, $document);
             if ($profile->getSpecialty() !== $previousSpecialty) {
                 $this->specialtyRoleSyncer->sync($profile);
             }

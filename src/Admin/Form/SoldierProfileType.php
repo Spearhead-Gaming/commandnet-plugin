@@ -19,6 +19,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\Enum\SoldierStatus;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
@@ -102,6 +103,15 @@ class SoldierProfileType extends AbstractType
             ->add('dischargeDate', DateType::class, [
                 'required' => false,
                 'widget' => 'single_text',
+            ])
+            ->add('document', EntityType::class, [
+                'class' => Document::class,
+                'mapped' => false,
+                'required' => false,
+                'placeholder' => 'None',
+                'choice_label' => 'name',
+                'label' => 'Rank change document',
+                'help' => 'Optional. If the rank changes, shown with the promotion/demotion record on the personnel file.',
             ])
             ->add('bio', TextareaType::class, [
                 'required' => false,

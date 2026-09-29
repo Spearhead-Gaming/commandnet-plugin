@@ -46,6 +46,12 @@
                                         {% if row.eligible %}
                                             <form method="post" action="{{ path('command_net_promotions_promote', { id: row.soldier.id }) }}">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('promote_' ~ row.soldier.id) }}">
+                                                {% if documents %}
+                                                    <select name="document" class="form-select" aria-label="Document to attach to the promotion">
+                                                        <option value="">No document</option>
+                                                        {% for document in documents %}<option value="{{ document.id }}">{{ document.name }}</option>{% endfor %}
+                                                    </select>
+                                                {% endif %}
                                                 <button type="submit" class="btn-small btn-primary">Promote</button>
                                             </form>
                                         {% endif %}
