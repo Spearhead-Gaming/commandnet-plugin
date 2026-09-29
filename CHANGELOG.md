@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add attendance review for leadership: a filterable roster, a per-soldier history and attendance corrections for community leadership (`admin.attendance.*`) and unit commanders (their unit tree, never their own record), plus a read-only history for members' own attendance
+
 ## v1.1.3
 
 - Let a patrol be permanently deleted, and clean up the records it earned (#47)

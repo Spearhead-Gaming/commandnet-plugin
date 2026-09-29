@@ -28,10 +28,16 @@ class UnitAuthorizationChecker
 
     public function canManage(Unit $unit): bool
     {
-        if ($this->security->isGranted('command-net.admin.units.manage')) {
-            return true;
-        }
+        return $this->security->isGranted('command-net.admin.units.manage') || $this->commandsUnit($unit);
+    }
 
+    /**
+     * Holds units.manage_own and commands this unit or one of its ancestors. Unlike canManage(),
+     * the blanket admin.units.manage grant does not count - use this where "commands it" is the
+     * question (e.g. attendance scope), not "may edit it".
+     */
+    public function commandsUnit(Unit $unit): bool
+    {
         if (!$this->security->isGranted('command-net.units.manage_own')) {
             return false;
         }

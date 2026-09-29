@@ -103,7 +103,7 @@ class AttendanceScopeTest extends TestCase
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturnCallback(static fn (string $permission): bool => in_array($permission, $granted, true));
         $authorization = $this->createStub(UnitAuthorizationChecker::class);
-        $authorization->method('canManage')->willReturnCallback(static fn (Unit $unit): bool => in_array($unit, $commanded, true));
+        $authorization->method('commandsUnit')->willReturnCallback(static fn (Unit $unit): bool => in_array($unit, $commanded, true));
         $authorization->method('currentSoldier')->willReturn($this->me);
         $units = $this->createStub(UnitRepository::class);
         $units->method('findBy')->willReturn([$this->alpha, $this->bravo]);

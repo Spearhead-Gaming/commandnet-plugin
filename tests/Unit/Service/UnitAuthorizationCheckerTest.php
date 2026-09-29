@@ -54,11 +54,33 @@ class UnitAuthorizationCheckerTest extends TestCase
         return $soldier;
     }
 
-    private function checker(SoldierProfile $current): UnitAuthorizationChecker
+    public function testUnitsAdminMayManageEveryUnitButDoesNotCommandThem(): void
+    {
+        $unit = new Unit();
+        $unit->setCommander($this->soldier(7));
+        $admin = $this->checker($this->soldier(8), ['command-net.admin.units.manage']);
+
+        $this->assertTrue($admin->canManage($unit), 'The units admin grant still lets them edit any unit.');
+        $this->assertFalse($admin->commandsUnit($unit), 'It must not read as commanding it, or attendance scope would leak.');
+    }
+
+    public function testCommandsUnitNeedsTheManageOwnPermissionToo(): void
+    {
+        $unit = new Unit();
+        $unit->setCommander($this->soldier(7));
+
+        $this->assertFalse($this->checker($this->soldier(7), [])->commandsUnit($unit));
+        $this->assertTrue($this->checker($this->soldier(7))->commandsUnit($unit));
+    }
+
+    /**
+     * @param array<string> $granted
+     */
+    private function checker(SoldierProfile $current, array $granted = ['command-net.units.manage_own']): UnitAuthorizationChecker
     {
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturnCallback(
-            static fn (string $permission): bool => $permission === 'command-net.units.manage_own',
+            static fn (string $permission): bool => in_array($permission, $granted, true),
         );
         $security->method('getUser')->willReturn($this->createStub(User::class));
 

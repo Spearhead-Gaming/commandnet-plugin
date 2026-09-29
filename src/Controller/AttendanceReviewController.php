@@ -11,6 +11,7 @@ use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\AttendanceCalculator;
 use MajesticDev\CommandNet\Service\AttendanceScope;
 use MajesticDev\CommandNet\Service\OperationAttendanceService;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,6 +31,7 @@ class AttendanceReviewController extends AbstractController
         private readonly OperationRSVPRepository $rsvpRepository,
         private readonly SoldierProfileRepository $soldierProfileRepository,
         private readonly UserRepository $userRepository,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -113,7 +115,16 @@ class AttendanceReviewController extends AbstractController
             '0' => false,
             default => null,
         };
+        $before = $rsvp->getAttended();
         $this->attendanceService->mark($rsvp->getOperation(), $soldier, $attended);
+        // Corrections move AWOL status and combat credit, so leave a trail of who changed what.
+        $this->logger->info('Attendance corrected', [
+            'actor' => $this->getUser()?->getUserIdentifier(),
+            'soldier' => $soldier->getId(),
+            'operation' => $rsvp->getOperation()->getId(),
+            'from' => $before,
+            'to' => $attended,
+        ]);
         $this->addFlash('success', 'Attendance updated.');
 
         return $back;

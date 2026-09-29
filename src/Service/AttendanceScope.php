@@ -36,7 +36,7 @@ class AttendanceScope
 
     /**
      * Units whose soldiers the user reviews as leadership.
-     * ponytail: canManage() looks up the current soldier once per unit; cache it if unit counts grow large.
+     * ponytail: commandsUnit() looks up the current soldier once per unit; cache it if unit counts grow large.
      *
      * @return array<Unit>
      */
@@ -47,7 +47,7 @@ class AttendanceScope
             return $units;
         }
 
-        return array_values(array_filter($units, fn (Unit $unit): bool => $this->unitAuthorization->canManage($unit)));
+        return array_values(array_filter($units, fn (Unit $unit): bool => $this->unitAuthorization->commandsUnit($unit)));
     }
 
     /**
@@ -108,7 +108,7 @@ class AttendanceScope
     {
         $unit = $soldier->getPrimaryAssignment()?->getUnit();
 
-        return $unit !== null && $this->unitAuthorization->canManage($unit);
+        return $unit !== null && $this->unitAuthorization->commandsUnit($unit);
     }
 
     private function isSelf(SoldierProfile $soldier): bool

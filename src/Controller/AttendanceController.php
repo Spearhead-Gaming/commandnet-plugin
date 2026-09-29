@@ -25,7 +25,8 @@ class AttendanceController extends AbstractController
     public function __invoke(): Response
     {
         $canViewAll = $this->isGranted('command-net.attendance.view_all');
-        if (!$canViewAll && !$this->isGranted('command-net.attendance.view_own')) {
+        // Leadership with neither permission still lands here, where the review button lives.
+        if (!$canViewAll && !$this->isGranted('command-net.attendance.view_own') && !$this->attendanceScope->hasLeadershipAccess()) {
             throw $this->createAccessDeniedException();
         }
 

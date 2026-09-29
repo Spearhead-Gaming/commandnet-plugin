@@ -73,6 +73,10 @@ class AttendanceReviewTest extends WebTestCase
         $this->assertStringNotContainsString($inBravo->getUser()->getDisplayName(), $html, 'Another unit is out of scope.');
         $this->client->request('GET', $review . '/' . $name($inBravo));
         $this->assertResponseStatusCodeSame(403);
+        // Holding only units.manage_own, they still reach /attendance and find the way in from there.
+        $this->client->request('GET', '/attendance');
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('Leadership review', (string)$this->client->getResponse()->getContent());
 
         // ...and corrects an in-unit no-show through the real form.
         $crawler = $this->client->request('GET', $review . '/' . $name($inAlpha));
@@ -111,6 +115,14 @@ class AttendanceReviewTest extends WebTestCase
         $crawler = $this->client->request('GET', $review . '/' . $name($inBravo));
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->selectButton('Save'));
+
+        // Units admins may edit every unit, but that is not an attendance grant.
+        $unitsAdmin = $this->user('unitsadmin', ['command-net.units.manage_own', 'command-net.admin.units.manage']);
+        $this->login($unitsAdmin);
+        $this->client->request('GET', $review);
+        $this->assertResponseStatusCodeSame(403, 'admin.units.manage must not open attendance review for a non-commander.');
+        $this->client->request('GET', $review . '/' . $name($inBravo));
+        $this->assertResponseStatusCodeSame(403);
     }
 
     private function unit(string $name): Unit

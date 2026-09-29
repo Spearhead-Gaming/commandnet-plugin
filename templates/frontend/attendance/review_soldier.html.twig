@@ -43,7 +43,7 @@
                                 <td>{{ rsvp.attended ? 'Attended' : 'No-show' }}</td>
                                 {% if canCorrect %}
                                     <td>
-                                        <form method="post" action="{{ path('command_net_attendance_review_correct', { username: soldier.user.username, id: rsvp.id }) }}" class="cnf-correct">
+                                        <form method="post" action="{{ path('command_net_attendance_review_correct', { username: soldier.user.username, id: rsvp.id }) }}" class="cnf-correct" onsubmit="return this.attended.value !== '' || confirm('Clear this attendance record? It will drop out of this history and stop counting toward attendance.');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('attendance_correct_' ~ rsvp.id) }}">
                                             <select name="attended" aria-label="Correct attendance for {{ rsvp.operation.title }}">
                                                 <option value="1"{{ rsvp.attended ? ' selected' }}>Attended</option>
