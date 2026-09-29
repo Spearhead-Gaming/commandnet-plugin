@@ -11,9 +11,11 @@ use MajesticDev\Discord\Api\Resource\DiscordCommandRun;
 use MajesticDev\Discord\Discord\DiscordCommandInterface;
 use Forumify\OAuth\Idp\DiscordIdp;
 use Forumify\OAuth\Repository\IdentityProviderUserRepository;
+use MajesticDev\CommandNet\Entity\Equipment;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Repository\SoldierProfileRepository;
 use MajesticDev\CommandNet\Service\RankSettings;
+use MajesticDev\CommandNet\Service\SoldierLoadout;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\HttpFoundation\UrlHelper;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -31,6 +33,7 @@ class SoldierCommand implements DiscordCommandInterface
         private readonly Packages $packages,
         private readonly UrlHelper $urlHelper,
         private readonly RankSettings $rankSettings,
+        private readonly SoldierLoadout $soldierLoadout,
     ) {
     }
 
@@ -83,6 +86,22 @@ class SoldierCommand implements DiscordCommandInterface
         return $this->soldierProfileRepository->findOneBy(['user' => $self->getUser()]);
     }
 
+    /**
+     * One line per non-empty kind of kit, e.g. "Primary: M4A1, MK18". Empty when they have none.
+     */
+    private function loadoutSummary(SoldierProfile $profile): string
+    {
+        $loadout = $this->soldierLoadout->forSoldier($profile);
+        $lines = [];
+        foreach (['Primary' => 'primaryWeapons', 'Secondary' => 'secondaryWeapons', 'Vehicles' => 'vehicles'] as $label => $key) {
+            if ($loadout[$key] !== []) {
+                $lines[] = $label . ': ' . implode(', ', array_map(static fn (Equipment $e): string => $e->getName(), $loadout[$key]));
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
     private function createEmbed(SoldierProfile $profile): DiscordEmbed
     {
         $embed = new DiscordEmbed(
@@ -111,6 +130,11 @@ class SoldierCommand implements DiscordCommandInterface
             $embed->addField('Callsign', $callsign, true);
         }
 
+        $specialty = $profile->getSpecialty();
+        if ($specialty !== null) {
+            $embed->addField('Specialty', $specialty->getName(), true);
+        }
+
         $assignment = $profile->getPrimaryAssignment();
         if ($assignment !== null) {
             $parts = [$assignment->getUnit()->getName()];
@@ -118,6 +142,11 @@ class SoldierCommand implements DiscordCommandInterface
                 $parts[] = $position->getTitle();
             }
             $embed->addField('Assignment', implode(' - ', $parts));
+        }
+
+        $loadout = $this->loadoutSummary($profile);
+        if ($loadout !== '') {
+            $embed->addField('Loadout', $loadout);
         }
 
         $steamId = $profile->getSteamId();
