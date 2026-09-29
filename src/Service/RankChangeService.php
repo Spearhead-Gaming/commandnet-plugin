@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Service;
 use Forumify\Core\Entity\Notification;
 use Forumify\Core\Notification\GenericNotificationType;
 use Forumify\Core\Notification\NotificationService;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
@@ -31,20 +32,21 @@ class RankChangeService
     ) {
     }
 
-    public function changeRank(SoldierProfile $soldier, Rank $newRank): void
+    public function changeRank(SoldierProfile $soldier, Rank $newRank, ?Document $document = null): void
     {
         $previousRank = $soldier->getRank();
         $soldier->setRank($newRank);
         $this->soldierProfileRepository->save($soldier);
 
-        $this->afterRankChange($soldier, $previousRank);
+        $this->afterRankChange($soldier, $previousRank, $document);
     }
 
     /**
      * For callers that already applied the new rank themselves (a submitted form mutates the
-     * managed entity in place), passing the rank it had before.
+     * managed entity in place), passing the rank it had before. The optional document is shown
+     * with the resulting promotion/demotion record on the personnel file.
      */
-    public function afterRankChange(SoldierProfile $soldier, ?Rank $previousRank): void
+    public function afterRankChange(SoldierProfile $soldier, ?Rank $previousRank, ?Document $document = null): void
     {
         $newRank = $soldier->getRank();
         if ($newRank === $previousRank) {
@@ -60,11 +62,13 @@ class RankChangeService
         }
 
         $isPromotion = $previousRank === null || $newRank->getPosition() > $previousRank->getPosition();
-        $this->serviceRecordRepository->save(new ServiceRecord(
+        $record = new ServiceRecord(
             $soldier,
             $isPromotion ? ServiceRecordType::PROMOTION : ServiceRecordType::DEMOTION,
             (string) $newRank,
-        ));
+        );
+        $record->setDocument($document);
+        $this->serviceRecordRepository->save($record);
 
         $this->notificationService->sendNotification(new Notification(
             GenericNotificationType::TYPE,

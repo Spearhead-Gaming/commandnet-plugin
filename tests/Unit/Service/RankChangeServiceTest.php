@@ -6,6 +6,7 @@ namespace MajesticDev\CommandNet\Tests\Unit\Service;
 
 use Forumify\Core\Entity\User;
 use Forumify\Core\Notification\NotificationService;
+use MajesticDev\CommandNet\Entity\Document;
 use MajesticDev\CommandNet\Entity\Enum\ServiceRecordType;
 use MajesticDev\CommandNet\Entity\Rank;
 use MajesticDev\CommandNet\Entity\ServiceRecord;
@@ -80,6 +81,24 @@ class RankChangeServiceTest extends TestCase
         $this->service->changeRank($soldier, $this->rank(1));
 
         $this->assertSame([ServiceRecordType::PROMOTION], $this->savedTypes());
+    }
+
+    public function testAPassedDocumentIsAttachedToThePromotionRecord(): void
+    {
+        $document = new Document();
+        $soldier = $this->soldier($this->rank(1));
+
+        $this->service->changeRank($soldier, $this->rank(2), $document);
+
+        $this->assertCount(1, $this->saved);
+        $this->assertSame($document, $this->saved[0]->getDocument());
+    }
+
+    public function testNoDocumentLeavesTheRecordWithout(): void
+    {
+        $this->service->changeRank($this->soldier($this->rank(1)), $this->rank(2));
+
+        $this->assertNull($this->saved[0]->getDocument());
     }
 
     public function testUnchangedRankDoesNothing(): void
