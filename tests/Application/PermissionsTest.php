@@ -168,6 +168,10 @@ class PermissionsTest extends WebTestCase
             [[$a . 'reportin.manage'], 'GET', '/admin/command-net/report-in-settings'],
             [[$a . 'enlistment.manage'], 'GET', '/admin/command-net/enlistment-settings'],
             [[$a . 'squadxml.manage'], 'GET', '/admin/command-net/squad-xml-settings'],
+            [[$a . 'personnel.view'], 'GET', '/admin/command-net'],
+            [[$a . 'units.manage'], 'GET', '/admin/command-net/units/import'],
+            [[$a . 'units.view'], 'GET', '/admin/command-net/units/import/template'],
+            [[$p . 'units.manage_own'], 'GET', '/command-net/my-units'],
         ];
 
         // Admin catalogues: the list needs "view", opening a record needs "manage" (on the
