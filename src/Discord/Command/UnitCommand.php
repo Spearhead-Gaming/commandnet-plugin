@@ -23,6 +23,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  */
 class UnitCommand implements DiscordCommandInterface
 {
+    private const int FIELD_LIMIT = 1024;
+
     public function __construct(
         private readonly UnitRepository $unitRepository,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -91,7 +93,7 @@ class UnitCommand implements DiscordCommandInterface
 
         $vehicles = $unit->getVehicles()->toArray();
         if ($vehicles !== []) {
-            $embed->addField('Vehicles', implode(', ', array_map(static fn (Equipment $e): string => $e->getName(), $vehicles)));
+            $embed->addField('Vehicles', $this->joinWithinFieldLimit(array_map(static fn (Equipment $e): string => $e->getName(), $vehicles)));
         }
 
         $roster = array_filter($unit->getAssignments()->toArray(), fn (Assignment $a) => $a->isActive());
@@ -104,6 +106,36 @@ class UnitCommand implements DiscordCommandInterface
         }
 
         return $embed;
+    }
+
+    /**
+     * Discord rejects an embed whose field value is over 1024 characters, which would fail the
+     * whole reply, so a long list is cut short with a count of what was left out.
+     *
+     * @param array<string> $names
+     */
+    private function joinWithinFieldLimit(array $names): string
+    {
+        $full = implode(', ', $names);
+        if (mb_strlen($full) <= self::FIELD_LIMIT) {
+            return $full;
+        }
+
+        $kept = [];
+        $length = 0;
+        foreach ($names as $i => $name) {
+            $suffix = sprintf(', …and %d more', count($names) - $i);
+            $added = ($kept === [] ? 0 : 2) + mb_strlen($name);
+            if ($length + $added + mb_strlen($suffix) > self::FIELD_LIMIT) {
+                break;
+            }
+            $kept[] = $name;
+            $length += $added;
+        }
+
+        $more = sprintf('…and %d more', count($names) - count($kept));
+
+        return $kept === [] ? $more : implode(', ', $kept) . ', ' . $more;
     }
 
     private function formatSoldier(SoldierProfile $soldier): string

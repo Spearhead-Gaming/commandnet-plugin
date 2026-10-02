@@ -54,6 +54,25 @@ class UnitCommandTest extends DiscordCommandTestCase
         $this->assertSame('M1A2 Abrams, HMMWV', $this->fields($result->embeds[0])['Vehicles']);
     }
 
+    public function testCutsALongVehicleListShortWithACountOfWhatWasLeftOut(): void
+    {
+        $unit = new Unit();
+        $unit->setName('Motor Pool');
+        foreach (range(1, 200) as $n) {
+            $unit->addVehicle($this->vehicle('Vehicle number ' . $n));
+        }
+        $units = $this->createStub(UnitRepository::class);
+        $units->method('findByNameLike')->willReturn([$unit]);
+
+        $result = $this->command($units)->run($this->invocation('command-net-unit', ['name' => 'Motor']));
+
+        $vehicles = $this->fields($result->embeds[0])['Vehicles'];
+        $this->assertLessThanOrEqual(1024, mb_strlen($vehicles), 'Discord rejects a field value over 1024 characters.');
+        $this->assertStringStartsWith('Vehicle number 1, Vehicle number 2', $vehicles);
+        $this->assertSame(1, preg_match('/…and (\d+) more$/u', $vehicles, $matches));
+        $this->assertSame(200, substr_count($vehicles, 'Vehicle number') + (int) $matches[1], 'Every vehicle is either listed or counted.');
+    }
+
     public function testLeavesOutTheVehiclesFieldWhenTheUnitHasNone(): void
     {
         $unit = new Unit();
