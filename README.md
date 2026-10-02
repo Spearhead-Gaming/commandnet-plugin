@@ -31,11 +31,13 @@ Built for a specific MILSIM community's Forumify install; not a general-purpose 
 
 **Admin & permissions**
 - [Admin](#admin)
+- [Overview](#overview)
 - [Ranks](#ranks)
 - [Permissions](#permissions)
 
 **Feature modules**
 - [Rosters](#rosters)
+- [Squads and unit self-service](#squads-and-unit-self-service)
 - [Courses](#courses)
 - [Forms](#forms)
 - [Documents](#documents)
@@ -86,6 +88,11 @@ bin/console forumify:plugins:refresh
 bin/console doctrine:migrations:migrate
 ```
 
+**Upgrading to 1.1.5** adds the `unit_position`, `squad` and `squad_position` tables and an
+optional `assignment.squad_id`, so run the migrations. It also adds the
+`command-net.units.manage_own` permission; Forumify grants a new permission to no role, so give it
+to the roles your unit commanders hold before expecting My Units to appear.
+
 ## 🗂️ Entities
 
 <details>
@@ -94,13 +101,14 @@ bin/console doctrine:migrations:migrate
 | Entity | Notes |
 | --- | --- |
 | `SoldierProfile` | 1:1 with the Forumify `User`, kept separate so the plugin can be removed cleanly. Rank, specialty, service number, callsign, status (active, LOA, AWOL, discharged, retired), enlistment/discharge dates. |
-| `Unit` | Self-referencing tree (parent/children), sortable, optional commander and forumify role, optional vehicles. |
+| `Unit` | Self-referencing tree (parent/children), sortable, optional commander and forumify role, optional vehicles, and the positions (billets) it is expected to hold. |
+| `Squad` | A squad or team within a `Unit`; squads nest, so a team is a squad inside a squad. Carries a name and its positions, and none of a unit's command-specific fields (commander, insignia, role, vehicles). |
 | `Roster` | A named, sortable set of units shown as a tab on the roster page. |
 | `Rank`, `RankGroup` | Ranks are a sortable ladder with promotion requirements and an optional forumify role; a group is a promotion track (Enlisted, Officer, ...). |
 | `Position`, `Specialty`, `Award`, `Qualification` | Sortable catalogs managed in the admin panel. A position lists the weapons its holder may use; a specialty can carry a forumify role. |
 | `Equipment` | A primary weapon, secondary weapon or vehicle. |
 | `Document` | A rich-text template with `{placeholders}` that a service record can carry. |
-| `Assignment` | A soldier's posting to a unit (and optionally a position) over a date range. One assignment can be flagged primary. |
+| `Assignment` | A soldier's posting to a unit (and optionally a position and a squad) over a date range. One assignment can be flagged primary. |
 | `SoldierAward`, `SoldierQualification` | Join entities recording who issued what, and when. |
 | `Operation` | An event: an OPORD with a start/end time, a type (Operation, Patrol, Fun-Day, Training, Meeting, Other), optional unit, status, and optionally a leader, a Deployment and a joiner cap. Owns its RSVPs and AARs. What the type means is in [Events and patrols](#events-and-patrols). |
 | `Deployment` | A named period (name, description, start, end), normally a month, that events optionally belong to. |
@@ -123,6 +131,9 @@ bin/console doctrine:migrations:migrate
 | --- | --- | --- |
 | `command_net_roster` | `/roster` | Active roster: one list, or a tab per roster when rosters are defined (`?roster=<id>`). |
 | `command_net_units` | `/units` | Org chart. |
+| `command_net_my_units` | `/command-net/my-units` | The units you command. Needs `command-net.units.manage_own`. |
+| `command_net_my_unit` and `_edit` / `_create_child` / `_create_squad` / `_import` / `_delete` | `/command-net/my-units/{id}` and `/edit`, `/create-child`, `/create-squad`, `/import`, `/delete` | Manage one of your units: its settings, child units, squads, an outline import, and removing it. Only for that unit's commander (or an ancestor's). |
+| `command_net_my_squad` and `_edit` / `_create_child` / `_import` / `_delete` | `/command-net/my-squads/{id}` and `/edit`, `/create-child`, `/import`, `/delete` | The same for a squad or team inside one of your units. |
 | `command_net_qualifications` | `/qualifications` | Public qualifications board. |
 | `command_net_attendance` | `/attendance` | Your attendance record, or everyone's with the right permission. |
 | `command_net_attendance_review` | `/attendance/review` | Leadership review: soldiers in your scope with filters (unit, no-show rate, miss streak). `admin.attendance.view` sees everyone; a unit commander (`units.manage_own`) sees their unit tree. |
@@ -139,6 +150,7 @@ bin/console doctrine:migrations:migrate
 | `command_net_roster_qualification_delete` | `/roster/{username}/qualification/{id}/delete` | Remove a qualification and its service record entry. |
 | `command_net_roster_assignment` | `/roster/{username}/assignment` | Create an assignment (closes the soldier's current primary posting if the new one is primary). |
 | `command_net_roster_assignment_delete` | `/roster/{username}/assignment/{id}/delete` | Remove an assignment and its service record entry. |
+| `command_net_roster_service_record_document` | `/roster/{username}/service-record/{id}/document` | Print view of the document on a service record entry (`command-net.roster.view`). |
 | `command_net_roster_service_record_delete` | `/roster/{username}/service-record/{id}/delete` | Remove a manual or otherwise-orphaned timeline entry directly. |
 | `command_net_operations` | `/operations` | Upcoming/past operations. |
 | `command_net_patrol_new` | `/patrols/new` | Post a patrol (`command-net.patrols.create`). You become its leader. |
@@ -172,6 +184,21 @@ Discharge action. There's no separate admin screen for awards issued, qualificat
 assignments, or service records — those are managed from the frontend personnel file instead,
 since they only make sense in the context of one soldier.
 
+Units also have **Import ORBAT** (`command-net.admin.units.manage`), which builds a unit and squad
+structure from a pasted outline; see [Squads and unit self-service](#squads-and-unit-self-service).
+The Units list indents each unit under its parent so the tree is readable.
+
+## 📊 Overview
+
+The Command Net admin section opens on **Admin → Command Net → Overview**
+(`command-net.admin.personnel.view`), a dashboard of real data:
+
+- A **Needs attention** panel: pending enlistment applications, soldiers currently AWOL, and units
+  with nobody in command.
+- Personnel and unit graphs, and tiles for active and AWOL personnel.
+- Quick buttons for Create Personnel, Import ORBAT and Create Operation, each shown only to
+  someone who may use it.
+
 ## 🎖️ Ranks
 
 Ranks are on by default. Turn them off under **Admin → Command Net → Rank Settings**
@@ -204,6 +231,7 @@ Checked as `command-net.<area>.<action>` (the prefix is slugged from the plugin'
 | `command-net.forms.submit` | See and fill in open forms at `/forms`. |
 | `command-net.admin.courses.view` / `.manage` | View / edit courses and classes, and record class results. |
 | `command-net.courses.enroll` | See courses and enrol in classes at `/courses`. |
+| `command-net.units.manage_own` | Manage the units you command (and the squads and units beneath them) from the frontend. See [Squads and unit self-service](#squads-and-unit-self-service). |
 | `command-net.admin.units.view` / `.manage` | View / edit units. Also gates Positions — a position isn't useful outside the context of a unit's org chart, so it doesn't get its own permission branch. |
 | `command-net.admin.ranks.view` / `.manage` | View / edit the rank ladder, and edit Rank Settings. |
 | `command-net.admin.awards.view` / `.manage` | View / edit the award catalog and issue/remove awards. |
@@ -237,6 +265,50 @@ least one exists the roster page shows a tab per roster (the first is selected, 
 `?roster=`), listing the roster's units in their order with the soldiers whose current primary
 assignment is that unit, senior first. A soldier in none of a roster's units is not on it, and
 child units are not folded into their parent. Delete every roster to go back to the single list.
+
+## 🪖 Squads and unit self-service
+
+A **squad** is a smaller group inside a unit, and squads nest: a team is a squad inside a squad. A
+unit or squad lists the **positions** (billets) it is expected to hold, such as Squad Leader or
+Team Lead. A position is still the shared catalog title, so listing it on a unit or squad says
+which billets apply there; it does not create a vacancy count or say who holds it. When creating an
+assignment you can optionally pick the squad the soldier is in.
+
+**Self-service.** A unit's commander (or the commander of any unit above it) holds
+`command-net.units.manage_own` and manages their own sub-tree from the site, without admin-panel
+access: **My Units** (`/command-net/my-units`, also available as a menu item) lists the units
+they command, and each unit's page lets them edit its settings and positions (one title per line,
+with quick-fill buttons for the standard Team and Squad sets), create child units and squads,
+import an outline, and delete a unit or squad that has no child units, squads or assignments left
+(anything with history goes through the admin screens instead). Every one of these pages needs
+`manage_own`. On its own that only reaches units you command; someone who also holds
+`command-net.admin.units.manage` can use the pages on any unit. That admin grant does not give
+attendance review, which is scoped to commanders only.
+
+**Outline import.** Instead of creating each row by hand, paste an outline: one entry per line,
+indented two spaces per level.
+
+```
+# Lines starting with # are ignored
+Detachment 7
+  = Commanding Officer
+  + Squad 1
+    @Squad
+    + Team 1
+      @Team
+```
+
+- A bare line creates a **unit** (it can only sit under another unit).
+- `+ ` creates a **squad** (or a team, inside a squad).
+- `= ` links a **position** to the nearest unit or squad, creating it in the catalog if needed.
+- `@Team` or `@Squad` expands to a standard set of positions (Team: Team Lead, Medic, Team Member;
+  Squad: Squad Leader, Squad Medic).
+- `#` starts a comment.
+
+Admins import from **Admin → Command Net → Import ORBAT**, where a template can be downloaded and
+the import can go under any unit or at the top level; commanders import under the unit they are
+managing. The import only builds structure. It never creates assignments, because a name in a roster
+sheet can't be reliably matched to a forum account, so people are still assigned one at a time.
 
 ## 🎓 Courses
 
@@ -285,8 +357,13 @@ for the soldier and record. The placeholders (`{user_name}`, `{user_rank}`, `{re
 ...) are listed in the document editor. Values are HTML-escaped, and a placeholder that is not
 recognised is left as written.
 
-> **Not included yet:** documents can not be attached to promotions or to entries created another
-> way, and there is no print or download view.
+A document can also be attached when promoting or demoting: the promotions page has a document
+dropdown next to **Promote**, and the admin personnel form has a **Rank change document** picker.
+Next to any record's document is a **Print** link (`command-net.roster.view`) to a plain page with
+a print button, so the browser's print-to-PDF does the work; there is no separate PDF download.
+
+> **Not included yet:** documents can not be attached to entries created any other way (a discharge,
+> a course pass, an AWOL change), and existing promotion records are not backfilled with one.
 
 ## 🎯 Equipment
 
@@ -504,8 +581,9 @@ before relying on it.
   out; this install does not migrate from PERSCOM.
 - **`Unit`'s Discord server id** is only stored here. This plugin never reads it; the Discord
   plugin uses it to send a transferred soldier an invite to their new unit's server.
-- **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
-  `MajesticDev\Discord` plugin.
+- **`src/Discord` is analysed against stubs**, not the real private `MajesticDev\Discord` plugin
+  (`tests/PhpstanStubs`), so a change to that plugin's signatures isn't caught here. The same stubs
+  let the Discord commands be unit tested in CI.
 
 ## 🗺️ Squad XML
 
