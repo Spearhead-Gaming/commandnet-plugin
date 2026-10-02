@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show a unit's vehicles in the `/command-net-unit` Discord reply
+- Correct the README's known gaps: the Discord soldier reply already shows specialty and loadout, and a unit's Discord server id is used by the Discord plugin
 - Add attendance review for leadership: a filterable roster, a per-soldier history and attendance corrections for community leadership (`admin.attendance.*`) and unit commanders (their unit tree, never their own record), plus a read-only history for members' own attendance
 
 ## v1.1.3

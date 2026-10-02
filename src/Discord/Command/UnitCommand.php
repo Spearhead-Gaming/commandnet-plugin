@@ -10,6 +10,7 @@ use MajesticDev\Discord\Api\DTO\DiscordEmbed;
 use MajesticDev\Discord\Api\Resource\DiscordCommandRun;
 use MajesticDev\Discord\Discord\DiscordCommandInterface;
 use MajesticDev\CommandNet\Entity\Assignment;
+use MajesticDev\CommandNet\Entity\Equipment;
 use MajesticDev\CommandNet\Entity\SoldierProfile;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
@@ -86,6 +87,11 @@ class UnitCommand implements DiscordCommandInterface
         $commander = $unit->getCommander();
         if ($commander !== null) {
             $embed->addField('Commander', $this->formatSoldier($commander), true);
+        }
+
+        $vehicles = $unit->getVehicles()->toArray();
+        if ($vehicles !== []) {
+            $embed->addField('Vehicles', implode(', ', array_map(static fn (Equipment $e): string => $e->getName(), $vehicles)));
         }
 
         $roster = array_filter($unit->getAssignments()->toArray(), fn (Assignment $a) => $a->isActive());

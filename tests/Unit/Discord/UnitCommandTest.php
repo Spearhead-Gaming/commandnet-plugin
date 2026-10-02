@@ -7,6 +7,7 @@ namespace MajesticDev\CommandNet\Tests\Unit\Discord;
 use DateTime;
 use MajesticDev\CommandNet\Discord\Command\UnitCommand;
 use MajesticDev\CommandNet\Entity\Assignment;
+use MajesticDev\CommandNet\Entity\Equipment;
 use MajesticDev\CommandNet\Entity\Unit;
 use MajesticDev\CommandNet\Repository\UnitRepository;
 use MajesticDev\CommandNet\Service\RankSettings;
@@ -39,6 +40,32 @@ class UnitCommandTest extends DiscordCommandTestCase
         $this->assertStringNotContainsString('Gone Gary', $fields['Roster'], 'Ended assignments are not on the roster.');
     }
 
+    public function testListsTheUnitsVehiclesWhenItHasAny(): void
+    {
+        $unit = new Unit();
+        $unit->setName('Armor Platoon');
+        $unit->addVehicle($this->vehicle('M1A2 Abrams'));
+        $unit->addVehicle($this->vehicle('HMMWV'));
+        $units = $this->createStub(UnitRepository::class);
+        $units->method('findByNameLike')->willReturn([$unit]);
+
+        $result = $this->command($units)->run($this->invocation('command-net-unit', ['name' => 'Armor']));
+
+        $this->assertSame('M1A2 Abrams, HMMWV', $this->fields($result->embeds[0])['Vehicles']);
+    }
+
+    public function testLeavesOutTheVehiclesFieldWhenTheUnitHasNone(): void
+    {
+        $unit = new Unit();
+        $unit->setName('Foot Squad');
+        $units = $this->createStub(UnitRepository::class);
+        $units->method('findByNameLike')->willReturn([$unit]);
+
+        $result = $this->command($units)->run($this->invocation('command-net-unit', ['name' => 'Foot']));
+
+        $this->assertArrayNotHasKey('Vehicles', $this->fields($result->embeds[0]));
+    }
+
     public function testBlankNameIsRefusedWithoutSearching(): void
     {
         $units = $this->createMock(UnitRepository::class);
@@ -58,6 +85,14 @@ class UnitCommandTest extends DiscordCommandTestCase
 
         $this->assertSame('We could not find any units matching "Ghost Unit".', $result->content);
         $this->assertSame([], $result->embeds);
+    }
+
+    private function vehicle(string $name): Equipment
+    {
+        $equipment = new Equipment();
+        $equipment->setName($name);
+
+        return $equipment;
     }
 
     private function command(UnitRepository $units): UnitCommand

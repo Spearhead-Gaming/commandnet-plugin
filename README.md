@@ -299,8 +299,6 @@ position or unit changes it for everyone who holds it.
 
 Each item can carry an **Arma classname** (e.g. `B_MRAP_01_F`), which the ORBAT export needs.
 
-> **Not included yet:** the Discord soldier and unit replies do not show equipment.
-
 ## 🏅 Specialties
 
 A **specialty** is a soldier's trade (Combat Medic, Radio Operator, ...): one per soldier, set on
@@ -310,8 +308,7 @@ Specialties (`command-net.admin.specialties.view` / `.manage`). A specialty can 
 **Role**: a soldier holds the role of their specialty, and it is removed if it changes or they are
 discharged (map it to a Discord role in the Discord plugin to keep Discord in step).
 
-Changes to a soldier's specialty are not written to their service record, and it is not shown in
-the Discord `/command-net-soldier` reply yet.
+Changes to a soldier's specialty are not written to their service record.
 
 ## 🪖 Enlistment
 
@@ -505,8 +502,8 @@ before relying on it.
   Discord `/award`, `/qualification` and `/rank` commands. The section for each feature above
   lists what its first version leaves out. MILHQ's PERSCOM migration tool is deliberately left
   out; this install does not migrate from PERSCOM.
-- **Discord replies** do not show a soldier's specialty or loadout, and `Unit`'s Discord server
-  id is stored but unused.
+- **`Unit`'s Discord server id** is only stored here. This plugin never reads it; the Discord
+  plugin uses it to send a transferred soldier an invite to their new unit's server.
 - **`src/Discord` isn't analysed by PHPStan** in CI, because it depends on the private
   `MajesticDev\Discord` plugin.
 
@@ -541,7 +538,9 @@ updating. The exact `CfgORBAT` keys have not been checked against a running Arma
   mapped to Discord roles in that plugin's own settings, which keeps Discord in step without any
   Discord code here. It also adds slash commands: `/command-net-soldier`, `/command-net-unit`,
   `/command-net-promotion`, and the patrol commands in [Events and patrols](#events-and-patrols).
-  `Unit` has a Discord server id field, but nothing reads it yet.
+  `/command-net-soldier` shows the specialty and loadout, and `/command-net-unit` shows the unit's
+  vehicles. A `Unit`'s Discord server id is read by the Discord plugin, which uses it to DM a
+  transferred soldier an invite to their new unit's server.
 
 ## 🤝 Works well with
 
